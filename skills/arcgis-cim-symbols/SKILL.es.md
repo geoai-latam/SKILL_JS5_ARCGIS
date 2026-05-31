@@ -163,7 +163,7 @@ color: [255, 0, 0, 255]; // totalmente opaco
 ## Samples de Referencia
 
 - [CIMSymbol](https://developers.arcgis.com/javascript/latest/sample-code/sandbox/?sample=cim-symbols)
-- [CIM primitive overrides](https://developers.arcgis.com/javascript/latest/visualization/symbols-color-ramps/cim-symbols/)
+- [CIM primitive overrides](https://developers.arcgis.com/javascript/latest/visualization/)
 
 ## Changelog
 

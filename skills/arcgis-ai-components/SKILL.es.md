@@ -163,7 +163,7 @@ y pinea la versión del paquete.
 
 ## Samples de Referencia
 
-- [AI Components (beta)](https://www.esri.com/arcgis-blog/products/js-api-arcgis/developers/introducing-ai-components-beta-in-arcgis-maps-sdk-for-javascript)
+- [AI Components (beta)](https://developers.arcgis.com/javascript/latest/release-notes/)
 - [Components overview](https://developers.arcgis.com/javascript/latest/components/)
 
 ## Changelog

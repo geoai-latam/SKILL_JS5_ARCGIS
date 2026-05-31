@@ -166,8 +166,8 @@ new RelationshipQuery({ objectIds: [id], relationshipId: rel.id });
 
 ## Reference Samples
 
-- [FeatureTable component](https://developers.arcgis.com/javascript/latest/sample-code/featuretable-basic/)
-- [FeatureForm component](https://developers.arcgis.com/javascript/latest/sample-code/featureform-basic/)
+- [FeatureTable component](https://developers.arcgis.com/javascript/latest/api-reference/)
+- [FeatureForm component](https://developers.arcgis.com/javascript/latest/components/)
 
 ## Changelog
 

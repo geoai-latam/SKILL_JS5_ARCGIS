@@ -1,4 +1,4 @@
-# Agent Guide: _hello-world
+# Agent Guide: hello-world
 
 Quick-reference for the reference/template skill. Read before authoring or reviewing a skill.
 

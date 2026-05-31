@@ -165,7 +165,7 @@ if (first.nextQueryParams) await portal.queryItems(first.nextQueryParams);
 
 ## Samples de Referencia
 
-- [Portal query](https://developers.arcgis.com/javascript/latest/sample-code/portal-basic/)
+- [Portal query](https://developers.arcgis.com/javascript/latest/sample-code/)
 - [Load webmap by id](https://developers.arcgis.com/javascript/latest/sample-code/webmap-basic/)
 
 ## Changelog

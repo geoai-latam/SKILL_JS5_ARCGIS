@@ -1,5 +1,5 @@
 ---
-name: _hello-world
+name: hello-world
 description: >
   Reference skill and gold-standard template for the ArcGIS Maps SDK for
   JavaScript 5.0 skills library. It demonstrates the canonical file layout,

@@ -160,7 +160,7 @@ const layer = new FeatureLayer({ url, featureReduction: { type: "cluster" } });
 
 ## Reference Samples
 
-- [Optimize performance](https://developers.arcgis.com/javascript/latest/optimizing-performance/)
+- [Optimize performance](https://developers.arcgis.com/javascript/latest/programming-patterns/)
 - [Clustering](https://developers.arcgis.com/javascript/latest/sample-code/featurereduction-cluster/)
 
 ## Changelog

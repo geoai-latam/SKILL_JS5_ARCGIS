@@ -159,7 +159,7 @@ view.qualityProfile = "medium"; // balance realism vs performance
 
 ## Reference Samples
 
-- [Scene lighting](https://developers.arcgis.com/javascript/latest/sample-code/scene-daylight/)
+- [Scene lighting](https://developers.arcgis.com/javascript/latest/sample-code/)
 - [Weather](https://developers.arcgis.com/javascript/latest/sample-code/scene-weather/)
 
 ## Changelog

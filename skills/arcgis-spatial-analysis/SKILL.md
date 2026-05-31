@@ -163,8 +163,8 @@ const { features } = await layer.queryFeatures(q);
 
 ## Reference Samples
 
-- [Geoprocessing](https://developers.arcgis.com/javascript/latest/sample-code/tasks-gp-viewshed/)
-- [Query statistics](https://developers.arcgis.com/javascript/latest/sample-code/query-statistics/)
+- [Geoprocessing](https://developers.arcgis.com/javascript/latest/sample-code/)
+- [Query statistics](https://developers.arcgis.com/javascript/latest/api-reference/)
 
 ## Changelog
 

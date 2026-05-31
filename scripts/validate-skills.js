@@ -86,7 +86,7 @@ async function validateSkill(name, { checkLinks }) {
   if (relatedBody) {
     const refs = [...relatedBody.matchAll(/`([a-z0-9_][a-z0-9-]+)`/g)].map((m) => m[1]);
     for (const ref of refs) {
-      if (!ref.startsWith("arcgis-") && ref !== "_hello-world") continue;
+      if (!ref.startsWith("arcgis-") && ref !== "hello-world") continue;
       if (allSkills.has(ref)) continue;
       if (CATALOG.has(ref)) warn(`Related skill "${ref}" is in the catalog but not built yet`);
       else err(`Related Skills references unknown skill: ${ref}`);

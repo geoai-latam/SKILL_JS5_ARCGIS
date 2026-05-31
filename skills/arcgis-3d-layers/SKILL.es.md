@@ -165,7 +165,7 @@ const map = new Map({ basemap: "arcgis/imagery", ground: "world-elevation" });
 ## Samples de Referencia
 
 - [SceneLayer](https://developers.arcgis.com/javascript/latest/sample-code/layers-scenelayer/)
-- [IntegratedMeshLayer](https://developers.arcgis.com/javascript/latest/sample-code/layers-integratedmesh/)
+- [IntegratedMeshLayer](https://developers.arcgis.com/javascript/latest/layers/)
 
 ## Changelog
 

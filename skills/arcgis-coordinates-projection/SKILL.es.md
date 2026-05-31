@@ -161,7 +161,7 @@ const wm = webMercatorUtils.geographicToWebMercator(point);
 
 ## Samples de Referencia
 
-- [Projection](https://developers.arcgis.com/javascript/latest/sample-code/geometry-operators/)
+- [Projection](https://developers.arcgis.com/javascript/latest/api-reference/)
 - [Spatial reference](https://developers.arcgis.com/javascript/latest/api-reference/esri-geometry-SpatialReference.html)
 
 ## Changelog

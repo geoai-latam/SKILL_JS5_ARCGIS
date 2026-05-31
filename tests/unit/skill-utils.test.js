@@ -41,14 +41,15 @@ describe("isIsoDate / toIsoDateString", () => {
 });
 
 describe("isKebabCase", () => {
-  it("accepts kebab and leading-underscore names", () => {
+  it("accepts kebab-case names", () => {
     expect(isKebabCase("arcgis-core-maps")).toBe(true);
-    expect(isKebabCase("_hello-world")).toBe(true);
+    expect(isKebabCase("hello-world")).toBe(true);
   });
-  it("rejects camelCase / spaces / trailing dash", () => {
+  it("rejects camelCase / spaces / trailing dash / leading underscore (spec)", () => {
     expect(isKebabCase("arcgisCoreMaps")).toBe(false);
     expect(isKebabCase("arcgis maps")).toBe(false);
     expect(isKebabCase("arcgis-")).toBe(false);
+    expect(isKebabCase("_hello-world")).toBe(false);
   });
 });
 
@@ -111,7 +112,7 @@ describe("enumerations", () => {
   it("has the 3 statuses", () => {
     expect(STATUSES).toEqual(["stable", "beta", "deprecated"]);
   });
-  it("catalog has 35 skills + _hello-world", () => {
+  it("catalog has 35 skills + hello-world", () => {
     expect(CATALOG.size).toBe(36);
     expect(CATALOG.has("arcgis-embeddable-maps")).toBe(true);
   });

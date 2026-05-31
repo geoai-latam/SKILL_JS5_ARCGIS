@@ -5,7 +5,7 @@ The 35-skill catalog for the ArcGIS Maps SDK for JavaScript 5.0. Status legend:
 
 | # | Skill | Category | Status |
 |---|---|---|---|
-| — | `_hello-world` | reference | ✅ |
+| — | `hello-world` | reference | ✅ |
 | 01 | `arcgis-starter-app` | core | ✅ |
 | 02 | `arcgis-core-maps` | core | ✅ |
 | 03 | `arcgis-core-utilities` | core | ✅ |

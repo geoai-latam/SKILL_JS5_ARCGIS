@@ -160,7 +160,7 @@ const executor = await createArcadeExecutor(script, profile); // once, reuse per
 
 ## Reference Samples
 
-- [Arcade in popups](https://developers.arcgis.com/javascript/latest/sample-code/intro-popuptemplate-arcade/)
+- [Arcade in popups](https://developers.arcgis.com/javascript/latest/sample-code/)
 - [Arcade renderer](https://developers.arcgis.com/javascript/latest/sample-code/visualization-arcade/)
 
 ## Changelog

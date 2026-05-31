@@ -164,7 +164,7 @@ import "@arcgis/map-components/dist/components/arcgis-bookmarks";
 ## Samples de Referencia
 
 - [Print component](https://developers.arcgis.com/javascript/latest/sample-code/widgets-print/)
-- [ElevationProfile](https://developers.arcgis.com/javascript/latest/sample-code/widgets-elevationprofile/)
+- [ElevationProfile](https://developers.arcgis.com/javascript/latest/components/)
 
 ## Changelog
 

@@ -44,7 +44,7 @@ export const STATUSES = ["stable", "beta", "deprecated"];
  * planned but not yet built (warning) versus a typo / unknown name (error).
  */
 export const CATALOG = new Set([
-  "_hello-world",
+  "hello-world",
   "arcgis-starter-app",
   "arcgis-core-maps",
   "arcgis-core-utilities",
@@ -82,7 +82,7 @@ export const CATALOG = new Set([
   "arcgis-embeddable-maps",
 ]);
 
-/** List skill directories under skills/ (any subdirectory, including _hello-world). */
+/** List skill directories under skills/ (any subdirectory, including hello-world). */
 export function listSkills() {
   if (!fs.existsSync(SKILLS_DIR)) return [];
   return fs
@@ -184,7 +184,9 @@ export function isIsoDate(v) {
 }
 
 export function isKebabCase(v) {
-  return typeof v === "string" && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(v.replace(/^_/, ""));
+  // Per the Agent Skills spec, a skill name must be lowercase alphanumeric with
+  // single hyphens and must start with a letter/digit (no leading underscore/hyphen).
+  return typeof v === "string" && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(v);
 }
 
 // Simple colored status glyphs (no dependency).

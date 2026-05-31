@@ -1,5 +1,5 @@
 {
-  "skill_name": "_hello-world",
+  "skill_name": "hello-world",
   "should_trigger": [
     "What's the canonical structure of a skill in this repo?",
     "Show me the gold-standard template for an arcgis skill",

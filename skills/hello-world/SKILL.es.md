@@ -1,5 +1,5 @@
 ---
-name: _hello-world
+name: hello-world
 description: >
   Skill de referencia y plantilla gold-standard para la librería de skills del
   ArcGIS Maps SDK for JavaScript 5.0. Demuestra la estructura canónica de

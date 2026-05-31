@@ -1,4 +1,4 @@
-// End-to-end checks: the validators must exit 0 on the gold-standard _hello-world
+// End-to-end checks: the validators must exit 0 on the gold-standard hello-world
 // skill, and lint-frontmatter must catch a malformed frontmatter.
 import { describe, it, expect } from "vitest";
 import { spawnSync } from "node:child_process";
@@ -15,21 +15,21 @@ function run(script, args = []) {
   return { status: res.status, out: (res.stdout || "") + (res.stderr || "") };
 }
 
-describe("validators on _hello-world (gold standard)", () => {
+describe("validators on hello-world (gold standard)", () => {
   it("validate-skills passes", () => {
-    const { status } = run("validate-skills.js", ["--skill=_hello-world"]);
+    const { status } = run("validate-skills.js", ["--skill=hello-world"]);
     expect(status).toBe(0);
   });
   it("lint-frontmatter passes", () => {
-    const { status } = run("lint-frontmatter.js", ["--skill=_hello-world"]);
+    const { status } = run("lint-frontmatter.js", ["--skill=hello-world"]);
     expect(status).toBe(0);
   });
   it("bilingual-sync passes", () => {
-    const { status } = run("bilingual-sync.js", ["--skill=_hello-world"]);
+    const { status } = run("bilingual-sync.js", ["--skill=hello-world"]);
     expect(status).toBe(0);
   });
   it("smoke-test type-checks the snippet", () => {
-    const { status } = run("smoke-test.mjs", ["--skill=_hello-world"]);
+    const { status } = run("smoke-test.mjs", ["--skill=hello-world"]);
     expect(status).toBe(0);
   });
 });

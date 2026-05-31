@@ -161,7 +161,7 @@ layer.renderer.valueExpression = editor.script; // even if invalid
 ## Reference Samples
 
 - [Coding components](https://developers.arcgis.com/javascript/latest/references/coding-components/)
-- [Arcade editor](https://developers.arcgis.com/javascript/latest/sample-code/coding-arcade-editor/)
+- [Arcade editor](https://developers.arcgis.com/javascript/latest/components/)
 
 ## Changelog
 

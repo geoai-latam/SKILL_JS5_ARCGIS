@@ -162,7 +162,7 @@ const buffers = bufferOperator.executeMany(bigGeoms, distances); // batched
 ## Reference Samples
 
 - [Geometry operators](https://developers.arcgis.com/javascript/latest/sample-code/geometry-operator-worker/)
-- [geometryEngine](https://developers.arcgis.com/javascript/latest/sample-code/geometryengine-buffer/)
+- [geometryEngine](https://developers.arcgis.com/javascript/latest/sample-code/)
 
 ## Changelog
 

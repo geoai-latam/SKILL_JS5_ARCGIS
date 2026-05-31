@@ -160,7 +160,7 @@ entities.filter((e) => e.geometry).forEach((e) => map.add(graphicFrom(e.geometry
 
 ## Samples de Referencia
 
-- [Knowledge graph](https://developers.arcgis.com/javascript/latest/sample-code/knowledge-graph/)
+- [Knowledge graph](https://developers.arcgis.com/javascript/latest/api-reference/esri-rest-knowledgeGraphService.html)
 - [knowledgeGraphService](https://developers.arcgis.com/javascript/latest/api-reference/esri-rest-knowledgeGraphService.html)
 
 ## Changelog

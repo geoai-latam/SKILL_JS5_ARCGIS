@@ -159,7 +159,7 @@ await layer.load();
 
 ## Samples de Referencia
 
-- [API keys](https://developers.arcgis.com/javascript/latest/security/api-keys/)
+- [API keys](https://developers.arcgis.com/javascript/latest/api-reference/)
 - [OAuth2](https://developers.arcgis.com/javascript/latest/sample-code/identity-oauth-basic/)
 
 ## Changelog

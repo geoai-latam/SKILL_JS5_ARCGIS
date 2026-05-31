@@ -5,7 +5,7 @@ All notable changes to this project are documented here. The format is based on
 
 ## [1.0.0] - 2026-05-31
 
-All 35 catalog skills (plus the `_hello-world` reference) are complete, bilingual (EN/ES), and
+All 35 catalog skills (plus the `hello-world` reference) are complete, bilingual (EN/ES), and
 green across the full quality gate: validate-skills, lint-frontmatter, bilingual-sync,
 markdownlint, smoke (59 snippets type-checked against the real SDK 5.0.19), eval structure, and
 22 validator unit tests.
@@ -24,7 +24,7 @@ markdownlint, smoke (59 snippets type-checked against the real SDK 5.0.19), eval
 - Triggering eval runner `eval-descriptions.mjs` (structural mode).
 - `new-skill` CLI plus bilingual templates.
 - CI workflows (validate, smoke, deploy-docs, integration, triggering-eval, release) and Dependabot.
-- `_hello-world` gold-standard reference skill.
+- `hello-world` gold-standard reference skill.
 - Vitest unit tests for the validators (22 tests).
 - Sprint 1 (Core): `arcgis-starter-app`, `arcgis-core-maps`, `arcgis-core-utilities`,
   `arcgis-performance` — bilingual, with references, smoke-tested snippets, and eval JSON.

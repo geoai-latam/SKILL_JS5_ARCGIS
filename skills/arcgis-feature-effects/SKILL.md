@@ -163,7 +163,7 @@ focusLayer.featureEffect = new FeatureEffect({ filter, includedEffect: "bloom(2,
 ## Reference Samples
 
 - [Layer effects](https://developers.arcgis.com/javascript/latest/sample-code/intro-effect-layer/)
-- [Feature effect](https://developers.arcgis.com/javascript/latest/sample-code/intro-effect-feature/)
+- [Feature effect](https://developers.arcgis.com/javascript/latest/sample-code/)
 
 ## Changelog
 

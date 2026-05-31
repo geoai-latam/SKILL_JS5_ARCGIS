@@ -162,7 +162,7 @@ chartEl.config = chartConfig;
 ## Samples de Referencia
 
 - [Charts components](https://developers.arcgis.com/javascript/latest/references/charts-components/)
-- [Chart + map](https://developers.arcgis.com/javascript/latest/sample-code/charts-feature-layer/)
+- [Chart + map](https://developers.arcgis.com/javascript/latest/components/)
 
 ## Changelog
 

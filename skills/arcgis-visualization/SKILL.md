@@ -164,7 +164,7 @@ pointLayer.renderer = new HeatmapRenderer({ radius: 18, colorStops });
 
 ## Reference Samples
 
-- [UniqueValueRenderer](https://developers.arcgis.com/javascript/latest/sample-code/visualization-uvr/)
+- [UniqueValueRenderer](https://developers.arcgis.com/javascript/latest/visualization/)
 - [Visual variables](https://developers.arcgis.com/javascript/latest/sample-code/visualization-vv-color/)
 
 ## Changelog

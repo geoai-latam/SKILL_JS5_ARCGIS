@@ -163,8 +163,8 @@ typeRendererCreator.createRenderer({ layer, view, field: "NAME" }); // categorí
 
 ## Samples de Referencia
 
-- [Smart Mapping color](https://developers.arcgis.com/javascript/latest/sample-code/visualization-sm-continuous-color/)
-- [Smart Mapping size](https://developers.arcgis.com/javascript/latest/sample-code/visualization-sm-continuous-size/)
+- [Smart Mapping color](https://developers.arcgis.com/javascript/latest/visualization/)
+- [Smart Mapping size](https://developers.arcgis.com/javascript/latest/sample-code/)
 
 ## Changelog
 

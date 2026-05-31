@@ -14,6 +14,17 @@ The SDK 5.0 release (February 2026) changed a lot: a unified CDN, ESM-only impor
 `__esri` type namespace, and new layers like `GaussianSplatLayer`. These skills encode those
 patterns so agents stop suggesting 4.x idioms.
 
+## How the bilingual model works
+
+Agent Skills activate on **`SKILL.md`** — that is the file the runtime (Claude Code, etc.) reads,
+and its `description` is the trigger. `SKILL.md` is in English, so the agent **selects and reasons
+from the English skill** and can answer the user in Spanish (or any language) as usual.
+
+`SKILL.es.md` is a **synchronized Spanish companion** for human readers and reviewers — it is not a
+second auto-activating skill. The `bilingual-sync` check keeps both files structurally aligned
+(same heading shape, same code blocks). In short: **the docs are bilingual; activation is driven by
+the English `SKILL.md`.**
+
 ## Status
 
 **v1.0.0 — all 35 skills complete.** Every skill is bilingual (EN/ES) and green across the full
@@ -25,14 +36,14 @@ for the catalog.
 ## Install
 
 ```bash
-# All skills, via the Skills CLI
-npx skills add <owner>/arcgis-js5-skills
+# All skills, via the Skills CLI (requires the repo to be public)
+npx skills add sforero77/SKILL_JS5_ARCGIS
 
 # A specific skill
-npx skills add <owner>/arcgis-js5-skills/arcgis-starter-app
+npx skills add sforero77/SKILL_JS5_ARCGIS/arcgis-starter-app
 
-# Claude Code marketplace
-# /plugin marketplace add <owner>/arcgis-js5-skills
+# Claude Code marketplace (requires a .claude-plugin/marketplace.json — see below)
+# /plugin marketplace add sforero77/SKILL_JS5_ARCGIS
 ```
 
 ## Develop
