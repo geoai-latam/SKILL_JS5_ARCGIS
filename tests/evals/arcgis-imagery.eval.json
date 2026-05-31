@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-imagery",
+  "should_trigger": [
+    "How do I add an ImageryLayer to my map?",
+    "Apply an NDVI raster function to satellite imagery",
+    "What's the difference between ImageryLayer and ImageryTileLayer?",
+    "How do I set a mosaic rule on an image service?",
+    "Display a hillshade from an elevation image service",
+    "¿Cómo aplico una raster function NDVI a imágenes?",
+    "Necesito mostrar imágenes satelitales con procesamiento al vuelo"
+  ],
+  "should_not_trigger": [
+    "Add a FeatureLayer and query it",
+    "Buffer a geometry client-side",
+    "Create a 2D map with a basemap",
+    "How do I authenticate with OAuth2?"
+  ]
+}

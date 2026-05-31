@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-3d-layers",
+  "should_trigger": [
+    "How do I add a SceneLayer of 3D buildings?",
+    "Load an integrated mesh into my 3D scene",
+    "How do I display a point cloud in ArcGIS?",
+    "What is GaussianSplatLayer and how do I use it?",
+    "How do I show photorealistic 3D capture on the map?",
+    "¿Cómo agrego edificios 3D con SceneLayer?",
+    "Necesito cargar una malla integrada sobre el terreno"
+  ],
+  "should_not_trigger": [
+    "Add a 2D FeatureLayer and query it",
+    "Create a simple 2D map",
+    "How do I style points with a heatmap?",
+    "Set up OAuth2 authentication"
+  ]
+}

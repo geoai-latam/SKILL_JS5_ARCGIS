@@ -1,0 +1,41 @@
+{
+  "name": "arcgis-js5-skills",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Bilingual (ES/EN) Agent Skills library for ArcGIS Maps SDK for JavaScript 5.0+",
+  "type": "module",
+  "license": "MIT",
+  "author": "GeoAI LATAM",
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@10.34.1",
+  "scripts": {
+    "new-skill": "node .skills-cli/new-skill.mjs",
+    "validate-skills": "node scripts/validate-skills.js",
+    "lint-frontmatter": "node scripts/lint-frontmatter.js",
+    "bilingual-sync": "node scripts/bilingual-sync.js",
+    "validate-all": "node scripts/validate-skills.js && node scripts/lint-frontmatter.js && node scripts/bilingual-sync.js",
+    "lint": "markdownlint-cli2 \"skills/**/*.md\" \"README*.md\" \"CONTRIBUTING*.md\" \"CHANGELOG.md\"",
+    "lint:fix": "markdownlint-cli2 --fix \"skills/**/*.md\" \"README*.md\" \"CONTRIBUTING*.md\" \"CHANGELOG.md\"",
+    "cspell": "cspell \"skills/**/*.md\" --no-progress",
+    "smoke": "node scripts/smoke-test.mjs",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "eval-descriptions": "node scripts/eval-descriptions.mjs"
+  },
+  "devDependencies": {
+    "@arcgis/ai-components": "^5.0.19",
+    "@arcgis/charts-components": "^5.0.19",
+    "@arcgis/coding-components": "^5.0.19",
+    "@arcgis/core": "^5.0",
+    "@arcgis/map-components": "^5.0",
+    "@esri/calcite-components": "^5.0",
+    "gray-matter": "^4.0.3",
+    "markdownlint-cli2": "^0.18.0",
+    "semver": "^7.6.3",
+    "typescript": "^5.9.0",
+    "vite": "^7.0.0",
+    "vitest": "^2.1.8"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-authentication",
+  "should_trigger": [
+    "How do I set my ArcGIS API key?",
+    "Set up OAuth2 sign-in with the ArcGIS SDK",
+    "How do I access private org content securely?",
+    "Configure IdentityManager for named-user login",
+    "How do I handle ArcGIS authentication in the browser?",
+    "¿Cómo configuro mi API key de ArcGIS?",
+    "Necesito iniciar sesión de usuario con OAuth2"
+  ],
+  "should_not_trigger": [
+    "Add a public basemap to a map",
+    "Buffer a geometry client-side",
+    "Color a layer with a renderer",
+    "Run a route between stops"
+  ]
+}

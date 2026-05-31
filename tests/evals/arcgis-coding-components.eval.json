@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-coding-components",
+  "should_trigger": [
+    "How do I add an Arcade editor to my app?",
+    "Embed a code editor with syntax highlighting in ArcGIS",
+    "Build a SQL where-clause editor bound to a layer",
+    "How do I give users autocomplete for Arcade?",
+    "Use arcgis-arcade-editor with a profile",
+    "¿Cómo agrego un editor de Arcade con autocompletado?",
+    "Necesito un editor de expresiones SQL para una capa"
+  ],
+  "should_not_trigger": [
+    "Run an Arcade expression in a renderer",
+    "Add a FeatureLayer to the map",
+    "Create a chart from a layer",
+    "How do I authenticate with OAuth2?"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-charts",
+  "should_trigger": [
+    "How do I add a chart to my ArcGIS app?",
+    "Create a bar chart from a FeatureLayer",
+    "How do I make a time series line chart of feature data?",
+    "Link chart selection to map features",
+    "Use the arcgis-chart component with a layer",
+    "¿Cómo agrego un chart de barras desde un FeatureLayer?",
+    "Necesito una serie de tiempo de los datos de una capa"
+  ],
+  "should_not_trigger": [
+    "Style a layer with a renderer on the map",
+    "Add a basemap to a map",
+    "Run a utility network trace",
+    "How do I authenticate with OAuth2?"
+  ]
+}

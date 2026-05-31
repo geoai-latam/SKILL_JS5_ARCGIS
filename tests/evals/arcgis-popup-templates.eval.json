@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-popup-templates",
+  "should_trigger": [
+    "How do I customize the popup when I click a feature?",
+    "Format popup fields with thousands separators",
+    "Add custom HTML content to an ArcGIS popup",
+    "How do I use a PopupTemplate with fieldInfos?",
+    "Show a chart inside a feature popup",
+    "¿Cómo personalizo el popup de una capa con PopupTemplate?",
+    "Necesito formatear campos del popup con separadores de miles"
+  ],
+  "should_not_trigger": [
+    "How do I detect which feature was clicked?",
+    "Add a FeatureLayer to the map",
+    "Create a 3D scene",
+    "Set up OAuth2 login"
+  ]
+}

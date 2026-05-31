@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-cim-symbols",
+  "should_trigger": [
+    "How do I build a multi-layered CIM symbol?",
+    "Create a custom vector marker with CIMSymbol",
+    "What is the CIM JSON structure for a point symbol?",
+    "How do I make a complex cartographic symbol in ArcGIS?",
+    "Use primitive overrides on a CIM symbol",
+    "¿Cómo creo un símbolo CIM multi-capa?",
+    "Necesito un marcador personalizado con CIMSymbol"
+  ],
+  "should_not_trigger": [
+    "Color a layer by category",
+    "Add a FeatureLayer and query it",
+    "Create a 2D map with a basemap",
+    "How do I cluster points?"
+  ]
+}

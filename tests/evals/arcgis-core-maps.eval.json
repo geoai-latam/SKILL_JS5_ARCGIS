@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-core-maps",
+  "should_trigger": [
+    "Create a 2D map with the latest ArcGIS SDK and TypeScript",
+    "How do I initialize a SceneView in 3D?",
+    "What's the difference between Map Components and the Core API?",
+    "Show me how to use the arcgis-map component with a basemap",
+    "How do I set the basemap and center of my map?",
+    "Necesito crear un mapa con ArcGIS y elegir un basemap",
+    "¿Cómo hago una escena 3D con terreno en ArcGIS?"
+  ],
+  "should_not_trigger": [
+    "How do I query features from a FeatureLayer?",
+    "Add a popup template to my layer",
+    "How do I authenticate with OAuth2 in ArcGIS?",
+    "Apply a heatmap renderer to points"
+  ]
+}

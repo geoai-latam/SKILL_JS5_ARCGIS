@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-time-animation",
+  "should_trigger": [
+    "How do I add a time slider to my map?",
+    "Filter a time-aware layer by a TimeExtent",
+    "How do I animate data over time in ArcGIS?",
+    "Set view.timeExtent to show one month of data",
+    "How do I make a temporal playback experience?",
+    "¿Cómo agrego un time slider para animar datos?",
+    "Necesito filtrar una capa por tiempo con TimeExtent"
+  ],
+  "should_not_trigger": [
+    "Add a basemap to a 2D map",
+    "Buffer a geometry",
+    "How do I authenticate with OAuth2?",
+    "Apply a heatmap renderer"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-rest-services",
+  "should_trigger": [
+    "How do I geocode an address with the ArcGIS SDK?",
+    "Solve a route between two stops",
+    "How do I reverse geocode coordinates to an address?",
+    "Search for places (POIs) near a point",
+    "Run a standalone query against a feature service",
+    "¿Cómo geocodifico una dirección con el SDK?",
+    "Necesito resolver una ruta entre paradas"
+  ],
+  "should_not_trigger": [
+    "Buffer a geometry client-side",
+    "Run a geoprocessing job",
+    "Add a FeatureLayer to the map",
+    "Color a layer with a renderer"
+  ]
+}

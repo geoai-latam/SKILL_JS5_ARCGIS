@@ -1,0 +1,17 @@
+{
+  "skill_name": "_hello-world",
+  "should_trigger": [
+    "What's the canonical structure of a skill in this repo?",
+    "Show me the gold-standard template for an arcgis skill",
+    "How do I author a new ArcGIS skill correctly?",
+    "What frontmatter fields does a skill need?",
+    "¿Cómo se organiza una skill de esta librería?",
+    "Dame la plantilla de referencia para crear una skill arcgis"
+  ],
+  "should_not_trigger": [
+    "How do I query a FeatureLayer?",
+    "Create a 3D scene with a basemap",
+    "How do I authenticate with OAuth2 in ArcGIS?",
+    "Add a heatmap renderer to my layer"
+  ]
+}

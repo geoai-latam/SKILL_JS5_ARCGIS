@@ -1,0 +1,27 @@
+name: Integration Tests
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    # Requires an ArcGIS API key secret and a Playwright suite under tests/integration.
+    if: ${{ hashFiles('tests/integration/**') != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps
+      - run: pnpm run test:integration
+        env:
+          VITE_ARCGIS_API_KEY: ${{ secrets.ARCGIS_API_KEY }}

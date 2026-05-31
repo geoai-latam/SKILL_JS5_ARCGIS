@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-performance",
+  "should_trigger": [
+    "My ArcGIS map is slow with a lot of points, how do I speed it up?",
+    "How do I reduce the bundle size of my ArcGIS app?",
+    "The map janks while panning, what can I do?",
+    "How do I prevent memory leaks when switching routes with a MapView?",
+    "How do I lazy-load ArcGIS layers?",
+    "Mi mapa de ArcGIS va lento con muchos datos, ¿cómo lo optimizo?",
+    "¿Cómo evito fugas de memoria al destruir la vista?"
+  ],
+  "should_not_trigger": [
+    "Create a basic 2D map",
+    "How do I style a layer with a renderer?",
+    "Set up OAuth2 authentication",
+    "Scaffold a new ArcGIS project"
+  ]
+}

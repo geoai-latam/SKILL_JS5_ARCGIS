@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-tables-forms",
+  "should_trigger": [
+    "How do I show a feature table in ArcGIS?",
+    "Build an attribute editing form with arcgis-feature-form",
+    "How do I query related records from a FeatureLayer?",
+    "Display layer attributes in a spreadsheet view",
+    "How do I use a FormTemplate for editing?",
+    "¿Cómo muestro una tabla de atributos de una capa?",
+    "Necesito consultar registros relacionados de una feature"
+  ],
+  "should_not_trigger": [
+    "Create a 3D scene with buildings",
+    "Add a basemap to my map",
+    "How do I cluster points?",
+    "Run a route between stops"
+  ]
+}

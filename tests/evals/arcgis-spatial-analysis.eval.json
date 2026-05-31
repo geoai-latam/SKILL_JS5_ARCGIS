@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-spatial-analysis",
+  "should_trigger": [
+    "How do I run a geoprocessing tool from the ArcGIS SDK?",
+    "Submit an asynchronous GP job and get results",
+    "How do I compute sum/average statistics over features?",
+    "Run a viewshed analysis service",
+    "How do I aggregate features by a group field?",
+    "¿Cómo ejecuto un servicio de geoprocessing?",
+    "Necesito estadísticas agregadas sin descargar features"
+  ],
+  "should_not_trigger": [
+    "Buffer a geometry client-side",
+    "Add a FeatureLayer to the map",
+    "How do I geocode an address?",
+    "Style a layer with a renderer"
+  ]
+}

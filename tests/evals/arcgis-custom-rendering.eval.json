@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-custom-rendering",
+  "should_trigger": [
+    "How do I add custom WebGL rendering to a SceneView?",
+    "Use RenderNode to inject a custom render pass",
+    "What replaces externalRenderers in 5.0?",
+    "How do I draw custom 3D geometry with shaders in ArcGIS?",
+    "Integrate a WebGL library into a scene",
+    "¿Cómo agrego rendering WebGL custom con RenderNode?",
+    "Necesito un render pass custom en mi escena 3D"
+  ],
+  "should_not_trigger": [
+    "Add a SceneLayer of buildings",
+    "Style a layer with a renderer",
+    "Create a 2D map",
+    "How do I geocode an address?"
+  ]
+}

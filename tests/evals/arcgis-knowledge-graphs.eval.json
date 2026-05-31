@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-knowledge-graphs",
+  "should_trigger": [
+    "How do I connect to an ArcGIS Knowledge graph?",
+    "Run an openCypher query against a knowledge graph",
+    "How do I explore entities and relationships in a graph?",
+    "Visualize a knowledge graph with a link chart",
+    "Use fetchKnowledgeGraph to load the data model",
+    "¿Cómo consulto un knowledge graph con openCypher?",
+    "Necesito explorar entidades y relaciones de un grafo"
+  ],
+  "should_not_trigger": [
+    "Add a FeatureLayer and query it with SQL",
+    "Run a utility network trace",
+    "Create a 2D map",
+    "How do I style a layer?"
+  ]
+}

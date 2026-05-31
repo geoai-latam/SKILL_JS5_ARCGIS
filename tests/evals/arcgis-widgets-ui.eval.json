@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-widgets-ui",
+  "should_trigger": [
+    "How do I add a legend to my map?",
+    "Add a layer list and search box with Map Components",
+    "How do I let users switch basemaps?",
+    "What replaces the deprecated Legend widget in 5.0?",
+    "Place a search component on the map",
+    "¿Cómo agrego una leyenda y un buscador al mapa?",
+    "Necesito un selector de basemap con componentes"
+  ],
+  "should_not_trigger": [
+    "How do I add a print or bookmarks widget?",
+    "Create a FeatureLayer and query it",
+    "How do I edit features with applyEdits?",
+    "Run a route between two points"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-core-utilities",
+  "should_trigger": [
+    "How do I watch when the map stops moving in the ArcGIS SDK?",
+    "Debounce a search request with the ArcGIS SDK utilities",
+    "How do I make a REST call with esriRequest?",
+    "What is reactiveUtils and how do I use watch?",
+    "How do I work with the ArcGIS Collection type?",
+    "¿Cómo observo cuándo cambia el zoom de la vista en ArcGIS?",
+    "Necesito cancelar peticiones asíncronas con promiseUtils"
+  ],
+  "should_not_trigger": [
+    "Create a 2D map with a basemap",
+    "Add a FeatureLayer to my map",
+    "How do I render a heatmap?",
+    "Scaffold a new ArcGIS project with Vite"
+  ]
+}

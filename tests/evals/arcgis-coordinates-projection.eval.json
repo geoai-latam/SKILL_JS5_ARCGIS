@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-coordinates-projection",
+  "should_trigger": [
+    "How do I reproject geometry to another spatial reference?",
+    "Convert WGS84 coordinates to web mercator",
+    "What WKID is web mercator and how do I use SpatialReference?",
+    "How do I use projectOperator in 5.0?",
+    "Align geometries from different coordinate systems",
+    "¿Cómo reproyecto una geometría a otro WKID?",
+    "Necesito convertir de geográficas a web mercator"
+  ],
+  "should_not_trigger": [
+    "Buffer a geometry",
+    "Add a FeatureLayer to the map",
+    "Run a geoprocessing job",
+    "Style a layer with a renderer"
+  ]
+}

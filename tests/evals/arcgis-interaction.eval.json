@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-interaction",
+  "should_trigger": [
+    "How do I detect which feature the user clicked?",
+    "Use hitTest to identify graphics under the cursor",
+    "How do I let users draw a polygon on the map?",
+    "Wire up a click handler with SketchViewModel",
+    "How do I track pointer movement on the map?",
+    "¿Cómo identifico la feature que el usuario clicó?",
+    "Necesito dejar dibujar geometrías con Sketch"
+  ],
+  "should_not_trigger": [
+    "Add a basemap to my map",
+    "Color a layer with a renderer",
+    "How do I run a route?",
+    "Set up OAuth2 authentication"
+  ]
+}

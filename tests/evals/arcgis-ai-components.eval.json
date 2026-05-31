@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-ai-components",
+  "should_trigger": [
+    "How do I add the ArcGIS AI assistant to my map?",
+    "Use arcgis-assistant for natural-language map navigation",
+    "What AI agents are available in ArcGIS 5.0?",
+    "Build conversational data exploration on a map",
+    "How do I enable the data-exploration agent?",
+    "¿Cómo agrego el asistente de IA de ArcGIS al mapa?",
+    "Necesito exploración de datos por lenguaje natural"
+  ],
+  "should_not_trigger": [
+    "Add a FeatureLayer and query it",
+    "Create a chart from a layer",
+    "Buffer a geometry",
+    "Style a layer with a renderer"
+  ]
+}

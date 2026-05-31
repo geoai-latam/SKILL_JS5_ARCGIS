@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-smart-mapping",
+  "should_trigger": [
+    "How do I auto-generate a renderer from my data?",
+    "Use Smart Mapping to color a layer by a field",
+    "Create a continuous color renderer automatically",
+    "How do I compute class breaks from statistics?",
+    "Generate a size renderer based on population",
+    "¿Cómo genero un renderer automático con Smart Mapping?",
+    "Necesito una rampa de color basada en estadísticas"
+  ],
+  "should_not_trigger": [
+    "Manually define a unique value renderer",
+    "Add a FeatureLayer to the map",
+    "Build a CIM symbol",
+    "Run a route between stops"
+  ]
+}

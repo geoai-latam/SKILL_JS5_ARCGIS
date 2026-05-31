@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-starter-app",
+  "should_trigger": [
+    "Create an ArcGIS Maps SDK project with TypeScript and Vite",
+    "How do I set up the ArcGIS SDK 5.0 from scratch?",
+    "Scaffold a new ArcGIS web app",
+    "How do I integrate ArcGIS Map Components in React 19?",
+    "How do I configure my ArcGIS API key with Vite env variables?",
+    "Necesito iniciar un proyecto ArcGIS con Vite y TypeScript",
+    "¿Cómo integro el SDK de ArcGIS en Angular?"
+  ],
+  "should_not_trigger": [
+    "How do I add a heatmap renderer?",
+    "Query a FeatureLayer by attribute",
+    "Create a 3D scene with terrain",
+    "How do I run a route between two stops?"
+  ]
+}

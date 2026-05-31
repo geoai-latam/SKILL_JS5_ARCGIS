@@ -1,0 +1,23 @@
+name: Bug report
+description: Something in a skill is wrong or outdated
+labels: [bug]
+body:
+  - type: input
+    id: skill
+    attributes:
+      label: Skill
+      placeholder: arcgis-core-maps
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What is wrong?
+      description: Describe the incorrect guidance, code, or behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+      description: What should the skill say or generate instead?

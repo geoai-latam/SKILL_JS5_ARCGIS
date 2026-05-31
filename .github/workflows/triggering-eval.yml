@@ -1,0 +1,27 @@
+name: Triggering Eval
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 8 * * 3" # Wednesdays 08:00 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Live triggering requires the Claude CLI + ANTHROPIC_API_KEY. Without it,
+      # the runner falls back to structural validation of the eval JSON files.
+      - name: Triggering eval
+        run: pnpm run eval-descriptions
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

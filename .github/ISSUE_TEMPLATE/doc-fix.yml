@@ -1,0 +1,17 @@
+name: Documentation fix
+description: Typo, broken link, or unclear wording
+labels: [docs]
+body:
+  - type: input
+    id: location
+    attributes:
+      label: File / location
+      placeholder: skills/arcgis-core-maps/SKILL.md
+    validations:
+      required: true
+  - type: textarea
+    id: fix
+    attributes:
+      label: Suggested fix
+    validations:
+      required: true

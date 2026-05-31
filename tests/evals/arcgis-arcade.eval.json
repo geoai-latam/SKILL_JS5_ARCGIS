@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-arcade",
+  "should_trigger": [
+    "How do I write an Arcade expression for a popup?",
+    "Use createArcadeExecutor to run an Arcade script",
+    "How do I drive a renderer with an Arcade valueExpression?",
+    "Compute a label from feature attributes with Arcade",
+    "What profile do I need for an Arcade expression?",
+    "¿Cómo uso una expresión Arcade en un popup?",
+    "Necesito un valueExpression de Arcade para el renderer"
+  ],
+  "should_not_trigger": [
+    "Add a FeatureLayer to the map",
+    "Buffer a geometry",
+    "How do I authenticate with OAuth2?",
+    "Create a basic 2D map"
+  ]
+}

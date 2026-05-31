@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-advanced-layers",
+  "should_trigger": [
+    "How do I add a WMS layer from GeoServer?",
+    "Integrate a WFS service into my ArcGIS map",
+    "How do I toggle sublayers on a MapImageLayer?",
+    "What is CatalogLayer and how do I use it?",
+    "How do I display a KML file on the map?",
+    "¿Cómo agrego una capa WMS de un servicio OGC?",
+    "Necesito mostrar sublayers de un MapServer dinámico"
+  ],
+  "should_not_trigger": [
+    "Add a hosted FeatureLayer and query it",
+    "Create a 2D map with a basemap",
+    "How do I cluster points for performance?",
+    "Set up OAuth2 sign-in"
+  ]
+}

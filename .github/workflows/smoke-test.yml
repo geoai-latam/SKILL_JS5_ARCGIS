@@ -1,0 +1,25 @@
+name: Smoke Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Type-checks every skills/*/scripts/snippet-*.ts against the real SDK types.
+      # The SDK is installed once at the repo root, so this is fast (no per-skill build).
+      - name: Smoke (tsc --noEmit on all snippets)
+        run: pnpm run smoke

@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-layers",
+  "should_trigger": [
+    "How do I add a FeatureLayer to my map?",
+    "Query features from a feature service with a where clause",
+    "How do I load a GeoJSON file as a layer?",
+    "How do I paginate query results in the ArcGIS SDK?",
+    "Add client-side graphics to a GraphicsLayer",
+    "¿Cómo consulto features de una capa con un filtro SQL?",
+    "Necesito cargar un CSV con coordenadas como capa"
+  ],
+  "should_not_trigger": [
+    "Create a 2D map with a basemap",
+    "How do I style a layer with a unique-value renderer?",
+    "Add an OAuth2 login flow",
+    "Set up a new ArcGIS project with Vite"
+  ]
+}

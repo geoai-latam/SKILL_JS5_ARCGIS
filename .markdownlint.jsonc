@@ -1,0 +1,14 @@
+{
+  // Markdown lint config for the skills library.
+  "default": true,
+  // Line length: 120 chars, but don't enforce inside code blocks or tables.
+  "MD013": { "line_length": 120, "code_blocks": false, "tables": false },
+  // Allow repeated sub-headings (e.g. "Anti-pattern"/"Correct") under different parents.
+  "MD024": { "siblings_only": true },
+  // Emoji/inline HTML occasionally used intentionally.
+  "MD033": false,
+  // Allow trailing "/" in headings like "When to Read references/".
+  "MD026": { "punctuation": ".,;:!。，；：！" },
+  // First-line H1 not required (files start with YAML frontmatter).
+  "MD041": false
+}

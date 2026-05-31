@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-widgets-advanced",
+  "should_trigger": [
+    "How do I add a print/export button to my map?",
+    "Add bookmarks to switch between saved views",
+    "How do I show sun position and shadows in a 3D scene?",
+    "Add an elevation profile widget",
+    "How do I add a compass to reset map rotation?",
+    "¿Cómo agrego impresión y bookmarks al mapa?",
+    "Necesito un control de daylight en mi escena 3D"
+  ],
+  "should_not_trigger": [
+    "How do I add a legend or layer list?",
+    "Create a FeatureLayer and query it",
+    "How do I edit features?",
+    "Run a route between stops"
+  ]
+}

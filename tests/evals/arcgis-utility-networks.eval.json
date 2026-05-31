@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-utility-networks",
+  "should_trigger": [
+    "How do I run a trace on a utility network?",
+    "Load a UtilityNetwork and analyze connectivity",
+    "How do I do an isolation trace for valves?",
+    "Set up the utility network trace analysis component",
+    "Upstream and downstream trace in an electric network",
+    "¿Cómo ejecuto un trace en una utility network?",
+    "Necesito analizar conectividad de una red de agua"
+  ],
+  "should_not_trigger": [
+    "Add a FeatureLayer and query it",
+    "Solve a route between stops",
+    "Create a 2D map",
+    "How do I style a layer?"
+  ]
+}

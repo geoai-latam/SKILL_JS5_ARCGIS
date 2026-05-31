@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-embeddable-maps",
+  "should_trigger": [
+    "How do I embed an ArcGIS webmap into my website?",
+    "Add a saved map with one script tag",
+    "What is the arcgis-embedded-map element?",
+    "How do I share a webmap with minimal code?",
+    "Embed a map without a build pipeline",
+    "¿Cómo embebo un webmap de ArcGIS en mi sitio?",
+    "Necesito mostrar un mapa guardado con un script CDN"
+  ],
+  "should_not_trigger": [
+    "Build a custom map app with Map Components",
+    "Add a FeatureLayer and query it",
+    "Run a geoprocessing job",
+    "How do I style a layer with a renderer?"
+  ]
+}

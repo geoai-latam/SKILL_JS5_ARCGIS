@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-geometry-operations",
+  "should_trigger": [
+    "How do I buffer a point in the ArcGIS SDK?",
+    "Find the intersection of two polygons client-side",
+    "How do I test if a point is inside a polygon?",
+    "Measure the geodesic length of a line",
+    "What is the new operators API for geometry in 5.0?",
+    "¿Cómo hago un buffer de una geometría en el cliente?",
+    "Necesito unir varios polígonos con geometryEngine"
+  ],
+  "should_not_trigger": [
+    "Run a geoprocessing service",
+    "Add a FeatureLayer to the map",
+    "Project coordinates between spatial references",
+    "How do I authenticate with OAuth2?"
+  ]
+}

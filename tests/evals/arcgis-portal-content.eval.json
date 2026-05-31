@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-portal-content",
+  "should_trigger": [
+    "How do I load an ArcGIS item by its id?",
+    "Query web maps from a portal with PortalQueryParams",
+    "How do I search ArcGIS Online content from the SDK?",
+    "Read metadata of a PortalItem",
+    "How do I work with portal groups?",
+    "¿Cómo cargo un item de ArcGIS por su id?",
+    "Necesito consultar contenido del portal con una query"
+  ],
+  "should_not_trigger": [
+    "Render a basemap on a 2D map",
+    "Geocode an address",
+    "Buffer a geometry",
+    "Style a layer with a renderer"
+  ]
+}

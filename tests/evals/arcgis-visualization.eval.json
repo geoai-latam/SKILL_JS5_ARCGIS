@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-visualization",
+  "should_trigger": [
+    "How do I color a layer by category in ArcGIS?",
+    "Apply a class breaks renderer for population ranges",
+    "How do I make a heatmap of points?",
+    "Use visual variables to size features by a field",
+    "How do I style a FeatureLayer with a renderer?",
+    "¿Cómo coloreo una capa por categoría con un renderer?",
+    "Necesito un mapa temático con rangos numéricos"
+  ],
+  "should_not_trigger": [
+    "How do I add a FeatureLayer to the map?",
+    "Create a 3D scene",
+    "Run a route between two points",
+    "Set up OAuth2 sign-in"
+  ]
+}

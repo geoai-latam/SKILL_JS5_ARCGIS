@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-scene-environment",
+  "should_trigger": [
+    "How do I enable shadows in a 3D scene?",
+    "Set the sun position and time of day in a SceneView",
+    "How do I add rainy weather to my 3D scene?",
+    "Configure atmosphere and stars in a scene",
+    "How do I use virtual lighting instead of the sun?",
+    "¿Cómo activo sombras y la posición del sol en 3D?",
+    "Necesito simular clima lluvioso en mi escena"
+  ],
+  "should_not_trigger": [
+    "Add a SceneLayer of buildings",
+    "Create a 2D map with a basemap",
+    "Buffer a geometry",
+    "How do I geocode an address?"
+  ]
+}

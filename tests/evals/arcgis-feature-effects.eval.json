@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-feature-effects",
+  "should_trigger": [
+    "How do I add a bloom effect to a layer?",
+    "Highlight features matching a filter and dim the rest",
+    "How do I use featureEffect with a FeatureFilter?",
+    "Apply a drop-shadow or blur to my layer",
+    "How do I emphasize selected features visually?",
+    "¿Cómo aplico un efecto de bloom a una capa?",
+    "Necesito resaltar features filtradas y atenuar el resto"
+  ],
+  "should_not_trigger": [
+    "Color a layer by category with a renderer",
+    "Add a FeatureLayer to the map",
+    "Create a 3D scene",
+    "Run a route between stops"
+  ]
+}

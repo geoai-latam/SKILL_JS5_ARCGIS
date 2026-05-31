@@ -1,0 +1,34 @@
+name: Propose a new skill
+description: Suggest a new arcgis-* skill or expand the catalog
+labels: [new-skill]
+body:
+  - type: input
+    id: name
+    attributes:
+      label: Proposed skill name (kebab-case)
+      placeholder: arcgis-xyz
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - core
+        - layers
+        - visualization
+        - interaction
+        - widgets
+        - spatial
+        - services
+        - specialized
+        - new-in-5.0
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Which SDK APIs / components should it cover?
+    validations:
+      required: true

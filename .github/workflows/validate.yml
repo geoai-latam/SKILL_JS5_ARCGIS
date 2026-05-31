@@ -1,0 +1,33 @@
+name: Validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Markdown lint
+        run: pnpm run lint
+      - name: Validate skills (structure, cross-refs, bilingual)
+        run: pnpm run validate-skills
+      - name: Lint frontmatter
+        run: pnpm run lint-frontmatter
+      - name: Bilingual sync
+        run: pnpm run bilingual-sync
+      - name: Eval JSON structure
+        run: pnpm run eval-descriptions -- --structure-only
+      - name: Unit tests
+        run: pnpm run test:unit

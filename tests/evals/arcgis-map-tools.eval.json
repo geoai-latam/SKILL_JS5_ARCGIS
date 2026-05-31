@@ -1,0 +1,18 @@
+{
+  "skill_name": "arcgis-map-tools",
+  "should_trigger": [
+    "How do I add a sketch toolbar to my map?",
+    "Add a distance measurement tool",
+    "How do I measure area on a 2D map?",
+    "Enable snapping while drawing",
+    "Add interactive drawing tools to the map",
+    "¿Cómo agrego una herramienta de medición al mapa?",
+    "Necesito un sketch con snapping en mi app"
+  ],
+  "should_not_trigger": [
+    "Programmatically draw with SketchViewModel and a hitTest",
+    "Add a FeatureLayer to the map",
+    "Run a geoprocessing job",
+    "How do I authenticate with OAuth2?"
+  ]
+}
