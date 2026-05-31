@@ -11,17 +11,29 @@ permissions:
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    # Requires an ArcGIS API key secret and a Playwright suite under tests/integration.
-    if: ${{ hashFiles('tests/integration/**') != '' }}
     steps:
       - uses: actions/checkout@v4
+      - name: Check for Playwright suite
+        id: guard
+        run: |
+          if ls tests/integration/*.* >/dev/null 2>&1; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No tests/integration suite yet — skipping integration tests."
+          fi
       - uses: pnpm/action-setup@v4
+        if: steps.guard.outputs.present == 'true'
       - uses: actions/setup-node@v4
+        if: steps.guard.outputs.present == 'true'
         with:
           node-version: lts/*
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+        if: steps.guard.outputs.present == 'true'
       - run: pnpm exec playwright install --with-deps
+        if: steps.guard.outputs.present == 'true'
       - run: pnpm run test:integration
+        if: steps.guard.outputs.present == 'true'
         env:
           VITE_ARCGIS_API_KEY: ${{ secrets.ARCGIS_API_KEY }}
