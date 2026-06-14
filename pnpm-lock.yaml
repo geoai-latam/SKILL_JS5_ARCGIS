@@ -10,22 +10,22 @@ importers:
     devDependencies:
       '@arcgis/ai-components':
         specifier: ^5.0.19
-        version: 5.0.19(@arcgis/core@5.0.19)(@esri/calcite-components@5.1.0)(openai@6.39.1(zod@3.25.76))
+        version: 5.0.19(@arcgis/core@5.0.19)(@esri/calcite-components@5.1.1)(openai@6.39.1(zod@3.25.76))
       '@arcgis/charts-components':
         specifier: ^5.0.19
-        version: 5.0.19(@arcgis/core@5.0.19)(@esri/calcite-components@5.1.0)
+        version: 5.0.19(@arcgis/core@5.0.19)(@esri/calcite-components@5.1.1)
       '@arcgis/coding-components':
         specifier: ^5.0.19
-        version: 5.0.19(@arcgis/core@5.0.19)(@esri/calcite-components@5.1.0)
+        version: 5.0.19(@arcgis/core@5.0.19)(@esri/calcite-components@5.1.1)
       '@arcgis/core':
         specifier: ^5.0
         version: 5.0.19
       '@arcgis/map-components':
         specifier: ^5.0
-        version: 5.0.19(@arcgis/core@5.0.19)(@esri/calcite-components@5.1.0)
+        version: 5.0.19(@arcgis/core@5.0.19)(@esri/calcite-components@5.1.1)
       '@esri/calcite-components':
-        specifier: ^5.0
-        version: 5.1.0
+        specifier: ^5.1
+        version: 5.1.1
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
@@ -108,8 +108,8 @@ packages:
       '@lit/context':
         optional: true
 
-  '@arcgis/lumina@5.1.0-next.122':
-    resolution: {integrity: sha512-XOj1KTKR8uEhJjmjLyOs2Qxh1z+dHNgQi6AGgNiEKzL7MlkdOugG2Xnv+H9mk6hnoiJNOCw7rTMqbihrqhHRWw==}
+  '@arcgis/lumina@5.1.0-next.135':
+    resolution: {integrity: sha512-LWEKF5i2UYtr9M6UcM3ulaC1KGQfCXQptjSDAqUDyNhO9hkW4mcuA0Odn9u3dRi5WQH5R1a5lyVf9gMlWzZ1xA==}
     peerDependencies:
       '@lit/context': ^1.1.6
       lit: ^3.3.0
@@ -126,8 +126,8 @@ packages:
   '@arcgis/toolkit@5.0.19':
     resolution: {integrity: sha512-764RD+gII0r6o5tVXB8W5p+eOpjnfmlFnL/AXw4oPvby1PpwiSlFyhhzpjJIz7SD9ENn+gmK8+E6jMLT8Y1RFA==}
 
-  '@arcgis/toolkit@5.1.0-next.122':
-    resolution: {integrity: sha512-aUP2RN0ISjKpCunHAX/GkjSInzd4eGW1yIvRxpSVTgYiFGb6ZxIYIsoia1NGXqhxqbYS8/VVs6/yXpirnLUH8g==}
+  '@arcgis/toolkit@5.1.0-next.135':
+    resolution: {integrity: sha512-8fLJp5IvuBUmgk7bkrxR40FyKmwYKyu40WeLB9eABVsEH0tHymVTbasyO7fxUo1tNFMhEa6avw9rcppRaq/74Q==}
 
   '@babel/runtime@7.29.7':
     resolution: {integrity: sha512-Nq8OhGWiZIZGV6hLHoyAKLLcJihP/xFeBMGJoUrxTX2psI8dCifzLhZISFb+VWS3wFMRDmCGw5R+dOySCqPLhw==}
@@ -434,8 +434,8 @@ packages:
     resolution: {integrity: sha512-einEveDJ/k1180NOp78PB/4Hje9eBy3dyOGLLtLn6bSkizpUfCwuYBIXOA7Y3F/k/BsTQXgKqUVwQ0eiscWMdA==}
     engines: {node: '>=18.0.0'}
 
-  '@esri/calcite-components@5.1.0':
-    resolution: {integrity: sha512-lMcSt5u0k1WtVnStyj3cIpQ4HsLAy4IzJvrSqMZEy3/XW7DwHDMx2P/90Fxw6YWvo+N/h+62yBpsg+z1hXEtPw==}
+  '@esri/calcite-components@5.1.1':
+    resolution: {integrity: sha512-Rh99GQKzPGmznxZxvu5avln8Dj52Y2fis5w8ouQPXczruXlE/Wpgm8WTu5CUWQmfd5l0eMoUL2Sc1/LsCl+rkA==}
 
   '@esri/calcite-ui-icons@4.5.0':
     resolution: {integrity: sha512-MuXK8o5qefXXV/vdDucQUm8zno+9Q0KjadCX82gYX1VgHMLPp0x2+pbQzG3c0MDbRqkidhTqL/zwq/eVq282qg==}
@@ -1242,8 +1242,8 @@ packages:
     resolution: {integrity: sha512-HWcBoN6NileqtSydK2FqHbS/LoDd2pqrnQHLyJzBj4kOp/ky2MWMN694xOfkK8/SnUsW2DH7EfyVlydKCsm1Zw==}
     engines: {node: '>= 0.4'}
 
-  es-toolkit@1.47.0:
-    resolution: {integrity: sha512-n1GuoD0WEQZMBk5tttoZSqwgyLx01oqa5XsBmCHwPyNe1S9jPBEmtR2pSgp2kJuWE3ciFZ6yRHmY4pM4C3OOkw==}
+  es-toolkit@1.47.1:
+    resolution: {integrity: sha512-5RAqEwf4P4E17p+W75KLOWw/nOvKZzSQpxM32IpI2KZLaVonjTrZ0Ai5ghMaVI9eKC2p8eoQgcBdkEDgzFk6+Q==}
 
   esbuild@0.21.5:
     resolution: {integrity: sha512-mg3OPMV4hXywwpoDxu3Qda5xCKQi+vCTZq8S9J/EpkhB2HzKXq4SNFZE3+NK93JYxc8VMSep+lOUSC/RVKaBqw==}
@@ -2151,16 +2151,16 @@ snapshots:
       - ws
       - zod-to-json-schema
 
-  '@arcgis/ai-components@5.0.19(@arcgis/core@5.0.19)(@esri/calcite-components@5.1.0)(openai@6.39.1(zod@3.25.76))':
+  '@arcgis/ai-components@5.0.19(@arcgis/core@5.0.19)(@esri/calcite-components@5.1.1)(openai@6.39.1(zod@3.25.76))':
     dependencies:
       '@arcgis/ai-agents': 5.0.19(@arcgis/core@5.0.19)(openai@6.39.1(zod@3.25.76))
       '@arcgis/ai-orchestrator': 5.0.19(@arcgis/core@5.0.19)(openai@6.39.1(zod@3.25.76))
       '@arcgis/core': 5.0.19
       '@arcgis/lumina': 5.0.19(lit@3.3.3)
-      '@arcgis/map-components': 5.0.19(@arcgis/core@5.0.19)(@esri/calcite-components@5.1.0)
+      '@arcgis/map-components': 5.0.19(@arcgis/core@5.0.19)(@esri/calcite-components@5.1.1)
       '@arcgis/toolkit': 5.0.19
       '@esri/arcgis-html-sanitizer': 4.1.0
-      '@esri/calcite-components': 5.1.0
+      '@esri/calcite-components': 5.1.1
       '@langchain/core': 1.1.48(openai@6.39.1(zod@3.25.76))
       '@langchain/langgraph': 1.3.2(@langchain/core@1.1.48(openai@6.39.1(zod@3.25.76)))(zod@3.25.76)
       lit: 3.3.3
@@ -2207,7 +2207,7 @@ snapshots:
       vscode-languageserver-textdocument: 1.0.12
       vscode-languageserver-types: 3.17.5
 
-  '@arcgis/charts-components@5.0.19(@arcgis/core@5.0.19)(@esri/calcite-components@5.1.0)':
+  '@arcgis/charts-components@5.0.19(@arcgis/core@5.0.19)(@esri/calcite-components@5.1.1)':
     dependencies:
       '@amcharts/amcharts4': 4.10.40
       '@amcharts/amcharts5': 5.15.6
@@ -2215,7 +2215,7 @@ snapshots:
       '@arcgis/lumina': 5.0.19(lit@3.3.3)
       '@arcgis/toolkit': 5.0.19
       '@esri/arcgis-html-sanitizer': 4.1.0
-      '@esri/calcite-components': 5.1.0
+      '@esri/calcite-components': 5.1.1
       ajv: 6.12.6
       d3-array: 3.2.4
       d3-shape: 3.2.0
@@ -2231,14 +2231,14 @@ snapshots:
     transitivePeerDependencies:
       - '@lit/context'
 
-  '@arcgis/coding-components@5.0.19(@arcgis/core@5.0.19)(@esri/calcite-components@5.1.0)':
+  '@arcgis/coding-components@5.0.19(@arcgis/core@5.0.19)(@esri/calcite-components@5.1.1)':
     dependencies:
       '@arcgis/arcade-languageservice': 5.0.19
       '@arcgis/core': 5.0.19
       '@arcgis/languages-api-utils': 5.0.19
       '@arcgis/lumina': 5.0.19(lit@3.3.3)
       '@arcgis/toolkit': 5.0.19
-      '@esri/calcite-components': 5.1.0
+      '@esri/calcite-components': 5.1.1
       '@lit/task': 1.0.3
       lit: 3.3.3
       monaco-editor: 0.55.1
@@ -2247,13 +2247,13 @@ snapshots:
     transitivePeerDependencies:
       - '@lit/context'
 
-  '@arcgis/common-components@5.0.19(@arcgis/core@5.0.19)(@esri/calcite-components@5.1.0)':
+  '@arcgis/common-components@5.0.19(@arcgis/core@5.0.19)(@esri/calcite-components@5.1.1)':
     dependencies:
       '@arcgis/core': 5.0.19
       '@arcgis/lumina': 5.0.19(lit@3.3.3)
       '@arcgis/toolkit': 5.0.19
       '@esri/arcgis-html-sanitizer': 4.1.0
-      '@esri/calcite-components': 5.1.0
+      '@esri/calcite-components': 5.1.1
       '@lit/task': 1.0.3
       lit: 3.3.3
       luxon: 3.7.2
@@ -2266,7 +2266,7 @@ snapshots:
       '@amcharts/amcharts5': 5.15.6
       '@arcgis/toolkit': 5.0.19
       '@esri/arcgis-html-sanitizer': 4.1.0
-      '@esri/calcite-components': 5.1.0
+      '@esri/calcite-components': 5.1.1
       '@vaadin/grid': 25.0.12
       '@zip.js/zip.js': 2.8.26
       luxon: 3.7.2
@@ -2293,21 +2293,21 @@ snapshots:
       lit: 3.3.3
       tslib: 2.8.1
 
-  '@arcgis/lumina@5.1.0-next.122(lit@3.3.3)':
+  '@arcgis/lumina@5.1.0-next.135(lit@3.3.3)':
     dependencies:
-      '@arcgis/toolkit': 5.1.0-next.122
+      '@arcgis/toolkit': 5.1.0-next.135
       csstype: 3.2.3
       lit: 3.3.3
       tslib: 2.8.1
 
-  '@arcgis/map-components@5.0.19(@arcgis/core@5.0.19)(@esri/calcite-components@5.1.0)':
+  '@arcgis/map-components@5.0.19(@arcgis/core@5.0.19)(@esri/calcite-components@5.1.1)':
     dependencies:
       '@amcharts/amcharts5': 5.15.6
-      '@arcgis/common-components': 5.0.19(@arcgis/core@5.0.19)(@esri/calcite-components@5.1.0)
+      '@arcgis/common-components': 5.0.19(@arcgis/core@5.0.19)(@esri/calcite-components@5.1.1)
       '@arcgis/core': 5.0.19
       '@arcgis/lumina': 5.0.19(lit@3.3.3)
       '@arcgis/toolkit': 5.0.19
-      '@esri/calcite-components': 5.1.0
+      '@esri/calcite-components': 5.1.1
       lit: 3.3.3
       lodash-es: 4.18.1
       tslib: 2.8.1
@@ -2318,7 +2318,7 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@arcgis/toolkit@5.1.0-next.122':
+  '@arcgis/toolkit@5.1.0-next.135':
     dependencies:
       tslib: 2.8.1
 
@@ -2477,17 +2477,17 @@ snapshots:
     dependencies:
       xss: 1.0.13
 
-  '@esri/calcite-components@5.1.0':
+  '@esri/calcite-components@5.1.1':
     dependencies:
-      '@arcgis/lumina': 5.1.0-next.122(lit@3.3.3)
-      '@arcgis/toolkit': 5.1.0-next.122
+      '@arcgis/lumina': 5.1.0-next.135(lit@3.3.3)
+      '@arcgis/toolkit': 5.1.0-next.135
       '@esri/calcite-ui-icons': 4.5.0
       '@floating-ui/dom': 1.7.6
       '@floating-ui/utils': 0.2.11
       '@types/sortablejs': 1.15.9
       color: 5.0.3
       composed-offset-position: 0.0.6(@floating-ui/utils@0.2.11)
-      es-toolkit: 1.47.0
+      es-toolkit: 1.47.1
       focus-trap: 8.2.1
       interactjs: 1.10.27
       lit: 3.3.3
@@ -3337,7 +3337,7 @@ snapshots:
     dependencies:
       es-errors: 1.3.0
 
-  es-toolkit@1.47.0: {}
+  es-toolkit@1.47.1: {}
 
   esbuild@0.21.5:
     optionalDependencies:
