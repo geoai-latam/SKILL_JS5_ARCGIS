@@ -39,7 +39,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 10 | `arcgis-core-utilities` | aporta con arreglos | `when` no es de una vez, `watch` agrupa asíncrono (3 cambios → 1 llamada), un getter que lanza hace lanzar a `watch()`, `debounce` corre 2 de 3 |
 | 11 | `arcgis-custom-rendering` | aporta con arreglos | el ejemplo dejaba la escena en negro; externalRenderers no existe; sí hay WebGL 2D |
 | 12 | `arcgis-editing` | aporta con arreglos | dos pitfalls falsos (SR y refresh); los errores no rechazan la promesa |
-| 13 | `arcgis-embeddable-maps` | pendiente | |
+| 13 | `arcgis-embeddable-maps` | aporta con arreglos | el script 5.x no registra el elemento; hide-* no existen |
 | 14 | `arcgis-feature-effects` | pendiente | |
 | 15 | `arcgis-geometry-operations` | pendiente | |
 | 16 | `arcgis-imagery` | pendiente | |
@@ -468,3 +468,39 @@ saber que una edición mala no lanza error, los éxitos que mienten (borrar un i
 campos desconocidos) y que no hace falta `refresh()`. Antes enseñaba dos de esos puntos al revés.
 Advertencia honesta: todo se midió sobre una capa en memoria, no contra un servicio de ArcGIS
 Server, que puede comportarse distinto (por ejemplo, con el delete de un id que no existe).
+
+### 13. `arcgis-embeddable-maps` — aporta con arreglos
+
+**¿Corre en 5.1?** Antes no, en nada. La skill enseñaba a cargar el script unificado
+`https://js.arcgis.com/5.0/` y poner `<arcgis-embedded-map>`. Medido en Chromium
+(`tests/runtime/embebido.mjs`): ni el script de 5.0 ni el de 5.1 registran `arcgis-embedded-map`.
+`customElements.get` devuelve `undefined` y el elemento queda vacío, sin ningún error en la consola.
+Los embeddable components tienen su propio script, el que documenta Esri:
+`https://js.arcgis.com/5.1/embeddable-components/`. Con ese, el WebMap público de la documentación
+carga (`webMap.loadStatus === "loaded"`, 2 capas). La tipografía de los bloques no lo detectaba
+porque es HTML.
+
+**Lo que estaba mal (y ya se arregló):**
+
+- **El script.** Ahora es `js.arcgis.com/5.1/embeddable-components/` en el Inicio Rápido, los
+  ejemplos, el snippet y el AGENTS. Se agregó el pitfall de adivinar la ruta versionada de 4.x: la
+  medí, y `/embeddable-components/5.1/...esm.js` da 404 (el patrón llegó hasta 4.33).
+- **Los atributos `hide-legend` / `hide-bookmarks` / `hide-zoom` no existen.** No están en
+  `observedAttributes`. Las herramientas se encienden con booleanos `*-enabled` (`legend-enabled`,
+  `bookmarks-enabled`, `scroll-enabled`…), todos en `false` por defecto. La skill decía que la leyenda
+  y los bookmarks venían encendidos. Ahora está la lista completa, sacada de la referencia de Esri.
+- **`scroll-enabled` en `false`:** la rueda del mouse mueve la página, no el mapa. Es un pitfall
+  real de embeds; lo agregué.
+- **No se reprodujo:**
+  - "contenedor de alto cero": sin estilo, el elemento mide 400 px.
+  - "conflicto por cargar dos scripts del SDK": con el del SDK y el de embeddable juntos, cargan los
+    dos elementos y el WebMap.
+  
+  Los reemplacé.
+- **Lo que no se midió:** un item privado (no lo había).
+- **Se comprobó y es cierto:** no hay paquete npm (`npm view` da 404).
+
+**¿Aporta?** Ahora sí. Esta es justo la pieza que un agente se inventa: el script de la página del
+SDK, o la ruta 4.x con el número cambiado, y los nombres de los atributos. La versión anterior
+enseñaba las dos cosas mal y el embed salía en blanco sin ningún aviso. Es una skill corta, pero cada
+línea que tiene ahora está medida o viene de la referencia de Esri.

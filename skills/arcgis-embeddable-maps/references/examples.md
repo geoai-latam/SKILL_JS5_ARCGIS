@@ -5,46 +5,49 @@
 **Use case:** show a saved WebMap on a page.
 
 ```html
-<script type="module" src="https://js.arcgis.com/5.0/"></script>
-<arcgis-embedded-map item-id="<webmap-item-id>"></arcgis-embedded-map>
+<script type="module" src="https://js.arcgis.com/5.1/embeddable-components/"></script>
+<arcgis-embedded-map item-id="10f5128431d44f9180d9936834100ac5"></arcgis-embedded-map>
 ```
 
 **Notes:**
 
 - No build tooling or npm install needed.
-- Default tools (zoom, legend, bookmarks) are included.
+- Every tool attribute (`*-enabled`) is off by default.
 
 ---
 
-## Example 2: Themed embed with fewer tools
+## Example 2: Dark embed with legend and wheel zoom
 
-**Use case:** a dark, minimal embed.
+**Use case:** a dark embed that lets readers scroll-zoom and read the legend.
 
 ```html
 <arcgis-embedded-map
-  item-id="<webmap-item-id>"
+  item-id="10f5128431d44f9180d9936834100ac5"
   theme="dark"
-  hide-bookmarks
+  legend-enabled
+  scroll-enabled
+  style="height: 600px"
 ></arcgis-embedded-map>
 ```
 
 **Notes:**
 
-- Toggle tools via attributes.
-- Style the surrounding container for sizing.
+- `scroll-enabled` is off by default so the page scrolls past the map; turn it on deliberately.
+- Measured: the element is 400 px tall without a style; set the height you want.
 
 ---
 
-## Example 3: Tweak attributes from script
+## Example 3: Read the loaded WebMap from script
 
-**Use case:** adjust the element after load.
+**Use case:** show the map title next to the embed.
 
 ```typescript
-const embed = document.querySelector("arcgis-embedded-map");
-embed?.setAttribute("theme", "light");
+const embed = document.querySelector("arcgis-embedded-map") as HTMLElement & { webMap?: { portalItem?: { title?: string } }; componentOnReady(): Promise<unknown> };
+await embed.componentOnReady();
+console.log(embed.webMap?.portalItem?.title); // "Educational Attainment and Household Size"
 ```
 
 **Notes:**
 
-- It's a DOM custom element — use attributes/properties.
+- It's a DOM custom element: use attributes/properties.
 - For richer behavior, switch to the full SDK.
