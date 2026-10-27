@@ -16,11 +16,13 @@
 | Function | Returns | Description |
 |---|---|---|
 | `watch(getValue, callback, options?)` | `WatchHandle` | Run callback when the tracked value changes |
-| `when(getValue, callback, options?)` | `WatchHandle` | Run callback whenever the value is truthy |
+| `when(getValue, callback, options?)` | `WatchHandle` | Run callback **every time** the value becomes truthy |
 | `whenOnce(getValue, options?)` | `Promise<T>` | Resolve the first time the value is truthy |
 | `on(getTarget, eventName, callback)` | `WatchHandle` | Listen to an event on a reactive target |
 
-`options` may include `{ initial: true }` to fire immediately. Every handle has `.remove()`.
+`options`: `initial` (also run with the current value), `sync` (one call per change instead of one
+batched, asynchronous call), `once` (stop after the first call), `equals` (custom comparison). Every
+handle has `.remove()`.
 
 ---
 
@@ -30,7 +32,7 @@
 
 | Function | Returns | Description |
 |---|---|---|
-| `debounce(fn)` | debounced fn | Collapse rapid calls; aborts superseded ones |
+| `debounce(fn)` | debounced fn | One call at a time: a burst runs the first and the last, the ones in between reject with an abort error |
 | `isAbortError(error)` | `boolean` | True if the error is an abort/cancel |
 | `eachAlways(promises)` | `Promise<EachAlwaysResult[]>` | Settle all, never reject |
 
@@ -60,5 +62,7 @@
 | `new Collection<T>(items?)` | Create an observable collection |
 | `add(item, index?)` / `addMany(items)` | Insert items (emits `change`) |
 | `removeAt(index)` / `remove(item)` | Remove items |
-| `filter(fn)` / `map(fn)` | Functional helpers returning new collections |
+| `getItemAt(index)` | Item by index (there is no `[index]`) |
+| `filter(fn)` / `map(fn)` | Return new `Collection`s |
+| `on("change", e => e.added / e.removed)` | Batched per tick |
 | `toArray()` | Plain array copy |

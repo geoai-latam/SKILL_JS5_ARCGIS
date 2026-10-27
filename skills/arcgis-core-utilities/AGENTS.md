@@ -5,7 +5,8 @@ Quick-reference for the SDK core utilities. Read before wiring reactive/async lo
 ## Quick Decision Tree
 
 1. **Observe a property over time?** → `reactiveUtils.watch`.
-2. **Run once when a condition becomes true?** → `reactiveUtils.when` / `whenOnce`.
+2. **Run when a condition becomes true?** → every time: `reactiveUtils.when`; once: `whenOnce`
+   (or `{ once: true }`). Callbacks are async and batched; `{ sync: true }` for every change.
 3. **Async that can be superseded?** → `promiseUtils.debounce` + `isAbortError`.
 4. **REST call?** → `esriRequest`.
 5. **Observable array?** → `Collection<T>`.

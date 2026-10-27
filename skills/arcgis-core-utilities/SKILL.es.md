@@ -1,17 +1,17 @@
 ---
 name: arcgis-core-utilities
 description: >
-  Usa las utilidades core del ArcGIS Maps SDK for JavaScript 5.0: reactiveUtils
+  Usa las utilidades core del ArcGIS Maps SDK for JavaScript 5.1: reactiveUtils
   para observar propiedades de Accessor, promiseUtils para async cancelable,
   esriRequest para llamadas REST, y Collection para arrays observables. Usa esta
   skill cuando el usuario necesite reaccionar a cambios de estado de view/layer,
   hacer debounce o cancelar requests, llamar un endpoint REST, o usar Collection.
 lang: es
-version: 0.1.0
+version: 0.2.0
 status: stable
-sdk_version: ">=5.0 <6.0"
+sdk_version: ">=5.1 <6.0"
 created: 2026-05-31
-updated: 2026-05-31
+updated: 2026-10-27
 category: core
 tags:
   - reactiveutils
@@ -20,7 +20,7 @@ tags:
   - collection
   - accessor
 packages:
-  - "@arcgis/core@^5.0"
+  - "@arcgis/core@^5.1"
 maintainer: "GeoAI LATAM"
 license: MIT
 ---
@@ -56,15 +56,17 @@ const handle = reactiveUtils.when(
 
 1. **¿Reaccionar a una propiedad que cambia en el tiempo?**
    - Sí → `reactiveUtils.watch`.
-   - Una sola vez, cuando una condición se vuelve truthy → `reactiveUtils.when` / `whenOnce`.
+   - **Cada vez** que una condición se vuelve verdadera → `reactiveUtils.when` (no es de una vez).
+   - **Una sola vez** → `await reactiveUtils.whenOnce(...)` o `when(..., { once: true })`.
 
 2. **¿Async que puede ser superado (typeahead, pans rápidos)?**
-   - Sí → `promiseUtils.debounce` y maneja `promiseUtils.isAbortError`.
+   - Sí → un `promiseUtils.debounce` creado una sola vez, e ignora `promiseUtils.isAbortError`.
 
 3. **¿Llamar un endpoint REST?**
    - Sí → `esriRequest`.
 
-**Default:** prefiere `reactiveUtils` sobre el método de instancia legacy `.watch()`.
+**Default:** `reactiveUtils`. El método de instancia `.watch()` sigue existiendo en 5.1 pero está
+deprecado desde 4.32 (el SDK escribe un aviso de deprecación).
 
 ## Patrones de Import
 
@@ -96,15 +98,27 @@ import "@arcgis/map-components/components/arcgis-map";
 Las clases basadas en Accessor exponen propiedades observables. `reactiveUtils.watch(getValue,
 callback)` retorna un handle; llama `handle.remove()` para dejar de observar y liberar memoria.
 
+Los callbacks son **asíncronos y agrupados** por defecto (medido con 5.1.27): tres asignaciones
+seguidas dan cero llamadas en el momento y **una** después, con el último valor. Pasa
+`{ sync: true }` para recibir cada cambio (3 llamadas), `{ initial: true }` para correr también con
+el valor actual, `{ once: true }` para parar después de la primera llamada. El getter corre de
+inmediato: si lanza (`() => map.basemap.title` sin basemap), **el propio `watch()` lanza**; protégelo
+con `?.`.
+
 ### Concepto 2: Async cancelable
 
-`promiseUtils.debounce` colapsa llamadas rápidas; una promesa abortada rechaza con un error de
-abort detectable vía `promiseUtils.isAbortError(err)` — trágatelo, no lo trates como fallo real.
+`promiseUtils.debounce(fn)` deja correr una llamada a la vez: medido, tres llamadas seguidas corren
+la primera, rechazan la segunda con un error de abort y corren la tercera (2 ejecuciones, no 1).
+Detecta el rechazo con `promiseUtils.isAbortError(err)` y trágatelo. `esriRequest` recibe un
+`signal`; una petición abortada también pasa `isAbortError`. Una función con debounce creada dentro
+del handler no agrupa nada (3 llamadas → 3 ejecuciones).
 
 ### Concepto 3: Collection
 
 `Collection<T>` es el array observable del SDK (usado por `map.layers`, `graphics`, etc.). Emite
-eventos `change` y ofrece `add`, `addMany`, `filter`, `map` y `toArray`.
+eventos `change` (agrupados: `add`, `addMany` y `removeAt` en el mismo tick llegan como un solo
+evento con `added`/`removed`) y ofrece `add`, `addMany`, `getItemAt`, `filter`, `map` y `toArray`.
+No tiene acceso por índice: `collection[0]` no es un elemento.
 
 ## Pitfalls Comunes (Top 3)
 
@@ -151,7 +165,9 @@ map.layers.removeAt(0);
 map.layers.add(newLayer, 0);
 ```
 
-**Impacto:** la vista nunca se re-renderiza porque la Collection no emitió un cambio.
+**Impacto:** medido: la asignación se ignora. `length` sigue en 1, `getItemAt(0)` sigue siendo la
+capa vieja y no se dispara ningún evento `change`. En TypeScript, `Collection` no tiene firma de
+índice.
 
 ## Cuándo leer references/
 
@@ -174,4 +190,9 @@ map.layers.add(newLayer, 0);
 
 ## Changelog
 
+- **0.2.0** (2026-10-27): SDK 5.1. Medido: `when` corre cada vez que el valor se vuelve verdadero (el árbol lo
+  daba como de una vez); los callbacks de `watch` son asíncronos y agrupados (3 cambios → 1 llamada) salvo con
+  `sync: true`; un getter que lanza hace lanzar a `watch()` (no "se detiene en silencio"); `debounce` corre la
+  primera y la última de una ráfaga; asignar por índice en una Collection se ignora; `.watch()` deprecado. En
+  `tests/runtime/casos/arcgis-core-utilities.ts`.
 - **0.1.0** (2026-05-31): Versión inicial.

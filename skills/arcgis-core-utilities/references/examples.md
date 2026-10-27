@@ -47,7 +47,7 @@ export async function onInput(q: string) {
 
 **Notes:**
 
-- `debounce` aborts the previous call automatically.
+- Measured: a burst of three calls runs the first and the third; the second rejects with an abort error.
 - Always ignore abort errors so the UI stays quiet between keystrokes.
 
 ---

@@ -36,7 +36,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 7 | `arcgis-coding-components` | aporta con arreglos | antes era relleno con API inventada (`arcgisChange`, `sqlEditor.layer`); ahora perfil + diagnósticos medidos; SQL/code editor son `@internal` |
 | 8 | `arcgis-coordinates-projection` | aporta con arreglos | datum medido (492 m reetiquetando Bogotá 1975, 27 transformaciones a 22 m), mezcla de SR da `false` en silencio, 9377 en vez de 3116 |
 | 9 | `arcgis-core-maps` | aporta con arreglos | el Inicio Rápido lanzaba error (`detail` es `null` en `arcgisViewReadyChange`); sin key o sin alto la vista nunca queda lista |
-| 10 | `arcgis-core-utilities` | pendiente | |
+| 10 | `arcgis-core-utilities` | aporta con arreglos | `when` no es de una vez, `watch` agrupa asíncrono (3 cambios → 1 llamada), un getter que lanza hace lanzar a `watch()`, `debounce` corre 2 de 3 |
 | 11 | `arcgis-custom-rendering` | pendiente | |
 | 12 | `arcgis-editing` | pendiente | |
 | 13 | `arcgis-embeddable-maps` | pendiente | |
@@ -362,3 +362,35 @@ reales.
 **¿Aporta?** Sí, después del arreglo. El árbol (componentes frente a Core API), `[lon, lat]` y
 `view.destroy()` en una SPA eran correctos y útiles. Pero el patrón que un agente copia primero
 rompía el arranque de cualquier app con `<arcgis-map>`. Era la skill más leída enseñando un error.
+
+### 10. `arcgis-core-utilities` — aporta con arreglos
+
+**¿Corre en 5.1?** Sí: los 3 snippets y los 33 bloques compilan contra 5.1.27, y el código que
+enseña funciona. Quince comprobaciones en Chromium (`tests/runtime/casos/arcgis-core-utilities.ts`).
+Una de ellas falla a propósito: reproduce el getter que lanza error.
+
+**Lo que estaba mal (y ya se arregló):**
+
+- **El árbol de decisión decía que `when` es "de una sola vez".** Medido: corre cada vez que el valor
+  vuelve a ser verdadero (3 de 3). El comentario del Inicio Rápido ("re-run whenever") sí era
+  correcto: la skill se contradecía.
+- **No decía que los callbacks de `watch` son asíncronos y agrupados.** Tres asignaciones seguidas
+  dan 0 llamadas en el momento y 1 después, con el último valor. Con `sync: true` son 3. Es el
+  origen de muchos "mi watch no se dispara". Ahora también aparecen `once` y `equals`.
+- **"Un getter que lanza detiene el watch en silencio" era falso.** El getter corre de inmediato y
+  el propio `watch()` lanza "Cannot read properties of null", así que el código que sigue no corre.
+- **`debounce` no "colapsa" a una sola llamada.** Medido: de tres llamadas seguidas corren la
+  primera y la tercera; la segunda se rechaza con un error de abort.
+- **Asignar por índice en una Collection** (`layers[0] = x`): la skill decía "no notifica". Medido:
+  ni siquiera asigna; la capa vieja sigue ahí y no hay evento. Ahora también dice que los eventos
+  `change` se agrupan por tick.
+- **Se comprobó y es cierto:**
+  - `isAbortError` en el debounce y en `esriRequest` con `signal`.
+  - `filter`/`map` devuelven una `Collection`.
+  - `initial: true`.
+  - El debounce recreado en cada llamada no agrupa nada (3 → 3).
+  - `layer.watch()` existe, pero con aviso de deprecación (desde 4.32).
+
+**¿Aporta?** Sí, con matices. La parte básica (`watch` + `remove`) la sabe cualquier modelo. Lo que
+aporta es lo que no da error: el agrupado asíncrono, `when` sin `once`, el debounce que deja correr
+dos llamadas y la Collection sin índice. Antes enseñaba tres de esas cuatro de forma equivocada.

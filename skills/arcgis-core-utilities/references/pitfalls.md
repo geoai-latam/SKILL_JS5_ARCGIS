@@ -18,11 +18,12 @@ reactiveUtils.watch(() => view.map?.layers.length, cb);
 
 ### Impact
 
-A thrown error inside the getter silently stops the watch.
+Measured with 5.1.27: the getter runs immediately, so `watch()` itself throws ("Cannot read
+properties of null"); code after it never runs. With `?.` it fires as soon as the map appears.
 
 ### Diagnosis
 
-Add a `?.` and confirm the callback fires after the map loads.
+A stack trace pointing at the getter, at the line where `watch` is created.
 
 ---
 
@@ -48,7 +49,7 @@ function onType(q: string) {
 
 ### Impact
 
-Debouncing never actually happens; every keystroke fires a request.
+Debouncing never actually happens; measured: 3 calls → 3 executions (with one shared debounce: 2).
 
 ### Diagnosis
 
