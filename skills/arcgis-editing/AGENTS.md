@@ -10,7 +10,7 @@ Quick-reference for editing features. Read before CRUD work.
 
 ## Setup Checklist
 
-- [ ] `await layer.load()` and check `capabilities.operations` before editing.
+- [ ] `await layer.load()` and check `editingEnabled` + `capabilities.operations` before editing.
 - [ ] Updates/deletes must include `OBJECTID`.
 - [ ] Inspect `result.*FeatureResults[].error` for partial failures.
 - [ ] Use `arcgis-editor` (not the deprecated `Editor` widget) for new apps.
@@ -19,7 +19,8 @@ Quick-reference for editing features. Read before CRUD work.
 
 - ❌ Ignoring per-edit `error` fields.
 - ❌ Editing a layer without checking capabilities.
-- ❌ Updates without `OBJECTID`.
+- ❌ Updates without the `objectIdField` value.
+- ❌ Trusting `ok` on deletes of ids that may not exist, or on unknown field names.
 
 ## Files in This Skill
 

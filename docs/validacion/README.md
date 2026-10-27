@@ -38,7 +38,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 9 | `arcgis-core-maps` | aporta con arreglos | el Inicio Rápido lanzaba error (`detail` es `null` en `arcgisViewReadyChange`); sin key o sin alto la vista nunca queda lista |
 | 10 | `arcgis-core-utilities` | aporta con arreglos | `when` no es de una vez, `watch` agrupa asíncrono (3 cambios → 1 llamada), un getter que lanza hace lanzar a `watch()`, `debounce` corre 2 de 3 |
 | 11 | `arcgis-custom-rendering` | aporta con arreglos | el ejemplo dejaba la escena en negro; externalRenderers no existe; sí hay WebGL 2D |
-| 12 | `arcgis-editing` | pendiente | |
+| 12 | `arcgis-editing` | aporta con arreglos | dos pitfalls falsos (SR y refresh); los errores no rechazan la promesa |
 | 13 | `arcgis-embeddable-maps` | pendiente | |
 | 14 | `arcgis-feature-effects` | pendiente | |
 | 15 | `arcgis-geometry-operations` | pendiente | |
@@ -432,3 +432,39 @@ Ocho comprobaciones en `tests/runtime/casos/arcgis-custom-rendering.ts`.
 (4.x). Con la versión anterior, copiaba un `consumes` que deja la escena en negro. El valor real son
 la forma exacta de `consumes`/`produces`, `createSubclass` y la rama 2D. No enseña a escribir
 shaders, y no lo pretende.
+
+### 12. `arcgis-editing` — aporta con arreglos
+
+**¿Corre en 5.1?** Sí. El Inicio Rápido, los snippets y los 32 bloques compilan contra 5.1.27, y el
+código corre. Hice doce comprobaciones en Chromium (`tests/runtime/casos/arcgis-editing.ts`) sobre
+una capa en memoria del navegador, así que no se escribió en ningún servicio, más la lectura de las
+capacidades de un MapServer público de solo lectura. El `arcgis-editor` con `reference-element`
+monta y queda `ready`.
+
+**Lo que estaba mal (y ya se arregló):**
+
+- **Pitfall extendido 1, falso:** decía que una geometría en otra referencia espacial "queda mal
+  ubicada o se rechaza". Medido: un punto en 3857 se guardó proyectado en 4326 (`-74.0806, 4.6000`).
+- **Pitfall extendido 2, falso:** decía que hay que llamar `refresh()` después de `applyEdits`.
+  Medido: el layer view pasó de 2 a 3 features sin `refresh()` y la capa emitió un evento `edits`.
+- **En su lugar entran dos fallos silenciosos medidos:**
+  - Borrar un `objectId` que no existe devuelve `ok(99)`.
+  - Un atributo que no es un campo (`ESTADO`) se descarta y el update igual devuelve `ok`.
+- **Qué rechaza y qué no:** una edición mala nunca rechaza la promesa; vuelve como `error` en su
+  resultado. Solo rechazan los problemas de la capa (`editingEnabled: false`, z en una capa sin z).
+  Un lote con un update válido y uno inválido aplica el válido, así que no es transaccional. Se
+  documentó `rollbackOnFailureEnabled`, sin medirlo.
+- **Pitfall 3:** ahora usa `layer.objectIdField` en vez de un `OBJECTID` fijo.
+
+**Se comprobó y es cierto:**
+
+- Los tres pitfalls principales. El error aparece en el resultado: "Identifier fields: OBJECTID
+  missing" y "Feature with object id 9999 missing".
+- Las capacidades en `false` de un servicio de solo lectura.
+- El `Editor` widget está deprecado desde 5.0.
+
+**¿Aporta?** Sí, con matices. El `applyEdits` básico lo escribe cualquier modelo. Lo que aporta es
+saber que una edición mala no lanza error, los éxitos que mienten (borrar un id que no existe,
+campos desconocidos) y que no hace falta `refresh()`. Antes enseñaba dos de esos puntos al revés.
+Advertencia honesta: todo se midió sobre una capa en memoria, no contra un servicio de ArcGIS
+Server, que puede comportarse distinto (por ejemplo, con el delete de un id que no existe).

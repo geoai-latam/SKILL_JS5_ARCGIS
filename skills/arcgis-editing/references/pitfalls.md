@@ -2,52 +2,59 @@
 
 > Extends the Top 3 in SKILL.md. Format: Anti-pattern / Correct / Impact / Diagnosis.
 
-## Pitfall 1: Geometry in the wrong spatial reference
+## Pitfall 1: A field name that is not in the layer
 
 ### Anti-pattern
 
 ```typescript
-// Adding a feature whose geometry SR differs from the layer's
+await layer.applyEdits({ updateFeatures: [new Graphic({ attributes: { OBJECTID: 1, ESTADO: "x" } })] });
 ```
 
 ### Correct
 
 ```typescript
-// Project geometry to the layer's spatialReference before applyEdits.
+await layer.load();
+const known = new Set(layer.fields.map((f) => f.name.toLowerCase()));
+const unknown = Object.keys(attrs).filter((k) => !known.has(k.toLowerCase()));
+if (unknown.length) throw new Error(`Unknown fields: ${unknown.join(", ")}`);
 ```
 
 ### Impact
 
-The feature lands in the wrong place or the edit is rejected.
+Measured with 5.1.27: the result is `ok` and the attribute is simply dropped. Nothing tells you the
+value was not saved.
 
 ### Diagnosis
 
-Misplaced new features; compare geometry SR to the layer's.
+The edit "succeeds" but the value never appears when you query the feature again.
 
 ---
 
-## Pitfall 2: Not refreshing after edits
+## Pitfall 2: Deleting an id that does not exist
 
 ### Anti-pattern
 
 ```typescript
-await layer.applyEdits({ addFeatures }); // UI still shows old state
+const r = await layer.applyEdits({ deleteFeatures: [{ objectId: 99 }] });
+// r.deleteFeatureResults[0].error is null → "deleted"
 ```
 
 ### Correct
 
 ```typescript
-await layer.applyEdits({ addFeatures });
-layer.refresh();
+const ids = [99];
+const existing = await layer.queryObjectIds({ objectIds: ids });
+await layer.applyEdits({ deleteFeatures: existing.map((id) => ({ objectId: id as number })) });
 ```
 
 ### Impact
 
-The map doesn't show new/updated features immediately.
+Measured: deleting `objectId: 99` in a layer with ids 1 and 2 returns `ok(99)`. A sync process that
+counts successful deletes over-reports.
 
 ### Diagnosis
 
-Edits succeed server-side but the view lags; call `refresh()`.
+Delete counts that do not match the drop in `queryFeatureCount()`.
 
 ---
 
@@ -112,11 +119,13 @@ await layer.applyEdits({ addFeatures: many }); // expecting all-or-nothing
 ```typescript
 const r = await layer.applyEdits({ addFeatures: many });
 // Inspect each result; some may fail while others succeed.
+// For all-or-nothing on a service: applyEdits(edits, { rollbackOnFailureEnabled: true })
 ```
 
 ### Impact
 
-Partial success leaves inconsistent data if unchecked.
+Measured: with one valid and one invalid update in the same call, the valid one is applied and the
+other comes back with an error. Partial success leaves inconsistent data if unchecked.
 
 ### Diagnosis
 

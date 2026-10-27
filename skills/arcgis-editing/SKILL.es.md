@@ -1,17 +1,17 @@
 ---
 name: arcgis-editing
 description: >
-  Edita datos de features con el ArcGIS Maps SDK for JavaScript 5.0: el componente
+  Edita datos de features con el ArcGIS Maps SDK for JavaScript 5.1: el componente
   arcgis-editor para una UI de edición completa, FeatureLayer.applyEdits para
   add/update/delete programático, y manejo de attachments. Usa esta skill cuando
   el usuario cree, actualice o borre features, construya una experiencia de
   edición, o gestione attachments de features.
 lang: es
-version: 0.1.0
+version: 0.2.0
 status: stable
-sdk_version: ">=5.0 <6.0"
+sdk_version: ">=5.1 <6.0"
 created: 2026-05-31
-updated: 2026-05-31
+updated: 2026-10-27
 category: interaction
 tags:
   - editing
@@ -22,8 +22,8 @@ tags:
 requires:
   - arcgis-layers
 packages:
-  - "@arcgis/core@^5.0"
-  - "@arcgis/map-components@^5.0"
+  - "@arcgis/core@^5.1"
+  - "@arcgis/map-components@^5.1"
 maintainer: "GeoAI LATAM"
 license: MIT
 ---
@@ -86,18 +86,35 @@ import "@arcgis/map-components/components/arcgis-editor";
 
 ### Concepto 1: applyEdits
 
-`layer.applyEdits({ addFeatures, updateFeatures, deleteFeatures })` resuelve a arrays de resultado.
-Cada resultado tiene `objectId` y `error` — siempre revisa fallos parciales.
+`layer.applyEdits({ addFeatures, updateFeatures, deleteFeatures })` resuelve a arrays de resultado;
+cada elemento tiene `objectId` y `error`. Medido con 5.1.27 sobre una capa en cliente:
+
+- Una edición mala **no rechaza la promesa**: vuelve como `error` en su resultado ("Identifier
+  fields: OBJECTID missing", "Feature with object id 9999 missing").
+- **No es transaccional**: en un lote con un update válido y uno inválido, el válido se aplica. Para
+  un servicio, `applyEdits(edits, { rollbackOnFailureEnabled: true })` pide todo o nada (no medido
+  aquí).
+- **Éxitos silenciosos:** borrar un `objectId` que no existe devuelve `ok`; un atributo cuyo nombre
+  no es un campo (`ESTADO`) se descarta y el update igual devuelve `ok`. Los nombres de campo se
+  comparan sin distinguir mayúsculas (`status` actualizó `STATUS`).
+- La llamada entera **rechaza** solo por problemas de la capa: `editingEnabled: false` ("Editing is
+  disabled for layer") o valores z en una capa sin z.
+- Una geometría en otra referencia espacial se proyecta sola (un punto en 3857 quedó guardado en
+  4326 en `-74.0806, 4.6000`), y el layer view se actualiza sin `refresh()` (2 → 3 features; un
+  evento `edits`).
 
 ### Concepto 2: El componente editor
 
-`arcgis-editor` (que reemplaza al widget `Editor` deprecado) provee flujos de create/update,
-snapping, e integración de formularios con `reference-element` enlazado al mapa.
+`arcgis-editor` reemplaza al widget `Editor` (deprecado desde 5.0). Se enlaza con
+`reference-element`; sin `layerInfos` edita todas las capas editables del mapa (medido:
+`state === "ready"`). También tiene `startUpdateFeaturesWorkflow`, flujos de merge y split, y en 5.1
+los controles de la cuadrícula de snapping (`hide-snapping-controls-elements-grid-*`).
 
 ### Concepto 3: Attachments
 
-Cuando `capabilities.data.supportsAttachment` de la capa es true, usa `addAttachment(feature, form)`
-y `queryAttachments` para gestionar fotos/archivos por feature.
+Cuando `layer.capabilities.data.supportsAttachment` es true, usa `addAttachment(feature, form)` (un
+`FormData` o un `<form>`) y `queryAttachments({ objectIds })`, que resuelve a
+`{ [objectId]: AttachmentInfo[] }`.
 
 ## Pitfalls Comunes (Top 3)
 
@@ -114,7 +131,8 @@ const r = await layer.applyEdits({ updateFeatures });
 r.updateFeatureResults.forEach((res) => { if (res.error) console.error(res.error); });
 ```
 
-**Impacto:** fallos parciales silenciosos dejan los datos inconsistentes.
+**Impacto:** medido: un update con un id que no existe resuelve normal; solo su resultado trae el
+error. Un `try/catch` alrededor de `applyEdits` no lo ve.
 
 ### Pitfall 2: Editar una capa no editable
 
@@ -126,10 +144,12 @@ await layer.applyEdits({ addFeatures }); // el servicio no tiene capacidad de cr
 ```typescript
 // ✅ Correcto
 await layer.load();
-if (layer.capabilities?.operations?.supportsAdd) await layer.applyEdits({ addFeatures });
+if (layer.editingEnabled && layer.capabilities?.operations?.supportsAdd) await layer.applyEdits({ addFeatures });
 ```
 
-**Impacto:** el servicio rechaza las ediciones.
+**Impacto:** medido sobre una capa de MapServer: `supportsAdd`, `supportsUpdate`, `supportsEditing`
+y `editingEnabled` dan `false`. Con `editingEnabled: false` la llamada rechaza con "Editing is
+disabled for layer".
 
 ### Pitfall 3: Actualizar sin el objectId
 
@@ -141,11 +161,12 @@ await layer.applyEdits({ updateFeatures: [g] });
 
 ```typescript
 // ✅ Correcto
-const g = new Graphic({ attributes: { OBJECTID: 42, STATUS: "done" } });
+const g = new Graphic({ attributes: { [layer.objectIdField]: 42, STATUS: "done" } });
 await layer.applyEdits({ updateFeatures: [g] });
 ```
 
-**Impacto:** el servicio no puede emparejar la fila a actualizar.
+**Impacto:** medido: no hay excepción; el resultado dice "Identifier fields: OBJECTID missing" y no
+cambia ninguna fila. Usa `layer.objectIdField`: no siempre se llama `OBJECTID` (`FID`, `objectid`).
 
 ## Cuándo leer references/
 
@@ -168,4 +189,10 @@ await layer.applyEdits({ updateFeatures: [g] });
 
 ## Changelog
 
+- **0.2.0** (2026-10-27): SDK 5.1. El código corría; dos pitfalls extendidos eran falsos: una geometría en otra
+  referencia espacial se proyecta sola (no queda mal ubicada ni se rechaza) y el layer view se actualiza sin
+  `refresh()`. Se cambiaron por lo que sí falla en silencio: borrar un id que no existe devuelve `ok`, los campos
+  desconocidos se descartan con `ok`. Medido que una edición mala nunca rechaza la promesa, que los lotes no son
+  transaccionales y qué errores sí rechazan. `objectIdField` en vez de `OBJECTID` fijo. En
+  `tests/runtime/casos/arcgis-editing.ts`.
 - **0.1.0** (2026-05-31): Versión inicial.

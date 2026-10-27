@@ -18,7 +18,7 @@ console.log("new id", result.addFeatureResults[0].objectId);
 
 **Notes:**
 
-- Do not set OBJECTID on adds — the service assigns it.
+- Do not set OBJECTID on adds: the layer assigns it (measured: 3 after ids 1 and 2).
 - Check `addFeatureResults[0].error` for failures.
 
 ---
@@ -41,7 +41,7 @@ r.updateFeatureResults.forEach((res) => { if (res.error) console.error(res.error
 **Notes:**
 
 - Updates require `OBJECTID`.
-- Deletes accept `{ objectId }` objects.
+- Deletes accept `{ objectId }` objects; a missing id still returns `ok`.
 
 ---
 
