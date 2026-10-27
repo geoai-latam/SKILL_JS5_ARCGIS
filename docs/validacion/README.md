@@ -59,7 +59,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 30 | `arcgis-time-animation` | aporta con arreglos | el slider no toma el rango solo; el anti-patrón de zona horaria era falso; un startField mal escrito no filtra en silencio |
 | 31 | `arcgis-utility-networks` | aporta con arreglos | parámetro con el nombre REST (se descarta), objeto plano que lanza, componente deprecado desde 5.0; sin trazado real (servicio con token) |
 | 32 | `arcgis-visualization` | aporta con arreglos | 2 pitfalls falsos (caja del campo, orden de stops); medido por píxel: sin defaultSymbol no se dibuja, valores únicos con caja, heatmap en polígonos |
-| 33 | `arcgis-widgets-advanced` | pendiente | |
+| 33 | `arcgis-widgets-advanced` | aporta con arreglos | position= (no existe: cae al slot por defecto, medido) en todos los ejemplos; estadísticas del perfil en la analysis view; perfil sin ground no avanza |
 | 34 | `arcgis-widgets-ui` | pendiente | |
 | 35 | `arcgis-ai-components` | pendiente | |
 
@@ -1023,3 +1023,28 @@ El resto se contrastó con los tipos del SDK.
 - **Un heatmap sobre polígonos falla en silencio.** No hay error y la vista de la capa se crea (servicio de estados de USA). Sobre un polígono de cliente no dibujó nada.
 
 **Por qué aporta:** los cuatro fallos que dejó la medición (valor con otra caja, falta de `defaultSymbol`, `graphic.symbol` en FeatureLayer y heatmap sobre polígonos) no dan error: el mapa solo sale incompleto o igual. La skill vieja mandaba a buscar dos causas que no existen y no nombraba la de las mayúsculas en el valor.
+
+### 33. `arcgis-widgets-advanced` — aporta con arreglos
+
+**Evidencia.** El caso `tests/runtime/casos/arcgis-widgets-advanced.ts` corrió contra el SDK 5.1.27 en Chromium y dio 7/7 en verde.
+
+**Errores de la skill vieja que sí rompen la página:**
+
+1. **Todos los ejemplos ubicaban los componentes con `position="top-right"`.** Ninguno de los cinco componentes tiene esa propiedad. Medido: con `position`, la brújula cayó en el slot por defecto, una franja de 600×32 pegada arriba del mapa; con `slot="top-right"` quedó en la esquina, de 32×32. El mismo error estaba en `arcgis-editing/references/examples.md` (skill ya validada), y se arregló en este commit. Sigue en `arcgis-widgets-ui`, la próxima.
+2. **Las estadísticas del perfil de elevación cambiaron de lugar en 5.x.** Los números se leen en la analysis view (`await mapEl.whenAnalysisView(profileEl.analysis)`). Medido: `line.statistics`, la forma de 4.x, es `undefined`. En TypeScript strict hay que acotar la unión por `type` (`"elevation-profile-view-2d"`), o falla con TS2339; lo encontró el verificador.
+3. **Las rutas de import en `api-detail.md` eran `dist/components/...`**, y el import por CDN apuntaba al widget deprecado.
+4. **Las versiones de deprecación estaban mal.** Decía que todos los widgets estaban deprecados «en 5.0». Según los tipos: Compass desde 4.32, Print 4.33, Bookmarks y Daylight 4.34, y solo ElevationProfile desde 5.0.
+
+**Pitfalls falsos o de relleno que se quitaron:**
+
+- **«Print sin servicio falla».** Medido: sin `printServiceUrl` y sin API key, el componente llegó a `state: "ready"` en ~5 s. Usa el servicio de ArcGIS Online y no abrió diálogo de sesión. La exportación no se probó.
+- **«La brújula en 2D es inerte».** Medido: siguió una rotación de 45° (`orientation.z = 45`).
+- **«Daylight en 2D no tiene efecto» se mantiene, ahora medido.** Se enlaza a la vista 2D, pinta un panel de 127 px y no registra nada.
+- **«Cargar todos los componentes en todas partes»** era un consejo genérico, y además estaba mal: el anti-patrón importaba dos componentes y la corrección uno.
+
+**Lo que se midió y entró:**
+
+- **Sin `ground`, el perfil de elevación se queda quieto.** Sobre una línea que cruza la Cordillera Oriental junto a Bogotá, `progress` quedó en 0 con `available: false`, sin error. Con `ground="world-elevation"` terminó con un máximo de 3565 m.
+- **En un mapa sin web map, `arcgis-bookmarks` no tiene nada:** cero marcadores y el botón de agregar apagado por defecto. Hace falta `show-add-bookmark-button`.
+
+**Por qué aporta:** el `position` lo escribiría cualquier agente que haya visto componentes de 4.x, y deja la UI rota sin un solo error. El `line.statistics` es el otro error típico de 4.x. Los dos quedaron medidos y arreglados, y además se encontró el mismo `position` en otra skill.

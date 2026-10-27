@@ -51,7 +51,7 @@ r.updateFeatureResults.forEach((res) => { if (res.error) console.error(res.error
 
 ```html
 <arcgis-map item-id="<webmap-id>">
-  <arcgis-editor reference-element="arcgis-map" position="top-right"></arcgis-editor>
+  <arcgis-editor slot="top-right"></arcgis-editor>
 </arcgis-map>
 ```
 
@@ -59,3 +59,4 @@ r.updateFeatureResults.forEach((res) => { if (res.error) console.error(res.error
 
 - `arcgis-editor` replaces the deprecated `Editor` widget.
 - It reads editable layers from the bound map.
+- Nested in the map, place it with `slot`; a `position` attribute is ignored (measured in `arcgis-widgets-advanced`).
