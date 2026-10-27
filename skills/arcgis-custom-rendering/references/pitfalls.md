@@ -2,120 +2,135 @@
 
 > Extends the Top 3 in SKILL.md. Format: Anti-pattern / Correct / Impact / Diagnosis.
 
-## Pitfall 1: Leaving WebGL state dirty
+## Pitfall 1: Allocating GL resources every frame
 
 ### Anti-pattern
 
 ```typescript
-// Changing blend/depth state without restoring it
+const Node = RenderNode.createSubclass({
+  consumes: { required: ["composite-color"] }, produces: "composite-color",
+  render() { const buf = this.gl.createBuffer(); /* ... */ return this.bindRenderTarget(); },
+});
 ```
 
 ### Correct
 
 ```typescript
-// Save and restore GL state around your draw calls.
+let buf: WebGLBuffer | null = null;
+const Node = RenderNode.createSubclass({
+  consumes: { required: ["composite-color"] }, produces: "composite-color",
+  render() { buf ??= this.gl.createBuffer(); /* ... */ return this.bindRenderTarget(); },
+  destroy() { if (buf) this.gl.deleteBuffer(buf); },
+});
 ```
 
 ### Impact
 
-The SDK's own rendering breaks after your pass.
+GPU memory grows on every redraw.
 
 ### Diagnosis
 
-Scene renders wrong after the custom pass; restore state.
+Memory in the browser's task manager grows while the camera moves.
 
 ---
 
-## Pitfall 2: Ignoring devicePixelRatio
+## Pitfall 2: Leaving WebGL state changed
 
 ### Anti-pattern
 
 ```typescript
-gl.viewport(0, 0, cssWidth, cssHeight);
+gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE); // and never restored
 ```
 
 ### Correct
 
 ```typescript
-// Account for devicePixelRatio when sizing buffers/viewport.
+// Restore what you changed, or call this.resetWebGLState() at the end of render().
 ```
 
 ### Impact
 
-Blurry or mis-sized output on HiDPI.
+The SDK documentation warns that improper GL use can break the SceneView's own rendering.
+Measured with 5.1.27: leaving `SCISSOR_TEST` enabled with a 1×1 box did **not** break it (the
+scene kept rendering normally while the camera turned), so the engine restores at least some
+state. Do not rely on it for blend, depth, or bound programs.
 
 ### Diagnosis
 
-Fuzzy custom visuals; scale by DPR.
+The scene renders wrong only while your node exists.
 
 ---
 
-## Pitfall 3: Heavy work on the render thread
+## Pitfall 3: Raw float32 coordinates in a global scene
 
 ### Anti-pattern
 
 ```typescript
-render() { doExpensiveCPUWork(); }
+const verts = new Float32Array(ecef); // ECEF values are ~6.4 million
 ```
 
 ### Correct
 
 ```typescript
-// Precompute off the render path; keep render() tight.
+// Subtract a local origin in Float64 first, then convert the small offsets to Float32,
+// and apply the origin with renderCoordinateTransformAt(view, origin).
 ```
 
 ### Impact
 
-Frame drops.
+Float32 has ~7 significant digits: at 6.4 × 10⁶ m that is a step of about 0.5 m, and the
+geometry jitters when you zoom in.
 
 ### Diagnosis
 
-Low FPS during custom rendering; move work out of `render`.
+Geometry is right from far away and wobbles up close.
 
 ---
 
-## Pitfall 4: Not handling context loss
+## Pitfall 4: Expecting continuous frames
 
 ### Anti-pattern
 
 ```typescript
-// Assuming GL resources survive a context loss
+// Animation driven by time inside render(), with no requestRender()
 ```
 
 ### Correct
 
 ```typescript
-// Recreate resources on context restore.
+// Call this.requestRender() from render() while the animation runs.
 ```
 
 ### Impact
 
-Blank/broken visuals after context loss.
+Measured: `render` runs while the scene settles and when something changes, then stops while the
+camera is still. The animation freezes.
 
 ### Diagnosis
 
-Custom visuals vanish after GPU hiccup; handle restore.
+The effect moves only while you pan or zoom.
 
 ---
 
-## Pitfall 5: Mismatched coordinate transforms
+## Pitfall 5: Requiring an input that is not always there
 
 ### Anti-pattern
 
 ```typescript
-// Using a stale camera/transform from a previous frame
+const consumes = { required: ["composite-color", "highlights"] };
 ```
 
 ### Correct
 
 ```typescript
-// Read the current camera/transform each render.
+const consumes = { required: ["composite-color"], optional: ["highlights"] };
 ```
 
 ### Impact
 
-Geometry lags or drifts during navigation.
+With nothing highlighted, `highlights` is missing and the node is skipped for the frame (per the
+5.1 typings): the effect disappears.
 
 ### Diagnosis
 
-Custom geometry swims while panning; use current transforms.
+The effect shows only when something is selected.

@@ -37,7 +37,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 8 | `arcgis-coordinates-projection` | aporta con arreglos | datum medido (492 m reetiquetando Bogotá 1975, 27 transformaciones a 22 m), mezcla de SR da `false` en silencio, 9377 en vez de 3116 |
 | 9 | `arcgis-core-maps` | aporta con arreglos | el Inicio Rápido lanzaba error (`detail` es `null` en `arcgisViewReadyChange`); sin key o sin alto la vista nunca queda lista |
 | 10 | `arcgis-core-utilities` | aporta con arreglos | `when` no es de una vez, `watch` agrupa asíncrono (3 cambios → 1 llamada), un getter que lanza hace lanzar a `watch()`, `debounce` corre 2 de 3 |
-| 11 | `arcgis-custom-rendering` | pendiente | |
+| 11 | `arcgis-custom-rendering` | aporta con arreglos | el ejemplo dejaba la escena en negro; externalRenderers no existe; sí hay WebGL 2D |
 | 12 | `arcgis-editing` | pendiente | |
 | 13 | `arcgis-embeddable-maps` | pendiente | |
 | 14 | `arcgis-feature-effects` | pendiente | |
@@ -394,3 +394,41 @@ Una de ellas falla a propósito: reproduce el getter que lanza error.
 **¿Aporta?** Sí, con matices. La parte básica (`watch` + `remove`) la sabe cualquier modelo. Lo que
 aporta es lo que no da error: el agrupado asíncrono, `when` sin `once`, el debounce que deja correr
 dos llamadas y la Collection sin índice. Antes enseñaba tres de esas cuatro de forma equivocada.
+
+### 11. `arcgis-custom-rendering` — aporta con arreglos
+
+**¿Corre en 5.1?** Antes no. El único ejemplo con código real (`examples.md`, ejemplo 2) pasaba
+`consumes: [{ name: "composite-color" }]`. Medido en Chromium con 5.1.27: el constructor lo acepta,
+pero después **cada cuadro** lanza "Cannot read properties of undefined (reading 'includes')",
+`render` nunca se llama y **toda la escena sale negra** (`rgb(0,0,0)`), no solo el paso custom.
+El ejemplo 1 (`class TintNode extends RenderNode`) lanza en el constructor ("reading 'stage'").
+Ocho comprobaciones en `tests/runtime/casos/arcgis-custom-rendering.ts`.
+
+**Lo que estaba mal (y ya se arregló):**
+
+- **Forma de `consumes` y de la subclase.** Ahora es `RenderNode.createSubclass({ consumes:
+  { required: [...] }, produces: "composite-color", render })`. Medido: el cuadrado rojo de prueba
+  aparece en `takeScreenshot()`; `render` corre al redibujar y más con `requestRender()`; después
+  de `destroy()` ya no corre.
+- **`externalRenderers` ya no existe en 5.x.** La skill decía que estaba "superada", como si todavía
+  sirviera. El módulo no está en el paquete 5.1.27, así que el import falla. Es justo el error 4.x
+  que un agente cometería.
+- **"En 2D usa un GraphicsLayer o un canvas" era falso.** `BaseLayerViewGL2D` existe en 5.1 y no está
+  deprecado. Medido: 91 llamadas a `render` en 1,5 s, con `WebGL2RenderingContext`. Se agregó como
+  rama del árbol y como ejemplo.
+- **Era casi todo relleno.** Los tres pitfalls tenían el bloque "correcto" vacío ("Convert to the
+  view's render coordinate system"). Ahora llevan código y valores medidos:
+  - `toRenderCoordinates`: Bogotá → ECEF, a 6.380.737 m del centro de la Tierra. Pasado crudo queda
+    a 2,6 km del centro.
+  - El precio en precisión de float32: un paso de ~0,5 m.
+  - La vista no redibuja sola cuando está quieta.
+  - Una entrada requerida que falta (`highlights`) hace que se salte el nodo.
+- **Lo que no se reprodujo:** "dejar el estado GL sucio rompe el render del SDK". Con `SCISSOR_TEST`
+  encendido y una caja de 1×1, la escena siguió pintándose normal. Queda como precaución
+  (`resetWebGLState()`), no como hecho medido.
+- **Sin probar:** el decorador `@subclass`.
+
+**¿Aporta?** Ahora sí, para quien ya sabe WebGL. Sin la skill, un agente escribe `externalRenderers`
+(4.x). Con la versión anterior, copiaba un `consumes` que deja la escena en negro. El valor real son
+la forma exacta de `consumes`/`produces`, `createSubclass` y la rama 2D. No enseña a escribir
+shaders, y no lo pretende.
