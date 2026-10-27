@@ -25,7 +25,7 @@ for (const caso of casos) {
   page.on("console", (m) => { if (["error", "warning"].includes(m.type())) consola.push(`${m.type()}: ${m.text()}`); });
   page.on("pageerror", (e) => consola.push(`pageerror: ${e.message}`));
   await page.goto(`http://localhost:5199/?caso=${caso}`);
-  const res = await page.waitForFunction(() => window.__result, null, { timeout: 120000 }).then((h) => h.jsonValue()).catch((e) => ({ ok: false, error: String(e) }));
+  const res = await page.waitForFunction(() => window.__result, null, { timeout: 400000 }).then((h) => h.jsonValue()).catch((e) => ({ ok: false, error: String(e) }));
   console.log(`\n== ${caso}`);
   if (!res.ok) { fallos++; console.log(`✗ ${res.error}`); }
   for (const c of res.checks ?? []) { if (!c.ok) fallos++; console.log(`${c.ok ? "✓" : "✗"} ${c.check}${c.detail ? ` — ${c.detail}` : ""}`); }

@@ -44,6 +44,8 @@ export {};
 
 // Skills whose `view` is a SceneView unless a block says otherwise.
 const SCENE_SKILLS = new Set(["arcgis-3d-layers", "arcgis-scene-environment"]);
+// Skills whose free `layer` is not a FeatureLayer.
+const LAYER_TYPE = { "arcgis-advanced-layers": "@arcgis/core/layers/MapImageLayer.js" };
 const LANGS = new Set(["ts", "typescript", "js", "javascript", "tsx", "jsx"]);
 // Error codes that only mean "this is a fragment".
 const FRAGMENT_CODES = new Set([2304, 2552, 2582, 1375, 1378, 2451, 2300, 2393, 7006, 7005, 7034, 7031, 18004]);
@@ -61,12 +63,16 @@ function extractBlocks(file) {
   const lines = fs.readFileSync(file, "utf8").split(/\r?\n/);
   const blocks = [];
   let cur = null;
+  let heading = "";
   lines.forEach((line, i) => {
     const m = line.match(/^\s*```(\w*)/);
+    if (!cur && /^#{1,6}\s/.test(line)) heading = line;
     if (m && !cur) {
       cur = { lang: m[1].toLowerCase(), start: i + 2, code: [] };
     } else if (m && cur) {
-      if (LANGS.has(cur.lang)) blocks.push({ ...cur, code: cur.code.join("\n") });
+      const code = cur.code.join("\n");
+      const antipattern = /anti-?patr[oó]n|anti-pattern/i.test(heading) || /❌|Anti-?patr[oó]n|Anti-pattern/i.test(code.split("\n")[0] ?? "");
+      if (LANGS.has(cur.lang)) blocks.push({ ...cur, code, antipattern });
       cur = null;
     } else if (cur) cur.code.push(line);
   });
@@ -90,6 +96,9 @@ function check(blocks) {
     const scene = SCENE_SKILLS.has(b.skill) || /SceneView|arcgis-scene/.test(b.code);
     if (scene && !/\b(const|let|var)\s+view\b/.test(b.code)) {
       ctx.push('import type __SV from "@arcgis/core/views/SceneView.js"; declare const view: __SV;');
+    }
+    if (LAYER_TYPE[b.skill] && !/\b(const|let|var)\s+layer\b/.test(b.code)) {
+      ctx.push(`import type __L from "${LAYER_TYPE[b.skill]}"; declare const layer: __L;`);
     }
     fs.writeFileSync(f, ctx.join(" ") + " " + b.code + "\nexport {};\n");
     fileFor.set(path.normalize(f), b);
@@ -159,17 +168,20 @@ function main() {
     }
   }
   check(all);
+  // Anti-pattern blocks are meant to be wrong: report them apart and do not fail on them.
+  const real = all.filter((b) => !b.antipattern);
   const bad = all.filter((b) => b.errors.length || b.deprecated.length);
   if (args.flags.json) {
     console.log(JSON.stringify(all.map(({ code, ...b }) => ({ ...b, free: [...b.free] })), null, 2));
   } else {
     for (const b of bad) {
-      for (const e of b.errors) console.log(`✗ ${b.file}:${e.line} TS${e.code} ${e.msg}`);
-      for (const d of b.deprecated) console.log(`⚠ ${b.file}:${d.line} deprecated: ${d.msg}`);
+      const mark = b.antipattern ? "⊘" : "✗";
+      for (const e of b.errors) console.log(`${mark} ${b.file}:${e.line} TS${e.code} ${e.msg}${b.antipattern ? " (anti-pattern block)" : ""}`);
+      for (const d of b.deprecated) console.log(`⚠ ${b.file}:${d.line} deprecated: ${d.msg}${b.antipattern ? " (anti-pattern block)" : ""}`);
     }
-    console.log(`\n${all.length} block(s) · ${all.filter((b) => b.errors.length).length} with errors · ${all.filter((b) => b.deprecated.length).length} with deprecated APIs`);
+    console.log(`\n${all.length} block(s) · ${real.filter((b) => b.errors.length).length} with errors · ${real.filter((b) => b.deprecated.length).length} with deprecated APIs · ${all.length - real.length} anti-pattern block(s)`);
   }
-  process.exit(all.some((b) => b.errors.length) ? 1 : 0);
+  process.exit(real.some((b) => b.errors.length) ? 1 : 0);
 }
 
 main();

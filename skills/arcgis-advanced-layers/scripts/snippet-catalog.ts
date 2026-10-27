@@ -1,9 +1,9 @@
-// snippet-catalog.ts — CatalogLayer (new in 5.0): browse many datasets from one service.
+// snippet-catalog.ts — CatalogLayer (since 4.30): browse many datasets from one service.
 // Smoke-tested.
 import CatalogLayer from "@arcgis/core/layers/CatalogLayer.js";
 
 const layer = new CatalogLayer({
-  url: "https://example.com/arcgis/rest/services/MyCatalog/MapServer",
+  url: "https://services3.arcgis.com/TVDq0jswpjtt1Xia/arcgis/rest/services/PNW_Forest_Fuels_Inventory_Status/FeatureServer",
 });
 
 export async function loadCatalog() {

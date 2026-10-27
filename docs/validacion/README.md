@@ -28,7 +28,7 @@ Tres preguntas, con evidencia, no con impresión:
 | # | Skill | Veredicto | Evidencia corta |
 |---|---|---|---|
 | 1 | `arcgis-3d-layers` | aporta con arreglos | Enseñaba el splat con .ply (falla en silencio, ejecutado); qualityProfile contra la guía del SDK; faltaba 3D Tiles |
-| 2 | `arcgis-advanced-layers` | pendiente | |
+| 2 | `arcgis-advanced-layers` | aporta con arreglos | CatalogLayer sobre MapServer (rechazado, ejecutado) y no es de 5.0; pitfall WFS equivocado; WMS mal nombrado falla en silencio |
 | 3 | `arcgis-arcade` | pendiente | |
 | 4 | `arcgis-authentication` | pendiente | |
 | 5 | `arcgis-charts` | pendiente | |
@@ -98,3 +98,32 @@ lo que 5.1 trajo a los splats (recorte, slice, línea de visión, perfiles, somb
 modelo; el valor está en lo que no sabe porque es de 5.0/5.1: de dónde sale un splat, qué clase lee
 3D Tiles, cómo detectar que la capa cargó vacía y que `opacity` no hace nada ahí. Antes del
 arreglo, la skill restaba: inducía el error.
+
+### 2. `arcgis-advanced-layers` — aporta con arreglos
+
+**¿Corre en 5.1?** Los 3 snippets y los 38 bloques compilan contra 5.1.27. Se ejecutaron 11
+comprobaciones en Chromium contra servicios públicos (`tests/runtime/casos/arcgis-advanced-layers.ts`):
+catálogo de Esri, `MapImageLayer` USA, WMS y WFS del demo de MapServer y OGC API de pygeoapi. Todas
+en verde.
+
+**Lo que estaba mal (y ya se arregló):**
+
+- **`CatalogLayer` apuntaba a un MapServer.** Ejecutado: se rechaza con "There is no Catalog Layer in
+  the service"; la capa vive en un FeatureServer. Además decía "nueva en 5.0" y es de 4.30, y no
+  enseñaba nada de su uso real (`footprintLayer`, `dynamicGroupLayer`, `createLayerFromFootprint`):
+  el ejemplo solo imprimía el título.
+- **El pitfall de WFS era el equivocado.** Hablaba de CRS; el requisito duro que documenta el SDK es
+  WFS 2.0.0 con salida GeoJSON, y muchos geoportales nacionales siguen en WFS 1.1. Faltaba `name`.
+- **El pitfall del nombre WMS describía mal el síntoma.** Decía que el servidor devuelve un error;
+  ejecutado: `load()` resuelve, `loadError` queda en `null` y no se dibuja nada. Se añadió cómo sacar
+  los nombres reales (`allSublayers` sin declarar `sublayers`).
+- **Faltaba que declarar `sublayers` reemplaza la lista del servicio** (medido: 2 de 4).
+- **Faltaban `WMTSLayer` y `OGCFeatureLayer`**, los dos protocolos que más sirven hoy las IDE de
+  la región, y que `OGCFeatureLayer` no tiene `queryFeatures` en la capa (se consulta por el layer
+  view; ejecutado: 20 lagos).
+- Los ejemplos usaban `https://example/geoserver/wms`: se cambiaron por servicios que responden.
+
+**¿Aporta?** Sí, después del arreglo. "WMS no se consulta, WFS sí" lo sabe cualquier modelo. Lo que
+un agente no sabe y le cuesta horas: el requisito de WFS 2.0 + GeoJSON, los dos fallos silenciosos
+(nombre WMS, `sublayers` que esconden capas), dónde vive un catálogo y cómo se usa, y por dónde se
+consulta una capa OGC API.

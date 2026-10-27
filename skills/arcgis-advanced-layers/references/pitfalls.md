@@ -18,35 +18,40 @@ new WMSLayer({ url, sublayers: [{ name: "topp:states" }] });
 
 ### Impact
 
-The WMS returns an empty/missing-layer error.
+Nothing errors: `load()` resolves, `loadError` is `null`, and the map draws nothing for that
+sublayer (measured with SDK 5.1.27).
 
 ### Diagnosis
 
-Check GetCapabilities for the exact layer name (often `workspace:layer`).
+Load once without `sublayers` and log `layer.allSublayers.map((s) => s.name)`; GeoServer names
+usually carry the workspace (`workspace:layer`), MapServer names do not.
 
 ---
 
-## Pitfall 2: Assuming WFS supports every CRS
+## Pitfall 2: Pointing WFSLayer at a WFS the SDK cannot read
 
 ### Anti-pattern
 
 ```typescript
-new WFSLayer({ url }); // server may not offer the view's spatial reference
+new WFSLayer({ url: "https://host/geoserver/wfs" }); // WFS 1.1 only, or no GeoJSON output; no `name`
 ```
 
 ### Correct
 
 ```typescript
-// Match the view spatialReference to one the WFS advertises, or reproject.
+// The server must support WFS 2.0.0 and offer a GeoJSON outputFormat.
+new WFSLayer({ url: "https://host/geoserver/wfs", name: "workspace:typename" });
 ```
 
 ### Impact
 
-Features misalign or the layer fails when the CRS is unsupported.
+`load()` rejects ("An error occurred while getting info about the feature type …"). The SDK
+documents WFS 2.0.0 + GeoJSON as a hard requirement; many national portals still serve WFS 1.1.
 
 ### Diagnosis
 
-Compare the WFS capabilities CRS list with the view's `spatialReference`.
+Open `?SERVICE=WFS&REQUEST=GetCapabilities&VERSION=2.0.0` and look for an `outputFormat` with
+`json`. If there is none, use the portal's OGC API, its WMS, or a proxy that converts.
 
 ---
 
@@ -99,7 +104,27 @@ No visual change after assigning `layer.renderer`; move it to the sublayer.
 
 ---
 
-## Pitfall 5: Not awaiting CatalogLayer load before reading
+## Pitfall 5: A CatalogLayer on a MapServer, or read before load
+
+### Anti-pattern
+
+```typescript
+new CatalogLayer({ url: "https://host/arcgis/rest/services/MyCatalog/MapServer" });
+```
+
+### Correct
+
+```typescript
+new CatalogLayer({ url: "https://host/arcgis/rest/services/MyCatalog/FeatureServer" });
+```
+
+### Impact
+
+Rejected with "There is no Catalog Layer in the service" (measured with SDK 5.1.27).
+
+---
+
+## Pitfall 6: Not awaiting CatalogLayer load before reading
 
 ### Anti-pattern
 

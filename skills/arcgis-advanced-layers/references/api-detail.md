@@ -12,8 +12,10 @@
 
 | Class | Module | Notes |
 |---|---|---|
-| `WMSLayer` | `layers/WMSLayer.js` | `sublayers: [{ name }]`; rendered images |
-| `WFSLayer` | `layers/WFSLayer.js` | Vector features; queryable client-side |
+| `WMSLayer` | `layers/WMSLayer.js` | `sublayers: [{ name }]`; rendered images; `allSublayers` after load lists real names |
+| `WMTSLayer` | `layers/WMTSLayer.js` | OGC tile matrix sets; `activeLayer` |
+| `WFSLayer` | `layers/WFSLayer.js` | `url` + `name` (typename); WFS 2.0.0 + GeoJSON output required; `queryFeatures`/`queryFeatureCount` |
+| `OGCFeatureLayer` | `layers/OGCFeatureLayer.js` | `url` (landing page) + `collectionId`; no `queryFeatures` on the layer |
 | `KMLLayer` | `layers/KMLLayer.js` | KML/KMZ document URL |
 
 ---
@@ -32,13 +34,12 @@
 
 ## CatalogLayer
 
-`@arcgis/core/layers/CatalogLayer.js` (new in 5.0)
+`@arcgis/core/layers/CatalogLayer.js` (since 4.30)
 
 | Member | Description |
 |---|---|
-| `url` | Catalog service URL |
+| `url` | FeatureServer (or its catalog sublayer) URL — not a MapServer |
 | `load()` | Loads catalog metadata; required before browsing |
-| `title` | Display title once loaded |
-
-A catalog service exposes many datasets; `CatalogLayer` lets users browse footprints and add the
-underlying layers on demand.
+| `footprintLayer` | `CatalogFootprintLayer`: one polygon per dataset |
+| `dynamicGroupLayer` | `CatalogDynamicGroupLayer`: datasets in view, read-only; `maximumVisibleSublayers` (default 10) |
+| `createLayerFromFootprint(graphic)` | Promise of an editable layer for one dataset |
