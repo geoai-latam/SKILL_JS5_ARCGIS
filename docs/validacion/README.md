@@ -205,7 +205,7 @@ enseñaba algo engañoso.
 - **Calcite 5.2 rompe charts 5.1.27** (hallazgo de esta validación, no está documentado). Con
   `^5.1.1` se instala Calcite 5.2.0, amCharts lanza "Unknown color syntax: light-dark(...)" y el
   chart nunca dibuja. Con 5.1.2 dibuja. Va como Concepto 4 y Pitfall 3, y el repo fija `~5.1.2`.
-- Bloque de CDN sin URL real → los dos `<script>` de `js.arcgis.com/5.1/`. Ahora también enseña
+- Bloque de CDN sin URL real → un solo `<script type="module" src="https://js.arcgis.com/5.1/">`, que ya trae charts (corregido en la validación 7: la primera versión de este arreglo usaba una etiqueta clásica, que no registra nada). Ahora también enseña
   `syncViewSelection` + `chart.view` (5.1), el detalle real de `arcgisSelectionComplete`
   (`{ selectionData, model }`), `chartIndex` para charts guardados, los renombres de 5.1 y que desde
   5.1 se aceptan capas de imágenes.
