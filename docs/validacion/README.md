@@ -31,7 +31,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 2 | `arcgis-advanced-layers` | aporta con arreglos | CatalogLayer sobre MapServer (rechazado, ejecutado) y no es de 5.0; pitfall WFS equivocado; WMS mal nombrado falla en silencio |
 | 3 | `arcgis-arcade` | aporta con arreglos | Pitfall falso (mayúsculas: Arcade no las distingue, ejecutado); campos/geometría no pedidos dan 0 en silencio; faltaba isAsync y createArcadeProfile |
 | 4 | `arcgis-authentication` | aporta con arreglos | La key en VITE_ igual viaja en el bundle; keys AAPK retiradas el 27-jun-2026 (Invalid Token, ejecutado); OAuth tarde abre el diálogo del SDK, no falla |
-| 5 | `arcgis-charts` | pendiente | |
+| 5 | `arcgis-charts` | aporta con arreglos | antes no corría: `config` inventado; ahora `createModel` + `model`, ruta sin `.js`, Calcite fijado en ~5.1.2 |
 | 6 | `arcgis-cim-symbols` | pendiente | |
 | 7 | `arcgis-coding-components` | pendiente | |
 | 8 | `arcgis-coordinates-projection` | pendiente | |
@@ -183,3 +183,36 @@ Chromium (`tests/runtime/casos/arcgis-authentication.ts`) contra ArcGIS Online, 
 modelo. Lo que no sabe porque cambió en 2024–2026: el retiro de las keys legacy, la expiración y
 rotación, y qué hace el SDK cuando falta el sign-in. Antes del arreglo, en lo central (la key)
 enseñaba algo engañoso.
+
+### 5. `arcgis-charts` — aporta con arreglos
+
+**¿Corre en 5.1?** Ahora sí: el snippet y los 28 bloques compilan contra 5.1.27, y en Chromium
+(`tests/runtime/casos/arcgis-charts.ts`) el bar chart de `createModel` dispara
+`arcgisDataProcessComplete` con una `barSeries`. **Antes de este arreglo no corría nada.**
+
+**Lo que estaba mal (y ya se arregló):**
+
+- **Enseñaba una API que no existe.** Todo el código de la skill (Quick Start, ejemplos, pitfalls,
+  AGENTS.md) armaba el chart con `chartEl.config = { type: "bar", category: { field }, aggregation }`.
+  `arcgis-chart` no tiene `config` público. En ejecución hay una propiedad interna con ese nombre:
+  asignarla no da error, no crea modelo y el chart queda vacío. Los ejemplos solo compilaban porque
+  hacían cast del elemento a `{ config?: unknown }`. La API real es
+  `createModel({ layer, chartType: "barChart" })`, luego `model.xAxisField`/`aggregationType`, y
+  `chart.layer` + `chart.model`.
+- **La ruta de `createModel` que publica Esri falla.** Las notas de 5.1 la imprimen con `.js`; el
+  mapa de exports del paquete no la trae y Vite para con "Missing specifier". Sin `.js` funciona.
+  Hoy el índice del paquete también funciona, pero está deprecado y sale en 6.0.
+- **Calcite 5.2 rompe charts 5.1.27** (hallazgo de esta validación, no está documentado). Con
+  `^5.1.1` se instala Calcite 5.2.0, amCharts lanza "Unknown color syntax: light-dark(...)" y el
+  chart nunca dibuja. Con 5.1.2 dibuja. Va como Concepto 4 y Pitfall 3, y el repo fija `~5.1.2`.
+- Bloque de CDN sin URL real → los dos `<script>` de `js.arcgis.com/5.1/`. Ahora también enseña
+  `syncViewSelection` + `chart.view` (5.1), el detalle real de `arcgisSelectionComplete`
+  (`{ selectionData, model }`), `chartIndex` para charts guardados, los renombres de 5.1 y que desde
+  5.1 se aceptan capas de imágenes.
+- El pitfall "serie de tiempo sobre campo string" no tenía síntoma comprobado. Ejecutado: el modelo
+  acepta un string como `xAxisField` sin quejarse, así que la comprobación quedó en el ejemplo
+  (`layer.getField(...).type === "date"`) y el Top-3 lo ocupa lo de Calcite, que sí rompe en silencio.
+
+**¿Aporta?** Ahora sí y mucho: un agente sin la skill tiende a inventar un objeto de configuración
+(es lo que hizo la propia skill), y no puede adivinar ni la ruta sin `.js` ni el choque con Calcite
+5.2. Antes del arreglo la skill era peor que nada: enseñaba con seguridad un código que nunca dibuja.

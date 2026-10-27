@@ -2,52 +2,57 @@
 
 > Extends the Top 3 in SKILL.md. Format: Anti-pattern / Correct / Impact / Diagnosis.
 
-## Pitfall 1: Setting config before the element is defined
+## Pitfall 1: Reaching for the package index or the `.js` path for `createModel`
 
 ### Anti-pattern
 
 ```typescript
-chartEl.config = cfg; // element not yet upgraded
+// ❌ Anti-pattern: both fail in 5.1 (index deprecated, ".js" not in the export map)
+import { createModel } from "@arcgis/charts-components/model/shared/setup-utils.js";
 ```
 
 ### Correct
 
 ```typescript
-import "@arcgis/charts-components/components/arcgis-chart";
-customElements.whenDefined("arcgis-chart").then(() => { chartEl.config = cfg; });
+import { createModel } from "@arcgis/charts-components/model/shared/setup-utils";
 ```
 
 ### Impact
 
-The property is set before the component is ready.
+Vite stops with "Missing specifier" for the `.js` path (measured with 5.1.27); the package-index
+import works today and disappears in 6.0.
 
 ### Diagnosis
 
-Config ignored; wait for the element to be defined.
+Build error naming `setup-utils.js`: drop the extension.
 
 ---
 
-## Pitfall 2: Mismatched fields between config and layer
+## Pitfall 2: A model field that the layer does not have
 
 ### Anti-pattern
 
 ```typescript
-config = { category: { field: "Type" } }; // field is TYPE
+// ❌ Anti-pattern
+model.xAxisField = "Type"; // the layer field is "TYPE_CODE"
 ```
 
 ### Correct
 
 ```typescript
-config = { category: { field: "TYPE" } };
+await layer.load();
+const field = layer.getField("TYPE_CODE");
+if (!field) throw new Error("the chart field is not on the layer");
+model.xAxisField = field.name;
 ```
 
 ### Impact
 
-Empty chart.
+The chart queries a field that does not exist and draws nothing; nothing tells the user why.
 
 ### Diagnosis
 
-No bars/points; match field names exactly.
+Listen to `arcgisRuntimeError`, and check the name with `layer.getField()` before setting it.
 
 ---
 

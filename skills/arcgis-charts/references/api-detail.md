@@ -3,44 +3,69 @@
 ## Table of Contents
 
 - [arcgis-chart](#arcgis-chart)
-- [Chart config](#chart-config)
-- [Interactivity](#interactivity)
+- [createModel](#createmodel)
+- [Chart models](#chart-models)
+- [Renamed in 5.1](#renamed-in-51)
 
 ---
 
 ## arcgis-chart
 
-`@arcgis/charts-components/components/arcgis-chart`
+`@arcgis/charts-components/components/arcgis-chart` (CDN: `https://js.arcgis.com/5.1/charts-components/`)
 
 | Property | Type | Description |
 |---|---|---|
-| `layer` | `FeatureLayer` | Data source |
-| `config` | chart config | Type, fields, aggregation |
+| `layer` | `FeatureLayer` \| `FeatureLayerView` \| imagery layer | Data source. Imagery (`ImageryLayer`, `ImageryTileLayer`, `WCSLayer`) since 5.1, for histograms and scatterplots |
+| `model` | chart model \| `WebChart` | What to draw. There is **no public `config` property** (only an internal one; setting it draws nothing) |
+| `chartIndex` | `number` | Show the n-th chart saved on the layer |
+| `view` | `MapView` \| `SceneView` | Needed to sync selection, extent or time with the map |
+| `syncViewSelection` | `boolean` | Chart and map selection in step (5.1) |
+| `filterByViewExtent` | `boolean` | Only features in the view extent (5.1; was `filterByExtent`) |
 | `selectionData` | object | Current chart selection |
 
-| Event | Description |
+| Event | Detail |
 |---|---|
-| `arcgisSelectionComplete` | Fires when the user selects chart elements |
+| `arcgisDataProcessComplete` | Data fetched and processed: the chart will draw |
+| `arcgisSelectionComplete` | `{ selectionData, model }` |
+| `arcgisRuntimeError` | Runtime error in the chart |
 
 ---
 
-## Chart config
+## createModel
 
-A chart config describes the chart:
+```typescript
+import { createModel } from "@arcgis/charts-components/model/shared/setup-utils"; // no ".js"
+const model = await createModel({ layer, chartType: "barChart" });
+```
 
-| Field | Description |
-|---|---|
-| chart type | `bar`, `line`, `scatter`, `histogram`, `pie` |
-| category/value fields | Fields to plot |
-| aggregation | sum/avg/count/bin for grouping |
+Accepted props: `{ layer, chartType }`, `{ layer, config }` (a `WebChart` spec without its source),
+or `{ config }` (a spec with its source). `chartType`: `"barChart"`, `"lineChart"`,
+`"comboBarLineChart"`, `"pieChart"`, `"scatterplot"`, `"histogram"`, `"boxPlot"`, `"gauge"`,
+`"radarChart"`, `"heatChart"`.
 
-Configs can be loaded from a saved layer chart or authored in code.
+The `.js` path printed in the 5.1 release notes is not in the package's export map and fails in
+Vite; importing from the package index is deprecated in 5.1 and removed in 6.0.
 
 ---
 
-## Interactivity
+## Chart models
 
-| Direction | Mechanism |
+| Member (bar/line/combo) | Description |
 |---|---|
-| Chart → map | Handle selection events; highlight features |
-| Map → chart | Apply a filter/selection to the chart's layer |
+| `xAxisField` | Category or date field |
+| `numericFields` | Value field(s) for `sum`/`avg`/… |
+| `aggregationType` | `"count"`, `"sum"`, `"avg"`, `"min"`, `"max"`, … |
+| `splitByField` | One series per value |
+| `binTemporalData` | Bin a date `xAxisField` into periods |
+| `config` | The resulting `WebChart` spec (read it to save or inspect) |
+
+Scatterplots use `xAxisField` + `yAxisField`; pie and box plot use `numericFields`.
+
+---
+
+## Renamed in 5.1
+
+The old names still exist but are deprecated: `filterByExtent` → `filterByViewExtent`,
+`syncSelectionsBetweenChartAndLayerViewPolicy` → `syncViewSelection`, plus the boolean renames in the
+5.1 release notes (`disableInteractions` → `interactionsDisabled`, `useAnimatedCharts` →
+`animationEnabled`…). The checker in `scripts/check-code-blocks.mjs` flags them from the `.d.ts`.

@@ -36,3 +36,11 @@ Paquetes instalados para validar: `@arcgis/core`, `@arcgis/map-components`,
 - Charts: imágenes (histograma y dispersión con `ImageryLayer`/`ImageryTileLayer`/`WCSLayer`), tema con `calciteThemingCSSVariables`.
 - Editor/sketch: `AttachmentElement`, `MultipleChoiceInput`, etiquetas de segmento, curva tangente.
 - `arcgis-feature-table`: `mapLayerId`, `filterByViewExtent`, `@arcgisCellDblClick`, etc.
+
+## Hallazgos de la validación que las notas no dicen
+
+- **Calcite 5.2.0 rompe `arcgis-chart` 5.1.27**: amCharts lanza "Unknown color syntax: light-dark(...)"
+  y el chart no dibuja. `^5.1.x` resuelve a 5.2.0; el repo fija `@esri/calcite-components` en `~5.1.2`
+  (medido el 2026-10-27).
+- **`createModel` se importa sin `.js`**: `@arcgis/charts-components/model/shared/setup-utils`. La
+  ruta con `.js` que imprimen las notas no está en el mapa de exports y Vite falla.

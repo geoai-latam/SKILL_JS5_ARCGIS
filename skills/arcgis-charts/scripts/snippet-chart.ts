@@ -1,6 +1,12 @@
-// snippet-chart.ts — register the chart component. Smoke-tested.
+// snippet-chart.ts — a bar chart from createModel(). Smoke-tested.
 import "@arcgis/charts-components/components/arcgis-chart";
+import { createModel } from "@arcgis/charts-components/model/shared/setup-utils";
+import type FeatureLayer from "@arcgis/core/layers/FeatureLayer.js";
 
-// <arcgis-chart></arcgis-chart> — bind it to a layer + chart config in your app.
-
-export {};
+export async function barChart(chart: HTMLArcgisChartElement, layer: FeatureLayer, field: string) {
+  const model = await createModel({ layer, chartType: "barChart" });
+  model.xAxisField = field;
+  model.aggregationType = "count";
+  chart.layer = layer;
+  chart.model = model;
+}

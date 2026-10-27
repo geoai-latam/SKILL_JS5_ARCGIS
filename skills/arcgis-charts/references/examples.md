@@ -6,18 +6,27 @@
 
 ```typescript
 import "@arcgis/charts-components/components/arcgis-chart";
+import { createModel } from "@arcgis/charts-components/model/shared/setup-utils";
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer.js";
 
-const layer = new FeatureLayer({ url: "https://.../FeatureServer/0" });
-const chartEl = document.querySelector("arcgis-chart") as { layer?: FeatureLayer; config?: unknown };
+const layer = new FeatureLayer({
+  url: "https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer/2",
+});
+const model = await createModel({ layer, chartType: "barChart" });
+model.xAxisField = "sub_region";
+model.aggregationType = "count";
+
+const chartEl = document.querySelector("arcgis-chart")!;
+chartEl.addEventListener("arcgisDataProcessComplete", () => console.log("chart data ready"));
 chartEl.layer = layer;
-chartEl.config = { type: "bar", category: { field: "TYPE" }, aggregation: "count" };
+chartEl.model = model;
 ```
 
 **Notes:**
 
-- Set both `layer` and `config`.
-- Aggregate to keep the chart readable.
+- Checked against SDK 5.1.27 with Calcite 5.1.2: `arcgisDataProcessComplete` fires
+  (`tests/runtime/casos/arcgis-charts.ts`).
+- Give the element a size in CSS; it does not size itself.
 
 ---
 
@@ -26,31 +35,40 @@ chartEl.config = { type: "bar", category: { field: "TYPE" }, aggregation: "count
 **Use case:** values over time.
 
 ```typescript
-const chartEl = document.querySelector("arcgis-chart") as { config?: unknown };
-chartEl.config = { type: "line", x: { field: "DATE" }, y: { field: "VALUE" } };
+import { createModel } from "@arcgis/charts-components/model/shared/setup-utils";
+
+const chartEl = document.querySelector("arcgis-chart")!;
+if (layer.getField("REPORT_DATE")?.type !== "date") throw new Error("not a date field");
+const model = await createModel({ layer, chartType: "lineChart" });
+model.xAxisField = "REPORT_DATE";
+model.binTemporalData = true; // group dates into periods
+model.numericFields = ["CASES"];
+model.aggregationType = "sum";
+chartEl.layer = layer;
+chartEl.model = model;
 ```
 
 **Notes:**
 
-- Use a date field on the x-axis.
-- Numeric field on the value axis.
+- The model accepts a string field as `xAxisField` without complaint (measured), so check the
+  field type yourself before building a time series.
 
 ---
 
 ## Example 3: Link selection to the map
 
-**Use case:** highlight features when a bar is selected.
+**Use case:** select bars and see those features selected on the map, and the other way around.
 
 ```typescript
-const chartEl = document.querySelector("arcgis-chart");
-chartEl?.addEventListener("arcgisSelectionComplete", (e) => {
-  const detail = (e as CustomEvent).detail;
-  console.log("selected objectIds:", detail);
-  // apply to layerView.highlight(...) on the map
+const chartEl = document.querySelector("arcgis-chart")!;
+chartEl.view = view;              // the view of <arcgis-map> (viewElement.view)
+chartEl.syncViewSelection = true; // 5.1
+chartEl.addEventListener("arcgisSelectionComplete", (e) => {
+  console.log("selected:", e.detail.selectionData);
 });
 ```
 
 **Notes:**
 
-- Use the selection event to drive map highlights.
-- Conversely, filter the chart's layer from map selection.
+- `syncViewSelection` replaces `syncSelectionsBetweenChartAndLayerViewPolicy` (deprecated in 5.1).
+- Without `view` the chart cannot reach the map's layer view.
