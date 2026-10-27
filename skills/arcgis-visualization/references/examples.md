@@ -39,13 +39,14 @@ layer.renderer = new ClassBreaksRenderer({
     { minValue: 0, maxValue: 1000, symbol: new SimpleMarkerSymbol({ color: "yellow", size: 6 }) },
     { minValue: 1000, maxValue: 1000000, symbol: new SimpleMarkerSymbol({ color: "red", size: 16 }) },
   ],
+  defaultSymbol: new SimpleMarkerSymbol({ color: "gray", size: 4 }),
 });
 ```
 
 **Notes:**
 
-- Keep `minValue`/`maxValue` contiguous to avoid gaps.
-- Add a `defaultSymbol` for out-of-range values.
+- Keep `minValue`/`maxValue` contiguous; a value equal to a shared boundary (1000) goes to the lower class.
+- Without `defaultSymbol`, values above 1,000,000 or null are not drawn at all.
 
 ---
 
@@ -71,5 +72,5 @@ layer.renderer = new SimpleRenderer({
 
 **Notes:**
 
-- Visual variables interpolate between stops.
+- Visual variables interpolate between stops; their order in the array does not matter.
 - Combine color + size for two-variable maps.

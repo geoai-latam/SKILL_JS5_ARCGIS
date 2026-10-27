@@ -58,7 +58,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 29 | `arcgis-tables-forms` | aporta con arreglos | pitfall 1 falso (la tabla carga la capa); los relacionados omiten padres sin filas; editingEnabled y submit() fallan en silencio |
 | 30 | `arcgis-time-animation` | aporta con arreglos | el slider no toma el rango solo; el anti-patrón de zona horaria era falso; un startField mal escrito no filtra en silencio |
 | 31 | `arcgis-utility-networks` | aporta con arreglos | parámetro con el nombre REST (se descarta), objeto plano que lanza, componente deprecado desde 5.0; sin trazado real (servicio con token) |
-| 32 | `arcgis-visualization` | pendiente | |
+| 32 | `arcgis-visualization` | aporta con arreglos | 2 pitfalls falsos (caja del campo, orden de stops); medido por píxel: sin defaultSymbol no se dibuja, valores únicos con caja, heatmap en polígonos |
 | 33 | `arcgis-widgets-advanced` | pendiente | |
 | 34 | `arcgis-widgets-ui` | pendiente | |
 | 35 | `arcgis-ai-components` | pendiente | |
@@ -998,3 +998,28 @@ El resto se contrastó con los tipos del SDK.
 - **`un.trace()` llena `gdbVersion` y `moment`**, según los tipos. `TraceResult` trae `startingPointsIgnored` y `warnings`, y en los tipos 5.1 `shortest-path` aparece como deprecado.
 
 **Veredicto: aporta con arreglos.** El nombre del parámetro, el objeto plano y el componente deprecado son tres errores concretos que un agente comete sin la skill, y los tres quedaron medidos o comprobados en los tipos. El límite: el comportamiento de un trazado real (terminales, `startingPointsIgnored`) no se pudo medir, y la skill lo declara en `pitfalls.md`.
+
+### 32. `arcgis-visualization` — aporta con arreglos
+
+**Evidencia.** El caso `tests/runtime/casos/arcgis-visualization.ts` mide lo que de verdad pinta la GPU. Un polígono de cliente opaco cubre toda la vista sobre el basemap OSM, y se lee el píxel del centro de `view.takeScreenshot()`: si se ve el agua del basemap (170,211,223), no se dibujó nada. Corrió contra el SDK 5.1.27 y dio 6/6 en verde.
+
+**Dos pitfalls de la skill vieja eran falsos:**
+
+1. **«El nombre del campo con otra caja hace caer todo al símbolo por defecto».** Medido: con `field: "type"` sobre un campo `TYPE`, el polígono se dibujó igual que con `"TYPE"` (rojo). El nombre del campo se compara sin importar mayúsculas.
+2. **«Stops en desorden invierten la interpolación».** Medido: con los stops al revés, el valor 0 salió azul y el 100 rojo, igual que ordenados. El SDK los ordena.
+
+**Otros problemas de la skill vieja:**
+
+- **El pitfall del web map era solo un comentario,** y su bloque fallaba con TS2339 en el verificador.
+- **El del `referenceScale` del heatmap no se midió:** se quitó.
+- **El snippet usaba una URL de relleno** (`https://.../FeatureServer/0`).
+
+**Lo que se midió y entró:**
+
+- **Los valores únicos sí distinguen mayúsculas.** Un `"Park"` con la info `"park"` cayó al gris por defecto. Es el pitfall real detrás del falso del nombre del campo.
+- **Sin `defaultSymbol`, lo que no tiene clase no se dibuja.** Un valor en el hueco entre cortes (150), fuera de rango (500) o nulo no pintó nada y no hubo aviso. Con `defaultSymbol` salió gris.
+- **En el borde compartido gana la clase de abajo.** El valor 100, con `[0,100]` y `[100,300]`, fue a la primera clase: `maxValue` es inclusivo.
+- **`graphic.symbol` se ignora en una FeatureLayer.** Un gráfico fuente con símbolo rojo se dibujó con el azul del renderer. Así quedó medido el pitfall 1, que antes era una afirmación.
+- **Un heatmap sobre polígonos falla en silencio.** No hay error y la vista de la capa se crea (servicio de estados de USA). Sobre un polígono de cliente no dibujó nada.
+
+**Por qué aporta:** los cuatro fallos que dejó la medición (valor con otra caja, falta de `defaultSymbol`, `graphic.symbol` en FeatureLayer y heatmap sobre polígonos) no dan error: el mapa solo sale incompleto o igual. La skill vieja mandaba a buscar dos causas que no existen y no nombraba la de las mayúsculas en el valor.

@@ -17,8 +17,9 @@
 | `HeatmapRenderer` | `renderers/HeatmapRenderer.js` | `field?`, `colorStops`, `radius`, `maxDensity` |
 | `DotDensityRenderer` | `renderers/DotDensityRenderer.js` | `dotValue`, `attributes` |
 
-`uniqueValueInfos`: `{ value: string | number, symbol }[]`.
-`classBreakInfos`: `{ minValue, maxValue, symbol }[]` (keep contiguous).
+`uniqueValueInfos`: `{ value: string | number, symbol }[]`; values are matched case-sensitively, the `field` name is not.
+`classBreakInfos`: `{ minValue, maxValue, symbol }[]` (keep contiguous; `maxValue` is inclusive).
+Without `defaultSymbol`, features with no matching class or a null value are not drawn.
 
 ---
 
