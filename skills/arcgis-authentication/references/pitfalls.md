@@ -50,27 +50,31 @@ Redirect mismatch error; fix the registered URIs.
 
 ---
 
-## Pitfall 3: Over-scoped API key
+## Pitfall 3: Over-scoped, unrestricted or forgotten API key
 
 ### Anti-pattern
 
 ```typescript
-// A single key with all privileges shipped to every app
+// One key with every privilege, no referrer restriction, expiring in a year nobody tracks
+esriConfig.apiKey = import.meta.env.VITE_ARCGIS_API_KEY;
 ```
 
 ### Correct
 
 ```typescript
-// Scope keys to the minimum services and referrers needed.
+// On the API key credentials item: minimum privileges, referrers = your domains,
+// key 1 and key 2 with staggered expirations; swap the env value before one expires.
 ```
 
 ### Impact
 
-A leaked broad key is high-risk.
+The key is public by construction (it ships in the bundle), so its restrictions are the only
+protection. An expired key, or a legacy `AAPK…` key after 2026-06-27, answers "Invalid Token"
+(measured) and the whole app loses basemaps and geocoding at once.
 
 ### Diagnosis
 
-Audit key scopes/referrers; tighten them.
+`Invalid Token` on every location-service call; check the credential's expiration and type.
 
 ---
 
@@ -98,7 +102,7 @@ Console errors when the user dismisses sign-in; catch it.
 
 ---
 
-## Pitfall 5: Assuming API key works for secured layers
+## Pitfall 5: Using a key for per-user permissions
 
 ### Anti-pattern
 
@@ -109,13 +113,14 @@ esriConfig.apiKey = key; // then editing a private org layer
 ### Correct
 
 ```typescript
-// Private org content needs OAuth user sign-in, not just a key.
+// A key can be granted specific private items (item access on the API key credentials),
+// but it is one identity for every visitor. Per-user rights (who edits what) need OAuth.
 ```
 
 ### Impact
 
-403 on private content with only a key.
+Either a 403 (the item was not granted to the key) or, worse, every visitor gets the same rights.
 
 ### Diagnosis
 
-Auth errors on private layers; switch to OAuth.
+Auth errors on private layers, or edits attributed to the app instead of a person: switch to OAuth.

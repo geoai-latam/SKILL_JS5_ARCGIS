@@ -1,16 +1,16 @@
 ---
 name: arcgis-authentication
 description: >
-  Authenticate ArcGIS apps with the ArcGIS Maps SDK for JavaScript 5.0: API keys
+  Authenticate ArcGIS apps with the ArcGIS Maps SDK for JavaScript 5.1: API keys
   via esriConfig.apiKey for location services, and user sign-in via OAuth2 with
   OAuthInfo and IdentityManager. Use this skill whenever the user accesses secured
   content, configures an API key, or sets up OAuth2 / named-user sign-in.
 lang: en
-version: 0.1.0
+version: 0.2.0
 status: stable
-sdk_version: ">=5.0 <6.0"
+sdk_version: ">=5.1 <6.0"
 created: 2026-05-31
-updated: 2026-05-31
+updated: 2026-10-27
 category: services
 tags:
   - authentication
@@ -19,7 +19,7 @@ tags:
   - identitymanager
   - security
 packages:
-  - "@arcgis/core@^5.0"
+  - "@arcgis/core@^5.1"
 maintainer: "GeoAI LATAM"
 license: MIT
 ---
@@ -48,10 +48,12 @@ esriConfig.apiKey = import.meta.env.VITE_ARCGIS_API_KEY as string;
 ## Decision Tree
 
 1. **Just calling location services (basemaps, geocode, route)?**
-   - Yes → an **API key** (`esriConfig.apiKey`).
+   - Yes → an **API key** from API key credentials (`esriConfig.apiKey`), with referrer
+     restrictions and an expiration you track.
 
 2. **Accessing a user's private org content / editing secured layers?**
-   - Yes → **OAuth2** with `OAuthInfo` + `IdentityManager`.
+   - Yes → **OAuth2** with `OAuthInfo` + `IdentityManager` (default `flowType: "auto"`: two-step
+     with PKCE where the server supports it; `"implicit"` only for servers older than 10.9).
 
 3. **Enterprise / app login (not per-user)?**
    - Consider app-credential / token flows server-side; never ship secrets to the browser.
@@ -84,8 +86,19 @@ import "@arcgis/map-components/components/arcgis-map";
 
 ### Concept 1: API keys
 
-`esriConfig.apiKey` authorizes location services scoped to that key. Read it from the environment;
-never hardcode. Keys are not user identities.
+`esriConfig.apiKey` authorizes requests with that key's privileges. Read it from the environment so
+it stays out of git — but know that `import.meta.env.VITE_*` is **inlined into the public
+bundle**: every visitor can read the key. What protects it is configured on the API key
+credentials item, not in code:
+
+- **Referrer restrictions** (only your domains can use it) and the **minimum privileges**.
+- **Expiration**: keys from API key credentials last up to one year. Two keys per credential, with
+  staggered expirations, let you rotate without downtime.
+- **Legacy keys are gone**: API keys created before June 27, 2024 (`AAPK…`) were retired on June 27,
+  2026 and now answer "Invalid Token". Migrate them to API key credentials.
+
+A key is an app identity, not a user: it can be granted access to specific private items, but
+per-user permissions (who may edit what) need OAuth.
 
 ### Concept 2: OAuth2 flow
 
@@ -111,7 +124,8 @@ esriConfig.apiKey = "AAPK_real_key";
 esriConfig.apiKey = import.meta.env.VITE_ARCGIS_API_KEY as string;
 ```
 
-**Impact:** the key leaks into source control; gitleaks blocks it.
+**Impact:** the key leaks into source control; gitleaks blocks it. The env variable only keeps it
+out of git: it still ships in the bundle, so restrict its referrers and privileges.
 
 ### Pitfall 2: Putting a client secret in the browser
 
@@ -141,7 +155,9 @@ IdentityManager.registerOAuthInfos([info]);  // register first
 await layer.load();
 ```
 
-**Impact:** the first secured request fails before sign-in is configured.
+**Impact:** the request does not fail: measured with SDK 5.1.27, a secured layer (or a geocode
+call with no key) opens the SDK's own **username/password dialog** (`.esri-identity-modal`) and the
+promise waits on it. Your OAuth flow never runs for that request.
 
 ## When to Read references/
 
@@ -164,4 +180,8 @@ await layer.load();
 
 ## Changelog
 
+- **0.2.0** (2026-10-27): SDK 5.1. Env variables do not hide a key (it ships in the bundle); referrer
+  restrictions, expiration and rotation; legacy `AAPK` keys retired on 2026-06-27; OAuth registered late opens
+  the SDK's username/password dialog instead of failing (measured); `flowType` default `auto`; API key
+  credentials can be granted private items. Run in `tests/runtime/casos/arcgis-authentication.ts`.
 - **0.1.0** (2026-05-31): Initial release.

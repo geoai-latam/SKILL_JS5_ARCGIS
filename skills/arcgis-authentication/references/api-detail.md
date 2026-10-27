@@ -29,7 +29,8 @@ Set from `import.meta.env.VITE_ARCGIS_API_KEY`. Not a user identity.
 | `appId` | `string` | Public client id of your registered app |
 | `popup` | `boolean` | Popup vs redirect flow |
 | `portalUrl` | `string` | Portal to authenticate against |
-| `flowType` | `string` | e.g. `"authorization-code"` (PKCE) |
+| `flowType` | `"auto" \| "authorization-code" \| "implicit"` | Default `"auto"`: two-step + PKCE when the server supports it; `"implicit"` only for servers before 10.9 |
+| `popupCallbackUrl` | `string` | Callback page when `popup: true` (Esri's `oauth-callback.html`) |
 
 ---
 

@@ -30,7 +30,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 1 | `arcgis-3d-layers` | aporta con arreglos | Enseñaba el splat con .ply (falla en silencio, ejecutado); qualityProfile contra la guía del SDK; faltaba 3D Tiles |
 | 2 | `arcgis-advanced-layers` | aporta con arreglos | CatalogLayer sobre MapServer (rechazado, ejecutado) y no es de 5.0; pitfall WFS equivocado; WMS mal nombrado falla en silencio |
 | 3 | `arcgis-arcade` | aporta con arreglos | Pitfall falso (mayúsculas: Arcade no las distingue, ejecutado); campos/geometría no pedidos dan 0 en silencio; faltaba isAsync y createArcadeProfile |
-| 4 | `arcgis-authentication` | pendiente | |
+| 4 | `arcgis-authentication` | aporta con arreglos | La key en VITE_ igual viaja en el bundle; keys AAPK retiradas el 27-jun-2026 (Invalid Token, ejecutado); OAuth tarde abre el diálogo del SDK, no falla |
 | 5 | `arcgis-charts` | pendiente | |
 | 6 | `arcgis-cim-symbols` | pendiente | |
 | 7 | `arcgis-coding-components` | pendiente | |
@@ -154,3 +154,32 @@ Chromium (`tests/runtime/casos/arcgis-arcade.ts`), todas en verde, una contra el
 **¿Aporta?** Sí, después del arreglo, y es de las que más: los modelos escriben Arcade "que compila"
 y fallan en la integración (campos no pedidos, sync/async, perfiles). Antes del arreglo tenía un
 consejo falso y le faltaba lo que de verdad rompe.
+
+### 4. `arcgis-authentication` — aporta con arreglos
+
+**¿Corre en 5.1?** Los 2 snippets y los 31 bloques compilan contra 5.1.27. Cinco comprobaciones en
+Chromium (`tests/runtime/casos/arcgis-authentication.ts`) contra ArcGIS Online, todas en verde.
+
+**Lo que estaba mal (y ya se arregló):**
+
+- **Daba una falsa seguridad con la API key.** Presentaba `import.meta.env.VITE_ARCGIS_API_KEY` como
+  la protección; Vite mete ese valor en el JavaScript público. La key es visible por construcción:
+  la protegen la restricción de referrers, los privilegios mínimos y la expiración, que la skill no
+  nombraba.
+- **No sabía que las keys legacy murieron.** Las API keys anteriores al 27-jun-2024 (`AAPK…`) se
+  retiraron el 27-jun-2026 (fuente: Esri, "API keys (legacy)" y el aviso de soporte 000036479);
+  ejecutado: una `AAPK` responde "Invalid Token". Tampoco decía que las nuevas expiran (hasta un año)
+  ni cómo rotar con key 1 / key 2.
+- **El pitfall de registrar OAuth tarde describía mal el síntoma.** Decía "la primera petición
+  falla"; ejecutado: el SDK abre su propio diálogo de usuario y contraseña (`.esri-identity-modal`,
+  en español) y la promesa queda esperando. Lo mismo un geocode sin key.
+- **"Una API key no sirve para capas seguras" ya no es cierto**: a una API key credential se le
+  pueden dar ítems privados. Se reescribió como lo que sí es cierto: una key es una sola identidad
+  para todos los visitantes.
+- Faltaba que `flowType` vale `"auto"` por defecto (PKCE) y que `"implicit"` es solo para
+  servidores anteriores a 10.9.
+
+**¿Aporta?** Sí, después del arreglo. Lo de "no metas secretos en el navegador" lo sabe cualquier
+modelo. Lo que no sabe porque cambió en 2024–2026: el retiro de las keys legacy, la expiración y
+rotación, y qué hace el SDK cuando falta el sign-in. Antes del arreglo, en lo central (la key)
+enseñaba algo engañoso.

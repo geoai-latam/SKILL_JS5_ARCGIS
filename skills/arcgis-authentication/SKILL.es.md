@@ -1,16 +1,16 @@
 ---
 name: arcgis-authentication
 description: >
-  Autentica apps de ArcGIS con el ArcGIS Maps SDK for JavaScript 5.0: API keys vía
+  Autentica apps de ArcGIS con el ArcGIS Maps SDK for JavaScript 5.1: API keys vía
   esriConfig.apiKey para location services, y sign-in de usuario vía OAuth2 con
   OAuthInfo e IdentityManager. Usa esta skill cuando el usuario acceda a contenido
   seguro, configure un API key, o monte OAuth2 / sign-in de usuario nombrado.
 lang: es
-version: 0.1.0
+version: 0.2.0
 status: stable
-sdk_version: ">=5.0 <6.0"
+sdk_version: ">=5.1 <6.0"
 created: 2026-05-31
-updated: 2026-05-31
+updated: 2026-10-27
 category: services
 tags:
   - authentication
@@ -19,7 +19,7 @@ tags:
   - identitymanager
   - security
 packages:
-  - "@arcgis/core@^5.0"
+  - "@arcgis/core@^5.1"
 maintainer: "GeoAI LATAM"
 license: MIT
 ---
@@ -48,10 +48,12 @@ esriConfig.apiKey = import.meta.env.VITE_ARCGIS_API_KEY as string;
 ## Árbol de Decisión
 
 1. **¿Solo llamas location services (basemaps, geocode, route)?**
-   - Sí → un **API key** (`esriConfig.apiKey`).
+   - Sí → un **API key** de API key credentials (`esriConfig.apiKey`), con restricción de referrers
+     y una expiración que alguien vigile.
 
 2. **¿Accedes a contenido privado de un usuario / editas capas seguras?**
-   - Sí → **OAuth2** con `OAuthInfo` + `IdentityManager`.
+   - Sí → **OAuth2** con `OAuthInfo` + `IdentityManager` (por defecto `flowType: "auto"`: dos pasos
+     con PKCE donde el servidor lo soporta; `"implicit"` solo para servidores anteriores a 10.9).
 
 3. **¿Login de Enterprise / app (no por usuario)?**
    - Considera flujos de app-credential / token del lado servidor; nunca envíes secretos al navegador.
@@ -84,8 +86,20 @@ import "@arcgis/map-components/components/arcgis-map";
 
 ### Concepto 1: API keys
 
-`esriConfig.apiKey` autoriza location services con el alcance de esa key. Léela del entorno;
-nunca la hardcodees. Las keys no son identidades de usuario.
+`esriConfig.apiKey` autoriza las peticiones con los privilegios de esa key. Léela del entorno para
+que no entre a git — pero ten claro que `import.meta.env.VITE_*` queda **dentro del bundle
+público**: cualquier visitante la puede leer. Lo que la protege se configura en el ítem de API key
+credentials, no en el código:
+
+- **Restricción de referrers** (solo tus dominios la usan) y los **privilegios mínimos**.
+- **Expiración**: las keys de API key credentials duran hasta un año. Dos keys por credencial, con
+  expiraciones escalonadas, permiten rotar sin caída.
+- **Las keys legacy ya no existen**: las API keys creadas antes del 27 de junio de 2024 (`AAPK…`) se
+  retiraron el 27 de junio de 2026 y hoy responden "Invalid Token". Hay que migrarlas a API key
+  credentials.
+
+Una key es una identidad de app, no de usuario: se le puede dar acceso a ítems privados concretos,
+pero los permisos por usuario (quién edita qué) necesitan OAuth.
 
 ### Concepto 2: Flujo OAuth2
 
@@ -111,7 +125,8 @@ esriConfig.apiKey = "AAPK_real_key";
 esriConfig.apiKey = import.meta.env.VITE_ARCGIS_API_KEY as string;
 ```
 
-**Impacto:** la key se filtra al control de versiones; gitleaks la bloquea.
+**Impacto:** la key se filtra al control de versiones; gitleaks la bloquea. La variable de entorno
+solo la saca de git: igual viaja en el bundle, así que restringe sus referrers y privilegios.
 
 ### Pitfall 2: Poner un client secret en el navegador
 
@@ -141,7 +156,9 @@ IdentityManager.registerOAuthInfos([info]);  // registra primero
 await layer.load();
 ```
 
-**Impacto:** la primera petición segura falla antes de configurar el sign-in.
+**Impacto:** la petición no falla: medido con el SDK 5.1.27, una capa segura (o un geocode sin
+key) abre el **diálogo propio de usuario y contraseña** del SDK (`.esri-identity-modal`) y la
+promesa queda esperando. Tu flujo OAuth nunca corre para esa petición.
 
 ## Cuándo leer references/
 
@@ -164,4 +181,8 @@ await layer.load();
 
 ## Changelog
 
+- **0.2.0** (2026-10-27): SDK 5.1. La variable de entorno no esconde la key (viaja en el bundle);
+  restricción de referrers, expiración y rotación; las keys legacy `AAPK` se retiraron el 2026-06-27; OAuth
+  registrado tarde abre el diálogo de usuario y contraseña del SDK en vez de fallar (medido); `flowType` por
+  defecto `auto`; a una API key credential se le pueden dar ítems privados. En `tests/runtime/casos/arcgis-authentication.ts`.
 - **0.1.0** (2026-05-31): Versión inicial.
