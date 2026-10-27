@@ -60,7 +60,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 31 | `arcgis-utility-networks` | aporta con arreglos | parámetro con el nombre REST (se descarta), objeto plano que lanza, componente deprecado desde 5.0; sin trazado real (servicio con token) |
 | 32 | `arcgis-visualization` | aporta con arreglos | 2 pitfalls falsos (caja del campo, orden de stops); medido por píxel: sin defaultSymbol no se dibuja, valores únicos con caja, heatmap en polígonos |
 | 33 | `arcgis-widgets-advanced` | aporta con arreglos | position= (no existe: cae al slot por defecto, medido) en todos los ejemplos; estadísticas del perfil en la analysis view; perfil sin ground no avanza |
-| 34 | `arcgis-widgets-ui` | pendiente | |
+| 34 | `arcgis-widgets-ui` | aporta con arreglos | position= en todos los ejemplos (ahora slot); enlace roto medido (view null, sin error); pitfall de solapamiento falso |
 | 35 | `arcgis-ai-components` | pendiente | |
 
 `arcgis-ai-components` va al final a propósito: tiene 596 líneas sin guardar de antes de esta
@@ -1048,3 +1048,24 @@ El resto se contrastó con los tipos del SDK.
 - **En un mapa sin web map, `arcgis-bookmarks` no tiene nada:** cero marcadores y el botón de agregar apagado por defecto. Hace falta `show-add-bookmark-button`.
 
 **Por qué aporta:** el `position` lo escribiría cualquier agente que haya visto componentes de 4.x, y deja la UI rota sin un solo error. El `line.statistics` es el otro error típico de 4.x. Los dos quedaron medidos y arreglados, y además se encontró el mismo `position` en otra skill.
+
+### 34. `arcgis-widgets-ui` — aporta con arreglos
+
+**Evidencia.** El caso `tests/runtime/casos/arcgis-widgets-ui.ts` corrió contra el SDK 5.1.27 en Chromium y dio 6/6 en verde.
+
+**Errores de la skill vieja:**
+
+1. **Todos los ejemplos usaban `position="..."`.** Eran el ejemplo 1, el 2, el 3 y el Quick Start, y la tabla de atributos lo daba como atributo común. Ningún componente tiene `position`, y en la skill 33 quedó medido que el componente cae en el slot por defecto. Ahora es `slot`. Después de este commit, `position=` solo aparece en el repo como anti-patrón explicado.
+2. **El pitfall extendido 5 era falso.** Decía que dos componentes en la misma posición se tapan. Medido: un buscador y una leyenda en `top-right` quedaron apilados, uno sobre otro, sin solaparse.
+3. **Dos pitfalls eran solo comentarios:** «APIs solo del widget» y «estilos sin Calcite». El tercero principal, «importar todos los componentes», era un consejo genérico.
+4. **Las versiones de deprecación estaban mal.** Decía «todos en 5.0». Según los tipos: BasemapGallery desde 4.32, Search 4.33, Legend y Expand 4.34, y solo LayerList desde 5.0.
+5. **Las rutas de import eran `dist/components/...`**, el import por CDN cargaba el widget deprecado, y el ejemplo 1 usaba `arcgis/topographic`, que sin key bloquea el mapa (medido en la skill 28).
+
+**Lo que se midió y entró:**
+
+- **Un componente sin mapa queda vacío y no dice nada.** Una leyenda fuera del mapa sin `reference-element`, o con `reference-element="#map"` cuando el id es `myMap`, tenía `view: null` y 0 capas, sin error. La anidada tenía la vista 2D y 1 capa. El pitfall ahora está medido.
+- **Dentro de un `arcgis-expand` el componente se enlaza solo.** La lista de capas tenía la vista antes de abrir el expand.
+- **El buscador y la galería funcionan sin API key.** `arcgis-search` usa por defecto el World Geocoding Service: dio 6 resultados para «Villa de Leyva» y llevó el mapa hasta allá. La galería listó 31 basemaps.
+- **Un tag sin su import mide 0 px y no da error.** Con guion es un elemento desconocido válido.
+
+**Por qué aporta:** sin la skill, un agente que viene de 4.x escribe `position`, y no se entera de que la leyenda quedó sin enlazar porque nada falla. Las dos cosas quedaron medidas. Los pitfalls de relleno y el falso se fueron.

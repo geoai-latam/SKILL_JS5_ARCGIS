@@ -3,42 +3,43 @@
 ## Table of Contents
 
 - [Core UI components](#core-ui-components)
-- [Common attributes](#common-attributes)
+- [Placement and binding](#placement-and-binding)
 - [Deprecated widget equivalents](#deprecated-widget-equivalents)
 
 ---
 
 ## Core UI components
 
-| Component | Import | Purpose |
+All import from `@arcgis/map-components/components/<tag>`.
+
+| Component | Purpose | Useful attributes |
 |---|---|---|
-| `arcgis-legend` | `dist/components/arcgis-legend` | Symbology key |
-| `arcgis-layer-list` | `dist/components/arcgis-layer-list` | Toggle/reorder layers |
-| `arcgis-search` | `dist/components/arcgis-search` | Geocode / find features |
-| `arcgis-basemap-gallery` | `dist/components/arcgis-basemap-gallery` | Switch basemap |
-| `arcgis-expand` | `dist/components/arcgis-expand` | Collapse other components |
+| `arcgis-legend` | Symbology key | `basemap-legend-visible`, `hide-layers-not-in-current-view`, `legend-style` |
+| `arcgis-layer-list` | Toggle/reorder layers | `drag-enabled`, `show-filter` |
+| `arcgis-search` | Geocode / find features | `sources`, `max-results`, `popup-disabled`; World Geocoding Service by default |
+| `arcgis-basemap-gallery` | Switch basemap | `source` |
+| `arcgis-expand` | Collapse other components | `expanded`, `group`, `mode` |
 
 ---
 
-## Common attributes
+## Placement and binding
 
-| Attribute | Description |
+| How | Description |
 |---|---|
-| `reference-element` | Selector/ref of the map element |
-| `position` | `top-left` \| `top-right` \| `bottom-left` \| `bottom-right` |
-| `hide-*` | Component-specific visibility toggles |
+| `slot="top-left" \| "top-right" \| "bottom-left" \| "bottom-right"` | Corner of the map for a nested component (also `-start`/`-end`); several in one slot stack |
+| `reference-element="#mapId"` | Bind a component that is not nested; must match the map's id |
+| Nested in `arcgis-expand` | Still binds to the map the expand is in |
 
-Nested inside `<arcgis-map>`, components auto-bind without `reference-element`.
+There is no `position` property; the attribute is ignored.
 
 ---
 
 ## Deprecated widget equivalents
 
-> ⚠️ Deprecated in 5.0, removed in 6.0 (Q1 2027).
-
-| Widget | Replacement component |
-|---|---|
-| `@arcgis/core/widgets/Legend.js` | `arcgis-legend` |
-| `@arcgis/core/widgets/LayerList.js` | `arcgis-layer-list` |
-| `@arcgis/core/widgets/Search.js` | `arcgis-search` |
-| `@arcgis/core/widgets/BasemapGallery.js` | `arcgis-basemap-gallery` |
+| Widget | Deprecated since | Replacement component |
+|---|---|---|
+| `@arcgis/core/widgets/BasemapGallery.js` | 4.32 | `arcgis-basemap-gallery` |
+| `@arcgis/core/widgets/Search.js` | 4.33 | `arcgis-search` |
+| `@arcgis/core/widgets/Legend.js` | 4.34 | `arcgis-legend` |
+| `@arcgis/core/widgets/Expand.js` | 4.34 | `arcgis-expand` |
+| `@arcgis/core/widgets/LayerList.js` | 5.0 | `arcgis-layer-list` |
