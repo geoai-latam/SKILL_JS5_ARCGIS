@@ -56,7 +56,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 27 | `arcgis-spatial-analysis` | aporta con arreglos | su ejemplo fallaba (número para GPLinearUnit); job fallido rechaza con JobInfo; suma en cliente 54M de 165M |
 | 28 | `arcgis-starter-app` | aporta con arreglos | el scaffold generaba un main.ts que lanza (detail null), sin strict y con .env sin ignorar |
 | 29 | `arcgis-tables-forms` | aporta con arreglos | pitfall 1 falso (la tabla carga la capa); los relacionados omiten padres sin filas; editingEnabled y submit() fallan en silencio |
-| 30 | `arcgis-time-animation` | pendiente | |
+| 30 | `arcgis-time-animation` | aporta con arreglos | el slider no toma el rango solo; el anti-patrón de zona horaria era falso; un startField mal escrito no filtra en silencio |
 | 31 | `arcgis-utility-networks` | pendiente | |
 | 32 | `arcgis-visualization` | pendiente | |
 | 33 | `arcgis-widgets-advanced` | pendiente | |
@@ -946,3 +946,28 @@ nunca, o destruir y perder el mapa compartido.
 **Lo que no se pudo medir:** escribir en los controles del formulario. Están en un shadow DOM al que la prueba no llega, así que la skill no afirma nada sobre cómo cambia `form.feature` al escribir.
 
 **Por qué aporta:** sin la skill, un agente adivina el `relationshipId` y lee `res[id]` como si todos los padres estuvieran. También activa la edición sobre servicios de solo lectura y cree que `submit()` guarda. Son tres fallos silenciosos que ahora tienen su medición y su arreglo.
+
+### 30. `arcgis-time-animation` — aporta con arreglos
+
+**Evidencia.** El caso `tests/runtime/casos/arcgis-time-animation.ts` corrió contra el SDK 5.1.27 en Chromium (zona America/Bogota) y dio 6/6 en verde. Usa dos fuentes:
+
+- una capa de cliente con 12 puntos, uno por mes de 2020, sellados a las 00:00 UTC del día 1;
+- la capa pública de huracanes de 2000 (`Hurricanes/MapServer/0`, con tiempo habilitado).
+
+**Lo que la skill vieja decía y era falso o relleno:**
+
+1. **El anti-patrón de zona horaria era falso.** Ponía `new Date("2020-01-01")` como «ambigüedad local vs UTC», pero un ISO de solo fecha ya es UTC: medido, es igual a `Date.UTC(2020, 0, 1)`. La trampa real es `new Date(2020, 0, 1)`, que es medianoche local. En Bogotá arranca 5 h tarde y dejó fuera el registro de enero (0 de 1).
+2. **Dos pitfalls extendidos eran solo comentarios**, sin código: «stops demasiado finos» y «la zona del servidor». El de `setInterval` sin limpiar era JavaScript genérico.
+3. **El ejemplo 1 usaba un `item-id="<time-aware-webmap>"` de relleno.**
+4. **El snippet solo construía un `TimeExtent`** y no tocaba el slider.
+
+**Lo que se midió y entró como pitfall:**
+
+- **El slider no toma el rango de la capa.** Con una capa con tiempo en el mapa y nada más, el `fullTimeExtent` del slider, su `timeExtent` y el `view.timeExtent` seguían en `null` a los 3 s, y el mapa no filtraba nada. Con `slider.fullTimeExtent = layer.timeInfo.fullTimeExtent`, la vista pasó a la primera ventana de un día, y `next()` la movió un día.
+- **Un campo de `timeInfo` mal escrito falla en silencio.** No hay error ni `fullTimeExtent`, y los 12 registros siguen visibles en una ventana de un mes. Sin `timeInfo` pasa lo mismo; con el campo correcto queda 1.
+- **`view.timeExtent` filtra en el cliente.** 10 pasos semanales sobre los huracanes hicieron 0 peticiones a `/query`. Así quedó medido el pitfall de «no volver a consultar en cada paso», que antes era una afirmación.
+- **`useViewTime = false`** dejó 12 de 12 visibles con la vista en enero.
+- **`layer.timeExtent` se interseca con la ventana de la vista.** Junio–diciembre en la capa y enero en la vista dieron 0, sin error.
+- **`stops.interval` tiene que ser un `TimeInterval`.** Un `{ value, unit }` suelto corre por autocast, pero en TypeScript strict falla con TS2740. Lo encontró el verificador sobre los bloques nuevos.
+
+**Por qué aporta:** el error más probable de un agente es meter el slider en el mapa y esperar que funcione solo, y aquí quedó medido que no funciona. Detrás vienen dos fallos silenciosos: la fecha local que corre la ventana y el `startField` mal escrito. La skill vieja apuntaba a una trampa de fecha que no existe.

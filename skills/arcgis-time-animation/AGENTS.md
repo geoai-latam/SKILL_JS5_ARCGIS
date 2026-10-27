@@ -1,31 +1,32 @@
 # Agent Guide: arcgis-time-animation
 
-Quick-reference for temporal data. Read before time filtering/animation.
+Quick-reference for temporal data on SDK 5.1. Read before time filtering or animation.
 
 ## Quick Decision Tree
 
-1. **Playback UI?** → `arcgis-time-slider` bound to the map.
-2. **Filter window?** → set `view.timeExtent` (TimeExtent).
-3. **Layer not filtering?** → ensure it has `timeInfo`.
-4. **Programmatic animation?** → step `view.timeExtent` on a timer.
+1. **Playback UI?** → `arcgis-time-slider` in the map, with `fullTimeExtent` from `layer.timeInfo` and `stops`.
+2. **Filter window?** → set `view.timeExtent` (a `TimeExtent`); it filters client-side.
+3. **Layer not filtering?** → it has no `timeInfo`, or its `startField` does not exist.
+4. **One layer must ignore the window?** → `layer.useViewTime = false`.
 
 ## Setup Checklist
 
-- [ ] Confirm layers are time-aware (`timeInfo`).
-- [ ] Build TimeExtent in UTC to avoid TZ drift.
-- [ ] Animate via `view.timeExtent`, not per-frame re-queries.
-- [ ] Bind the slider to the map.
+- [ ] `await layer.load()` and set `slider.fullTimeExtent = layer.timeInfo.fullTimeExtent`; the slider stays null otherwise.
+- [ ] Build dates with `Date.UTC(...)` or ISO strings, never `new Date(y, m, d)` (local midnight).
+- [ ] Check that the `timeInfo.startField` exists and is a date field: a wrong name fails silently.
+- [ ] Animate by assigning `view.timeExtent` (or the slider's `play()`), not by re-querying.
 
 ## Anti-patterns (one-liner reminders)
 
-- ❌ Expecting time filter without `timeInfo`.
-- ❌ Local vs UTC date ambiguity.
-- ❌ Re-querying the service each animation frame.
+- ❌ A slider with no `fullTimeExtent`, expecting it to read the layer.
+- ❌ `new Date(2020, 0, 1)` in a `TimeExtent` (5 h off in Bogotá).
+- ❌ A `timeInfo` with a misspelled field (no error, no filtering).
+- ❌ `queryFeatures` on every animation step.
 
 ## Files in This Skill
 
 - `SKILL.md` / `SKILL.es.md` — full guides
-- `references/api-detail.md` — TimeExtent / time-slider
-- `references/examples.md` — playback / filter
+- `references/api-detail.md` — TimeExtent / view.timeExtent / time-slider
+- `references/examples.md` — playback / filter / animation
 - `references/pitfalls.md` — extended troubleshooting
 - `scripts/snippet-time.ts`
