@@ -11,17 +11,16 @@ rompían código o enseñaban algo falso. Ninguna se propone para borrar o fusio
 
 | Veredicto | Skills |
 |---|---|
-| aporta con arreglos (aplicados) | 33 |
+| aporta con arreglos (aplicados) | 34 |
 | aporta con arreglos, parcial (`arcgis-knowledge-graphs`: sin grafo accesible, todo pide token) | 1 |
-| aporta con arreglos propuestos, sin aplicar (`arcgis-ai-components`: 6 archivos con trabajo sin guardar de Sebastián; ver [`propuestas/`](./propuestas/arcgis-ai-components.md)) | 1 |
 | no aporta | 0 |
 
 ## Cómo se midió
 
 - **Que compile.** Cada bloque de código de `SKILL.md`, `SKILL.es.md`, `AGENTS.md` y
   `references/*.md` se compila contra los `.d.ts` 5.1.27, y se marca lo `@deprecated`
-  (`scripts/check-code-blocks.mjs`). Al final: 1064 bloques, y solo fallan los 5 del trabajo
-  sin guardar de ai-components. Los `scripts/snippet-*.ts` pasan los 59 (`smoke-test.mjs`).
+  (`scripts/check-code-blocks.mjs`). Al final: 1059 bloques y ninguno falla (el trabajo sin
+  guardar de ai-components se aplicó y corrigió el 27-oct). Los `scripts/snippet-*.ts` pasan los 59 (`smoke-test.mjs`).
 - **Que corra.** Hay un caso de runtime por skill en `tests/runtime/casos/` (34 archivos,
   más el de ai-components). Corren en Chromium real contra servicios públicos de Esri, sin
   API key y sin iniciar sesión. Lo que la skill dice que pasa se ejecuta, se lee el resultado
@@ -119,4 +118,5 @@ Antes de abrir el repo conviene decidir dos cosas, y las dos son de Sebastián:
 
 - cómo se presenta frente a ese otro, que tiene la misma estructura y los mismos nombres
   (atribución si de ahí salió la base, o diferenciarse por la validación);
-- qué hacer con el trabajo sin guardar de `arcgis-ai-components`.
+- ~~qué hacer con el trabajo sin guardar de `arcgis-ai-components`~~: aplicado y corregido el 27-oct,
+  a pedido de Sebastián.

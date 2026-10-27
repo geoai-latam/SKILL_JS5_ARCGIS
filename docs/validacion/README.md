@@ -61,7 +61,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 32 | `arcgis-visualization` | aporta con arreglos | 2 pitfalls falsos (caja del campo, orden de stops); medido por píxel: sin defaultSymbol no se dibuja, valores únicos con caja, heatmap en polígonos |
 | 33 | `arcgis-widgets-advanced` | aporta con arreglos | position= (no existe: cae al slot por defecto, medido) en todos los ejemplos; estadísticas del perfil en la analysis view; perfil sin ground no avanza |
 | 34 | `arcgis-widgets-ui` | aporta con arreglos | position= en todos los ejemplos (ahora slot); enlace roto medido (view null, sin error); pitfall de solapamiento falso |
-| 35 | `arcgis-ai-components` | aporta con arreglos (propuestos, sin aplicar: WIP) | sus imports dist/components rompen en Vite (no están en exports; tsc no lo ve); agentes de ArcGIS sin web map: Orchestrator not initialized; falta agent-utils 5.1 (FunctionAgent medido) |
+| 35 | `arcgis-ai-components` | aporta con arreglos | sus imports dist/components rompen en Vite (no están en exports; tsc no lo ve); agentes de ArcGIS sin web map: Orchestrator not initialized; falta agent-utils 5.1 (FunctionAgent medido) |
 
 `arcgis-ai-components` va al final a propósito: tiene 596 líneas sin guardar de antes de esta
 rama, y guardarlas o descartarlas lo decide Sebastián. Se valida la versión del working tree sin
@@ -1070,7 +1070,14 @@ El resto se contrastó con los tipos del SDK.
 
 **Por qué aporta:** sin la skill, un agente que viene de 4.x escribe `position`, y no se entera de que la leyenda quedó sin enlazar porque nada falla. Las dos cosas quedaron medidas. Los pitfalls de relleno y el falso se fueron.
 
-### 35. `arcgis-ai-components` — aporta con arreglos (propuestos, sin aplicar: WIP)
+### 35. `arcgis-ai-components` — aporta con arreglos
+
+**Actualización (27-oct, a pedido de Sebastián):** los arreglos de la propuesta se aplicaron sobre el
+trabajo sin guardar y quedó todo en un commit (versión 0.3.0): imports a `components/`, los cinco
+bloques compilan, el camino de `agent-utils` con `FunctionAgent`, el requisito de web map, el pin de
+`@langchain/core` y los pitfalls de relleno 1–5 cambiados por tres medidos. Al aplicarlo, el
+verificador atrapó un error en el ejemplo nuevo (`initialViewProperties` es de `WebMap`, no de `Map`).
+Lo de abajo es el registro de la validación, antes de aplicar.
 
 **Evidencia.** El caso `tests/runtime/casos/arcgis-ai-components.ts` corrió contra el SDK 5.1.27 en Chromium y dio 4/4 en verde. Los seis archivos de la skill con trabajo sin guardar **no se tocaron**. Los arreglos están en `docs/validacion/propuestas/arcgis-ai-components.md`, para aplicarlos cuando Sebastián decida qué hace con ese trabajo.
 

@@ -1,4 +1,6 @@
-# Propuesta de arreglos para `arcgis-ai-components` (sin aplicar)
+# Propuesta de arreglos para `arcgis-ai-components`
+
+> **Aplicada el 2026-10-27** a pedido de Sebastián (skill 0.3.0). Se conserva como registro.
 
 Estos seis archivos tienen trabajo sin guardar de antes de esta rama: `AGENTS.md`, `SKILL.md`,
 `SKILL.es.md` y `references/api-detail.md`, `examples.md` y `pitfalls.md` (+596/−128 líneas).
