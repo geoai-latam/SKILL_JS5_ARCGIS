@@ -1,17 +1,18 @@
 ---
 name: arcgis-arcade
 description: >
-  Write and run Arcade expressions with the ArcGIS Maps SDK for JavaScript 5.0:
-  createArcadeExecutor with the right profile for popups, labels, and renderers,
-  plus expression syntax and performance tips. Use this skill whenever the user
+  Write and run Arcade expressions with the ArcGIS Maps SDK for JavaScript 5.1:
+  createArcadeProfile and createArcadeExecutor for popups, labels and renderers,
+  execute vs executeAsync, fieldsUsed/geometryUsed (missing ones return 0 silently),
+  and geodetic vs planar measures. Use this skill whenever the user
   writes an Arcade expression for a popup, label, renderer, or computes a value
   from feature attributes/geometry.
 lang: en
-version: 0.1.0
+version: 0.2.0
 status: stable
-sdk_version: ">=5.0 <6.0"
+sdk_version: ">=5.1 <6.0"
 created: 2026-05-31
-updated: 2026-05-31
+updated: 2026-10-27
 category: specialized
 tags:
   - arcade
@@ -22,7 +23,7 @@ tags:
 requires:
   - arcgis-visualization
 packages:
-  - "@arcgis/core@^5.0"
+  - "@arcgis/core@^5.1"
 maintainer: "GeoAI LATAM"
 license: MIT
 ---
@@ -48,6 +49,7 @@ import { createArcadeExecutor } from "@arcgis/core/arcade.js";
 const executor = await createArcadeExecutor("$feature.POP * 2", {
   variables: [{ name: "$feature", type: "feature" }],
 });
+const value = executor.execute({ $feature: graphic }); // the graphic must carry POP
 ```
 
 ## Decision Tree
@@ -58,7 +60,10 @@ const executor = await createArcadeExecutor("$feature.POP * 2", {
    - Renderer / visual variable → renderer profile (`valueExpression`).
 
 2. **Compiling manually?**
-   - Yes → `createArcadeExecutor(script, profile)` with the matching variables.
+   - Yes → `createArcadeExecutor(script, createArcadeProfile("popup"))`. The profile names are
+     `"popup"`, `"labeling"`, `"visualization"` (renderers), `"field-calculation"`,
+     `"form-calculation"`, `"form-constraint"`, `"aggregate-field"`, among others; the helper
+     declares every variable the context has (`$feature`, `$layer`, `$map`, `$view`, …).
 
 **Default:** declare the expression on the consuming object (popup/label/renderer) and let the SDK compile it.
 
@@ -95,6 +100,27 @@ Use the profile that matches the context so the right globals exist.
 `createArcadeExecutor(script, profile, options?)` returns an `ArcadeExecutor` you call with the
 runtime context (the feature). Compile once, execute many times.
 
+What the executor tells you, and what goes wrong if you ignore it (measured with SDK 5.1.27):
+
+- `isAsync`: `true` when the script uses a FeatureSet function. Then only `executeAsync()` works;
+  `execute()` throws "Cannot execute the script in synchronous mode". For many features,
+  `executeAsyncBatch()`.
+- `fieldsUsed`: request these fields (`layer.outFields = executor.fieldsUsed`, or the query's
+  `outFields`). A field that was not requested arrives as `null`, and `null / 1000` gives **0**:
+  a plausible wrong number, no error.
+- `geometryUsed`: request geometry (`returnGeometry: true`). Without it, `Area($feature)` returns
+  **0**, no error.
+- `options.cache` (5.0) replaces the deprecated `lruCache`; `options.timeZone` should be the view's
+  time zone when dates are shown.
+
+Field names are case-insensitive: `$feature.pop` reads a field named `POP`.
+
+### Concept 2b: Area and length are planar unless you say otherwise
+
+`Area()` and `Length()` measure in the geometry's own projection. In Web Mercator that is wrong away
+from the equator: a 0.01° cell at 50° S measures 1.928 km² with `Area` and 0.798 km² with
+`AreaGeodetic` (factor 2.42). Use `AreaGeodetic()` / `LengthGeodetic()` for real-world sizes.
+
 ### Concept 3: Where expressions live
 
 Most of the time you don't call the executor yourself — you set `expressionInfos` on a popup,
@@ -130,19 +156,28 @@ const executor = await createArcadeExecutor(script, profile); // once, reuse per
 
 **Impact:** recompiling per feature is slow.
 
-### Pitfall 3: Heavy FeatureSet functions in labels
+### Pitfall 3: A field or the geometry was never requested
 
 ```typescript
 // ❌ Anti-pattern
-// Using FeatureSetByName / aggregations in a label expression over many features
+const e = await createArcadeExecutor("$feature.pop2000 / 1000", profile);
+const { features } = await layer.queryFeatures({ where: "1=1", outFields: ["objectid"] });
+e.execute({ $feature: features[0] }); // 0, silently
 ```
 
 ```typescript
 // ✅ Correct
-// Keep label/renderer expressions lightweight; precompute heavy values.
+const { features } = await layer.queryFeatures({
+  where: "1=1",
+  outFields: e.fieldsUsed,
+  returnGeometry: e.geometryUsed,
+});
+e.execute({ $feature: features[0] }); // 1211.537
 ```
 
-**Impact:** dramatic slowdowns when expensive Arcade runs per feature.
+**Impact:** measured on the USA sample service: the missing field arrives as `null` and the
+expression returns 0, a believable wrong value with no error. `Area()` without geometry also
+returns 0.
 
 ## When to Read references/
 
@@ -165,4 +200,8 @@ const executor = await createArcadeExecutor(script, profile); // once, reuse per
 
 ## Changelog
 
+- **0.2.0** (2026-10-27): SDK 5.1. Removed the false "field name case" pitfall (Arcade field names
+  are case-insensitive, measured); missing fields or geometry return 0 silently; `isAsync` /
+  `executeAsync`; `createArcadeProfile`; `cache` replaces `lruCache` (5.0); planar vs geodetic area.
+  Every claim run in `tests/runtime/casos/arcgis-arcade.ts`.
 - **0.1.0** (2026-05-31): Initial release.

@@ -10,12 +10,17 @@ import { createArcadeExecutor } from "@arcgis/core/arcade.js";
 const executor = await createArcadeExecutor("Round($feature.POP / 1000) + ' k'", {
   variables: [{ name: "$feature", type: "feature" }],
 });
+layer.outFields = executor.fieldsUsed; // ["pop"]: without it the value is computed from null
+const text = executor.isAsync
+  ? await executor.executeAsync({ $feature: graphic })
+  : executor.execute({ $feature: graphic }); // "12 k" for POP = 12345
 ```
 
 **Notes:**
 
-- Declare `$feature` in the profile.
+- Declare `$feature` in the profile, or use `createArcadeProfile(...)`.
 - Compile once; reuse the executor per feature.
+- Checked against SDK 5.1.27 (`tests/runtime/casos/arcgis-arcade.ts`).
 
 ---
 

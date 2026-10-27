@@ -29,7 +29,7 @@ Tres preguntas, con evidencia, no con impresión:
 |---|---|---|---|
 | 1 | `arcgis-3d-layers` | aporta con arreglos | Enseñaba el splat con .ply (falla en silencio, ejecutado); qualityProfile contra la guía del SDK; faltaba 3D Tiles |
 | 2 | `arcgis-advanced-layers` | aporta con arreglos | CatalogLayer sobre MapServer (rechazado, ejecutado) y no es de 5.0; pitfall WFS equivocado; WMS mal nombrado falla en silencio |
-| 3 | `arcgis-arcade` | pendiente | |
+| 3 | `arcgis-arcade` | aporta con arreglos | Pitfall falso (mayúsculas: Arcade no las distingue, ejecutado); campos/geometría no pedidos dan 0 en silencio; faltaba isAsync y createArcadeProfile |
 | 4 | `arcgis-authentication` | pendiente | |
 | 5 | `arcgis-charts` | pendiente | |
 | 6 | `arcgis-cim-symbols` | pendiente | |
@@ -127,3 +127,30 @@ en verde.
 un agente no sabe y le cuesta horas: el requisito de WFS 2.0 + GeoJSON, los dos fallos silenciosos
 (nombre WMS, `sublayers` que esconden capas), dónde vive un catálogo y cómo se usa, y por dónde se
 consulta una capa OGC API.
+
+### 3. `arcgis-arcade` — aporta con arreglos
+
+**¿Corre en 5.1?** El snippet y los 28 bloques compilan contra 5.1.27. Diez comprobaciones en
+Chromium (`tests/runtime/casos/arcgis-arcade.ts`), todas en verde, una contra el servicio USA real.
+
+**Lo que estaba mal (y ya se arregló):**
+
+- **Un pitfall era falso.** "Mayúsculas en el nombre del campo: `$feature.pop` con campo `POP` da
+  null". Ejecutado: devuelve 7. Arcade no distingue mayúsculas en los campos. Un agente que lo
+  siguiera buscaría el error donde no está.
+- **El pitfall de geometría decía que "falla".** Ejecutado: `Area($feature)` sin geometría
+  devuelve 0, sin error. Es peor: un número falso que parece bueno.
+- **Faltaba el fallo silencioso más común**: el campo que no se pidió en `outFields`. Medido en un
+  servicio real: `$feature.pop2000 / 1000` da 0 sin el campo y 1211.537 con él. La API ya da la
+  respuesta (`executor.fieldsUsed`, `geometryUsed`) y la skill no la nombraba.
+- **Faltaba `isAsync` / `executeAsync`.** Un script con FeatureSet ejecutado con `execute()` lanza
+  "Cannot execute the script in synchronous mode" (ejecutado).
+- **Faltaba `createArcadeProfile`**, que arma el perfil correcto de cada contexto (popup trae 7
+  variables; visualización, 2) en vez de escribirlo a mano.
+- 5.0 deprecó `lruCache` por `cache`; no estaba.
+- Se añadió el área plana frente a la geodésica: medido a 50° S, `Area` en Web Mercator da 2,42 veces
+  `AreaGeodetic`. Para catastro o cobertura en el Cono Sur no es un detalle.
+
+**¿Aporta?** Sí, después del arreglo, y es de las que más: los modelos escriben Arcade "que compila"
+y fallan en la integración (campos no pedidos, sync/async, perfiles). Antes del arreglo tenía un
+consejo falso y le faltaba lo que de verdad rompe.

@@ -2,27 +2,30 @@
 
 > Extends the Top 3 in SKILL.md. Format: Anti-pattern / Correct / Impact / Diagnosis.
 
-## Pitfall 1: Field name case in expressions
+## Pitfall 1: The field is in the expression but not in the data
 
 ### Anti-pattern
 
-```text
-$feature.pop  // field is POP
+```typescript
+// The layer or query only fetched objectid
+const { features } = await layer.queryFeatures({ where: "1=1", outFields: ["objectid"] });
+executor.execute({ $feature: features[0] }); // "$feature.pop2000 / 1000" → 0
 ```
 
 ### Correct
 
-```text
-$feature.POP
+```typescript
+layer.outFields = executor.fieldsUsed; // or the query's outFields
 ```
 
 ### Impact
 
-Returns null/undefined values.
+Measured with SDK 5.1.27: the missing field is `null` and the result is 0, with no error. Field
+**case** is not the problem: `$feature.pop` reads `POP`.
 
 ### Diagnosis
 
-Blank computed output; match the field case.
+Suspicious zeros; log `executor.fieldsUsed` and compare with what the layer requested.
 
 ---
 
@@ -85,17 +88,41 @@ Area($feature)  // geometry not returned by the query
 
 ### Correct
 
-```text
-// Ensure returnGeometry / the profile provides geometry.
+```typescript
+const { features } = await layer.queryFeatures({ where: "1=1", returnGeometry: executor.geometryUsed });
 ```
 
 ### Impact
 
-Geometry functions fail without geometry.
+Measured with SDK 5.1.27: `Area()` without geometry returns 0, it does not throw.
 
 ### Diagnosis
 
-Null geometry errors; return geometry.
+Areas or lengths of 0; check `executor.geometryUsed` against the query.
+
+---
+
+## Pitfall 4b: Planar measures on Web Mercator
+
+### Anti-pattern
+
+```text
+Area($feature, 'square-kilometers')  // geometry in Web Mercator
+```
+
+### Correct
+
+```text
+AreaGeodetic($feature, 'square-kilometers')
+```
+
+### Impact
+
+A 0.01° cell at 50° S: 1.928 km² planar vs 0.798 km² geodetic (factor 2.42, measured).
+
+### Diagnosis
+
+Areas that grow with latitude; the geometry's `spatialReference` is 3857/102100.
 
 ---
 
@@ -120,3 +147,28 @@ Severe slowdowns at scale.
 ### Diagnosis
 
 Lag rendering labels/renderers; remove heavy data calls.
+
+---
+
+## Pitfall 6: `execute()` on a script that reads FeatureSets
+
+### Anti-pattern
+
+```typescript
+const e = await createArcadeExecutor("Count(FeatureSetByName($map, 'Parcels'))", createArcadeProfile("popup"));
+e.execute({ $feature: graphic, $map: map }); // throws
+```
+
+### Correct
+
+```typescript
+const result = e.isAsync ? await e.executeAsync({ $feature: graphic, $map: map }) : e.execute({ $feature: graphic, $map: map });
+```
+
+### Impact
+
+"Cannot execute the script in synchronous mode" (measured with SDK 5.1.27).
+
+### Diagnosis
+
+Check `executor.isAsync` before choosing the method.

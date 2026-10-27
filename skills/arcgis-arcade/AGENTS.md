@@ -18,9 +18,12 @@ Quick-reference for Arcade. Read before writing expressions.
 
 ## Anti-patterns (one-liner reminders)
 
-- ❌ Missing `$feature` in the profile.
+- ❌ Hand-written profiles that miss variables: use `createArcadeProfile("popup" | "labeling" | "visualization" | …)`.
 - ❌ Recompiling per feature.
-- ❌ Heavy FeatureSet ops in per-feature expressions.
+- ❌ Querying features without `executor.fieldsUsed` / `geometryUsed`: the expression returns 0, no error.
+- ❌ `execute()` when `executor.isAsync` (FeatureSet functions): use `executeAsync()`.
+- ❌ `Area()`/`Length()` on Web Mercator geometry for real sizes: `AreaGeodetic()`/`LengthGeodetic()`.
+- ❌ `lruCache` (deprecated in 5.0): `cache`.
 
 ## Files in This Skill
 
