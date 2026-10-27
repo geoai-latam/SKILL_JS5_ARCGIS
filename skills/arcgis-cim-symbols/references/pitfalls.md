@@ -7,31 +7,34 @@
 ### Anti-pattern
 
 ```typescript
-frame: { xmin: 0, ymin: 0, xmax: 16, ymax: 16 };
-// geometry rings using coordinates like 100
+// ❌ Anti-pattern: a 0..16 frame with a ring that reaches 100
+const geometry = { rings: [[[0, 0], [100, 0], [100, 100], [0, 100], [0, 0]]] };
+const frame = { xmin: 0, ymin: 0, xmax: 16, ymax: 16 };
 ```
 
 ### Correct
 
 ```typescript
-// Keep ring coordinates within the frame bounds (0..16 here).
+// Keep ring coordinates inside the frame (0..16 here), or make the frame fit the geometry.
 ```
 
 ### Impact
 
-The marker graphic is clipped or invisible.
+The frame does not clip. Measured with 5.1.27: the same marker at `size: 20` paints 27 px with the
+geometry inside the frame and 120 px with it outside.
 
 ### Diagnosis
 
-Nothing renders; verify ring coordinates fit the frame.
+A marker far bigger than its `size`: compare ring coordinates with the frame.
 
 ---
 
-## Pitfall 2: Reusing one CIMSymbol instance across layers
+## Pitfall 2: Reusing one CIMSymbol instance across renderers
 
 ### Anti-pattern
 
 ```typescript
+// ❌ Anti-pattern
 layerA.renderer = new SimpleRenderer({ symbol });
 layerB.renderer = new SimpleRenderer({ symbol }); // shared mutable symbol
 ```
@@ -45,7 +48,8 @@ layerB.renderer = new SimpleRenderer({ symbol: symbol.clone() });
 
 ### Impact
 
-Editing one renderer's symbol unexpectedly changes the other.
+Measured: both renderers hold the very same object (`r1.symbol === r2.symbol`), and
+`applyCIMSymbolColor` on one recolours the other.
 
 ### Diagnosis
 
@@ -53,27 +57,29 @@ Symbol edits leak between layers; clone before sharing.
 
 ---
 
-## Pitfall 3: Expecting size in pixels for every layer
+## Pitfall 3: Reading `size` and `width` as pixels
 
 ### Anti-pattern
 
 ```typescript
-// Assuming nested marker sizes are pixels
+// ❌ Anti-pattern: "a 24 px icon"
+const marker = { type: "CIMVectorMarker", enable: true, size: 24 };
 ```
 
 ### Correct
 
 ```typescript
-// Vector marker sizes are relative to the frame; the outer size scales them.
+// CIM sizes are points: 24 px = 18 pt.
+const marker = { type: "CIMVectorMarker", enable: true, size: 18 };
 ```
 
 ### Impact
 
-Markers render larger/smaller than expected.
+Measured: `size: 20` paints 27 px. Everything comes out a third bigger than designed.
 
 ### Diagnosis
 
-Scale looks off; remember frame-relative sizing.
+Icons larger than the mock-up by 1.33×.
 
 ---
 
@@ -101,24 +107,25 @@ Frame drops on dense layers using CIM; simplify or reduce features.
 
 ---
 
-## Pitfall 5: Hand-editing CIM without a schema reference
+## Pitfall 5: Trusting the old "forget `enable: true` and it is not drawn"
 
 ### Anti-pattern
 
 ```typescript
-// Guessing field names in the CIM JSON
+// ❌ Anti-pattern: debugging an invisible symbol by adding enable: true everywhere
 ```
 
 ### Correct
 
 ```typescript
-// Author in ArcGIS Pro / the symbol builder, then export the CIM JSON.
+// An omitted enable draws (measured, preview and MapView); only enable: false hides a layer.
+// Look instead at: the CIMSymbolReference wrapper, alpha 0–255, geometry vs frame, override case.
 ```
 
 ### Impact
 
-Typos in CIM keys silently disable layers.
+Time lost on a non-cause. Keep `enable: true` anyway: the typings require it.
 
 ### Diagnosis
 
-Layer missing; validate against the CIM spec or re-export from a tool.
+`symbolUtils.renderPreviewHTML(symbol)` on the symbol alone tells whether the JSON paints at all.

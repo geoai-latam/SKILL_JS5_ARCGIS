@@ -2,16 +2,16 @@
 name: arcgis-cim-symbols
 description: >
   Construye símbolos avanzados multi-capa con CIMSymbol en el ArcGIS Maps SDK for
-  JavaScript 5.0. Cubre la estructura CIM JSON (CIMSymbolReference, símbolos de
+  JavaScript 5.1. Cubre la estructura CIM JSON (CIMSymbolReference, símbolos de
   punto/línea/polígono, symbol layers, vector markers) y cuándo CIM supera a los
   símbolos simples. Usa esta skill cuando el usuario necesite íconos en capas,
   patrones de línea complejos, overrides por dato, o símbolos cartográficos precisos.
 lang: es
-version: 0.1.0
+version: 0.2.0
 status: stable
-sdk_version: ">=5.0 <6.0"
+sdk_version: ">=5.1 <6.0"
 created: 2026-05-31
-updated: 2026-05-31
+updated: 2026-10-27
 category: visualization
 tags:
   - cim
@@ -22,7 +22,7 @@ tags:
 requires:
   - arcgis-visualization
 packages:
-  - "@arcgis/core@^5.0"
+  - "@arcgis/core@^5.1"
 maintainer: "GeoAI LATAM"
 license: MIT
 ---
@@ -45,8 +45,29 @@ Un `CIMSymbol` envuelve el JSON del Cartographic Information Model de Esri, dej�
 
 ```typescript
 import CIMSymbol from "@arcgis/core/symbols/CIMSymbol.js";
+
+// Un cuadrado rojo de 16×16 dibujado a 20 pt (≈27 px). Un symbolLayers vacío no dibuja nada.
 const symbol = new CIMSymbol({
-  data: { type: "CIMSymbolReference", symbol: { type: "CIMPointSymbol", symbolLayers: [] } },
+  data: {
+    type: "CIMSymbolReference",
+    symbol: {
+      type: "CIMPointSymbol",
+      symbolLayers: [{
+        type: "CIMVectorMarker",
+        enable: true,
+        size: 20,
+        frame: { xmin: 0, ymin: 0, xmax: 16, ymax: 16 },
+        markerGraphics: [{
+          type: "CIMMarkerGraphic",
+          geometry: { rings: [[[0, 0], [16, 0], [16, 16], [0, 16], [0, 0]]] },
+          symbol: {
+            type: "CIMPolygonSymbol",
+            symbolLayers: [{ type: "CIMSolidFill", enable: true, color: [255, 0, 0, 255] }],
+          },
+        }],
+      }],
+    },
+  },
 });
 ```
 
@@ -90,17 +111,32 @@ import "@arcgis/map-components/components/arcgis-map";
 ### Concepto 1: La jerarquía CIM
 
 `data` es un `CIMSymbolReference` cuyo `symbol` es un `CIMPointSymbol` / `CIMLineSymbol` /
-`CIMPolygonSymbol`. Cada uno contiene `symbolLayers` dibujados de abajo hacia arriba.
+`CIMPolygonSymbol`. Cada uno contiene `symbolLayers`; la **primera** capa del arreglo se dibuja
+**encima** (orden CIM, como en la lista de capas de ArcGIS Pro).
 
-### Concepto 2: Symbol layers
+### Concepto 2: Vector markers: `size` en puntos, geometría en unidades del `frame`
 
-Las capas incluyen `CIMVectorMarker` (geometría custom), `CIMSolidStroke`/`CIMSolidFill`, y efectos
-de dash. Apilarlas crea íconos compuestos y líneas con patrón.
+Un `CIMVectorMarker` lleva su `frame` a `size`, y `size` está en **puntos**: medido con 5.1.27,
+`size: 20` pinta 27 px y `size: 40` pinta 54 px (1 pt = 1,33 px). La geometría de cada
+`markerGraphic` va en unidades del frame, y el frame no recorta: un anillo que llega a 100 en un
+frame 0..16 pinta un marcador de 120 px en vez de 27 px.
 
 ### Concepto 3: Primitive overrides
 
-CIM soporta `primitiveOverrides` que enlazan una propiedad del símbolo a una expresión Arcade o
-campo, habilitando detalles de símbolo data-driven más allá de las variables visuales.
+Ponle `primitiveName` a una capa del símbolo y agrega `primitiveOverrides` al
+`CIMSymbolReference`: cada uno define una `propertyName` de esa primitiva desde una
+`valueExpressionInfo` de Arcade. `propertyName` va en **Proper case** (`"Size"`, `"Color"`,
+`"TextString"`); un `"size"` en minúscula se ignora sin aviso (medido: los dos features quedan en el
+tamaño base).
+
+### Concepto 4: Utilidades en vez de editar el JSON a mano
+
+`cimSymbolUtils` lee y cambia un símbolo ya armado: `getCIMSymbolSize`/`scaleCIMSymbolTo`,
+`getCIMSymbolColor`/`applyCIMSymbolColor`, `getCIMSymbolRotation`/`applyCIMSymbolRotation`.
+`symbolUtils.renderPreviewHTML(symbol)` dibuja una vista previa, la forma más rápida de saber si un
+JSON CIM pinta algo. Nuevo en 5.1 (beta): `CIMSymbolAnimationMoveAlongLine` (un marcador que
+avanza por una línea) y `CIMMarkerPlacementAtMeasuredUnits`. Las animaciones no corren en un
+SceneView ni en la leyenda.
 
 ## Pitfalls Comunes (Top 3)
 
@@ -116,27 +152,14 @@ new CIMSymbol({ data: { type: "CIMPointSymbol", symbolLayers: [] } as any });
 new CIMSymbol({ data: { type: "CIMSymbolReference", symbol: { type: "CIMPointSymbol", symbolLayers: [] } } });
 ```
 
-**Impacto:** el símbolo no parsea porque `data` debe ser un `CIMSymbolReference`.
+**Impacto:** medido con 5.1.27: no da error al construirlo; la vista previa lanza "Cannot read
+properties of null" y no se dibuja nada. TypeScript lo atrapa solo si no está el `as any`.
 
-### Pitfall 2: Olvidar `enable: true` en una capa
-
-```typescript
-// ❌ Anti-patrón
-symbolLayers: [{ type: "CIMSolidFill", color: [255, 0, 0, 255] }];
-```
-
-```typescript
-// ✅ Correcto
-symbolLayers: [{ type: "CIMSolidFill", enable: true, color: [255, 0, 0, 255] }];
-```
-
-**Impacto:** una capa deshabilitada simplemente no se dibuja.
-
-### Pitfall 3: Colores RGBA fuera de rango
+### Pitfall 2: Alfa en escala 0–1
 
 ```typescript
 // ❌ Anti-patrón
-color: [255, 0, 0, 1]; // el alpha aquí es 0-255, no 0-1
+color: [255, 0, 0, 1]; // el alfa aquí es 0-255, no 0-1
 ```
 
 ```typescript
@@ -144,7 +167,25 @@ color: [255, 0, 0, 1]; // el alpha aquí es 0-255, no 0-1
 color: [255, 0, 0, 255]; // totalmente opaco
 ```
 
-**Impacto:** símbolos casi transparentes porque el alpha se interpreta en escala 0–255.
+**Impacto:** medido: alfa `1` pinta con un alfa de 1/255, un símbolo invisible. Los colores CIM no
+son objetos `Color`, donde el alfa sí va de 0 a 1.
+
+### Pitfall 3: `propertyName` en minúscula en un override
+
+```typescript
+// ❌ Anti-patrón
+primitiveOverrides: [{ type: "CIMPrimitiveOverride", primitiveName: "m", propertyName: "size",
+  valueExpressionInfo: { type: "CIMExpressionInfo", title: "s", expression: "$feature.s", returnType: "Default" } }];
+```
+
+```typescript
+// ✅ Correcto
+primitiveOverrides: [{ type: "CIMPrimitiveOverride", primitiveName: "m", propertyName: "Size",
+  valueExpressionInfo: { type: "CIMExpressionInfo", title: "s", expression: "$feature.s", returnType: "Default" } }];
+```
+
+**Impacto:** medido en un MapView: con `"Size"` los features con s=8 y s=40 pintan 132 y 2970 px;
+con `"size"` los dos quedan en el tamaño base (210 y 196 px), sin aviso.
 
 ## Cuándo leer references/
 
@@ -167,4 +208,9 @@ color: [255, 0, 0, 255]; // totalmente opaco
 
 ## Changelog
 
+- **0.2.0** (2026-10-27): SDK 5.1. El Inicio Rápido no dibujaba nada (`symbolLayers` vacío); el pitfall
+  "si olvidas `enable: true` no se dibuja" era falso (medido: sin `enable` dibuja, solo `false` lo oculta); la
+  geometría fuera del frame no se recorta, agranda el marcador; `size` va en puntos; la primera capa queda encima;
+  primitive overrides con un ejemplo real y la trampa de `propertyName` en Proper case; `cimSymbolUtils`; la
+  animación y la colocación de 5.1. En `tests/runtime/casos/arcgis-cim-symbols.ts`.
 - **0.1.0** (2026-05-31): Versión inicial.

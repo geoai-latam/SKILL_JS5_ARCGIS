@@ -32,7 +32,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 3 | `arcgis-arcade` | aporta con arreglos | Pitfall falso (mayúsculas: Arcade no las distingue, ejecutado); campos/geometría no pedidos dan 0 en silencio; faltaba isAsync y createArcadeProfile |
 | 4 | `arcgis-authentication` | aporta con arreglos | La key en VITE_ igual viaja en el bundle; keys AAPK retiradas el 27-jun-2026 (Invalid Token, ejecutado); OAuth tarde abre el diálogo del SDK, no falla |
 | 5 | `arcgis-charts` | aporta con arreglos | antes no corría: `config` inventado; ahora `createModel` + `model`, ruta sin `.js`, Calcite fijado en ~5.1.2 |
-| 6 | `arcgis-cim-symbols` | pendiente | |
+| 6 | `arcgis-cim-symbols` | aporta con arreglos | orden de capas al revés y el pitfall de `enable` falso (medido); Quick Start vacío; overrides con la trampa de `"size"` |
 | 7 | `arcgis-coding-components` | pendiente | |
 | 8 | `arcgis-coordinates-projection` | pendiente | |
 | 9 | `arcgis-core-maps` | pendiente | |
@@ -216,3 +216,37 @@ enseñaba algo engañoso.
 **¿Aporta?** Ahora sí y mucho: un agente sin la skill tiende a inventar un objeto de configuración
 (es lo que hizo la propia skill), y no puede adivinar ni la ruta sin `.js` ni el choque con Calcite
 5.2. Antes del arreglo la skill era peor que nada: enseñaba con seguridad un código que nunca dibuja.
+
+### 6. `arcgis-cim-symbols` — aporta con arreglos
+
+**¿Corre en 5.1?** El snippet y los 34 bloques compilan contra 5.1.27. Quince comprobaciones en
+Chromium (`tests/runtime/casos/arcgis-cim-symbols.ts`): pintan cada símbolo con
+`symbolUtils.renderPreviewHTML` y cuentan píxeles, y tres van en un MapView con `takeScreenshot`.
+
+**Lo que estaba mal (y ya se arregló):**
+
+- **El Inicio Rápido no dibujaba nada**: `symbolLayers: []` pinta 0 px. Ahora es el cuadrado rojo
+  del ejemplo 1, que pinta 27×27 px.
+- **Uno de los tres pitfalls principales era falso.** Decía que una capa sin `enable: true` "no se
+  dibuja". Medido en la vista previa y en el mapa: sin `enable` dibuja igual (1680 px); solo
+  `enable: false` oculta la capa (0 px). Pasó a un pitfall extendido para desmentirlo.
+- **El orden de capas estaba al revés**: decía que las últimas se dibujan encima. Medido: con rojo
+  en `[0]` y azul en `[1]` el centro queda rojo, o sea que `[0]` va encima. Con el orden que
+  enseñaba, el relleno tapa la mitad de su propio contorno.
+- **"Geometría fuera del frame → recortada o invisible" era falso**: el frame no recorta. El
+  marcador crece de 27 a 120 px.
+- **"Los tamaños son relativos al frame" estaba a medias**: `size` va en puntos (20 → 27 px,
+  40 → 54 px).
+- **Mencionaba `primitiveOverrides` sin enseñar cómo se usan.** Ahora hay un ejemplo medido en un
+  MapView (s=8 → 132 px, s=40 → 2970 px) y una trampa real que no salía: `propertyName: "size"` en
+  minúscula se ignora sin aviso.
+- Faltaban `cimSymbolUtils`, la vista previa para depurar, y lo nuevo de 5.1 (`MoveAlongLine`,
+  `AtMeasuredUnits`); en 5.1.27 el tipo `CIMSymbolAnimation` aún no incluye `MoveAlongLine`.
+- Se comprobó y es cierto: el alfa 0–255 (alfa 1 pinta a 1/255), el envoltorio `CIMSymbolReference`
+  (sin él la vista previa lanza un error críptico) y el símbolo compartido entre renderers (es el
+  mismo objeto).
+
+**¿Aporta?** Sí, después del arreglo. Un agente sin la skill escribe CIM JSON plausible y se
+equivoca justo en lo que no da error: el orden de capas, los puntos y los píxeles, el alfa, la
+mayúscula del override. Antes, dos de sus cinco "reglas" eran falsas y una tercera enseñaba el orden
+al revés: hacía daño en lo que más se copia.
