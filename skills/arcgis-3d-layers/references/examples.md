@@ -49,11 +49,16 @@ map.add(new IntegratedMeshLayer({
 ```typescript
 import GaussianSplatLayer from "@arcgis/core/layers/GaussianSplatLayer.js";
 
-const splat = new GaussianSplatLayer({ url: "https://example.com/splats/site.ply" });
+const splat = new GaussianSplatLayer({
+  // Public Esri sample. A raw .ply/.splat URL does not work: publish it first.
+  url: "https://tiles.arcgis.com/tiles/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Portcoast_industrial/3DTilesServer/tileset.json",
+});
 scene.add(splat);
+await splat.load();
+console.log(splat.fullExtent?.width); // the whole world here means the source never loaded
 ```
 
 **Notes:**
 
-- GPU-heavy; lower `view.qualityProfile` on weaker hardware.
-- Load on demand rather than at app startup.
+- Load on demand rather than at app startup; leave `view.qualityProfile` to the SDK.
+- Checked against SDK 5.1.27: this URL loads (`Portcoast industrial`, extent in WGS84).

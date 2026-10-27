@@ -27,7 +27,7 @@ Tres preguntas, con evidencia, no con impresión:
 
 | # | Skill | Veredicto | Evidencia corta |
 |---|---|---|---|
-| 1 | `arcgis-3d-layers` | pendiente | |
+| 1 | `arcgis-3d-layers` | aporta con arreglos | Enseñaba el splat con .ply (falla en silencio, ejecutado); qualityProfile contra la guía del SDK; faltaba 3D Tiles |
 | 2 | `arcgis-advanced-layers` | pendiente | |
 | 3 | `arcgis-arcade` | pendiente | |
 | 4 | `arcgis-authentication` | pendiente | |
@@ -69,3 +69,32 @@ mezclarla en los commits de esta rama.
 
 ## Registro por skill
 
+### 1. `arcgis-3d-layers` — aporta con arreglos
+
+**¿Corre en 5.1?** Los 3 snippets y los 37 bloques compilan contra 5.1.27, sin API deprecada.
+Además se ejecutó en Chromium real (`tests/runtime/casos/arcgis-3d-layers.ts`, 6 comprobaciones
+en verde): el `SceneLayer` de Nueva York carga, el splat de Esri carga desde su `tileset.json`, un
+`SceneLayer` en `MapView` no crea layerView, y el SceneView fija `qualityProfile` solo (`medium`).
+
+**Lo que estaba mal (y ya se arregló):**
+
+- **Enseñaba a fallar con el splat.** Los tres archivos y el snippet ponían
+  `new GaussianSplatLayer({ url: "…/site.ply" })`. La capa consume un `3DTilesServer/tileset.json`
+  publicado o un `portalItem` (lo dice el `.d.ts`). Ejecutado: con la `.ply`, `load()` resuelve,
+  `loadError` es `null` y el extent es el mundo entero; no hay error y no se dibuja nada. Un agente
+  que siguiera la skill entregaba código roto sin saberlo.
+- **El consejo de `qualityProfile` contradecía al SDK.** Recomendaba fijar `"medium"`; la
+  documentación dice que el SceneView lo evalúa por equipo y recomienda no tocarlo.
+- **Faltaba `IntegratedMesh3DTilesLayer`.** Una malla en 3D Tiles metida en `IntegratedMeshLayer`
+  falla (ejecutado: 404 en `?f=json`). Es el caso más común hoy (3DTilesServer) y la skill no lo
+  nombraba. También faltaban `BuildingSceneLayer` y `VoxelLayer` en el árbol.
+- El enlace de muestra de `IntegratedMeshLayer` iba a una página genérica.
+
+**Lo que se añadió:** el fallo silencioso del splat como pitfall con su diagnóstico (extent de
+360°), la limitación documentada de `opacity` en mallas, nubes y splats dentro de un SceneView, y
+lo que 5.1 trajo a los splats (recorte, slice, línea de visión, perfiles, sombras).
+
+**¿Aporta?** Sí, después del arreglo. Lo de "3D solo en SceneView" y `ground` lo sabe cualquier
+modelo; el valor está en lo que no sabe porque es de 5.0/5.1: de dónde sale un splat, qué clase lee
+3D Tiles, cómo detectar que la capa cargó vacía y que `opacity` no hace nada ahí. Antes del
+arreglo, la skill restaba: inducía el error.

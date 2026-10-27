@@ -1,17 +1,17 @@
 ---
 name: arcgis-3d-layers
 description: >
-  Add 3D layers in a SceneView with the ArcGIS Maps SDK for JavaScript 5.0:
-  SceneLayer (3D objects/buildings), IntegratedMeshLayer (reality-capture meshes),
-  PointCloudLayer, and the new GaussianSplatLayer for photorealistic captures. Use
-  this skill whenever the user works in 3D, loads i3s scene services, meshes,
-  point clouds, or gaussian splats.
+  Add 3D layers in a SceneView with the ArcGIS Maps SDK for JavaScript 5.1:
+  SceneLayer (3D objects/buildings), IntegratedMeshLayer (i3s meshes),
+  IntegratedMesh3DTilesLayer (OGC 3D Tiles), PointCloudLayer, and GaussianSplatLayer
+  (published 3D Tiles, not .ply files). Use this skill whenever the user works in 3D,
+  loads i3s scene services, 3D Tiles, meshes, point clouds, or gaussian splats.
 lang: en
-version: 0.1.0
+version: 0.2.0
 status: stable
-sdk_version: ">=5.0 <6.0"
+sdk_version: ">=5.1 <6.0"
 created: 2026-05-31
-updated: 2026-05-31
+updated: 2026-10-27
 category: layers
 tags:
   - scenelayer
@@ -22,7 +22,7 @@ tags:
 requires:
   - arcgis-core-maps
 packages:
-  - "@arcgis/core@^5.0"
+  - "@arcgis/core@^5.1"
 maintainer: "GeoAI LATAM"
 license: MIT
 ---
@@ -53,9 +53,14 @@ scene.add(layer); // a Map used by a SceneView
 
 1. **What is the 3D data?**
    - 3D objects/buildings (i3s) → `SceneLayer`.
-   - City-scale photogrammetry mesh → `IntegratedMeshLayer`.
+   - City-scale photogrammetry mesh from a `SceneServer` (i3s) → `IntegratedMeshLayer`.
+   - Mesh as OGC 3D Tiles (`.../3DTilesServer/tileset.json`) → `IntegratedMesh3DTilesLayer`.
+     `IntegratedMeshLayer` cannot read it (it asks for `?f=json` and gets a 404).
    - LiDAR points → `PointCloudLayer`.
-   - Gaussian splat capture → `GaussianSplatLayer` (new in 5.0).
+   - Gaussian splat capture → `GaussianSplatLayer` (5.0), pointed at a published
+     `3DTilesServer/tileset.json` or a `portalItem`. It does **not** read a raw `.ply`/`.splat`
+     file: publish it first (ArcGIS Pro, Reality Studio, Drone2Map, or upload a `.3tz`).
+   - BIM from Revit → `BuildingSceneLayer`; volumetric data → `VoxelLayer`.
 
 2. **Rendering in 2D?**
    - Yes → these will not show; use a `SceneView`.
@@ -80,7 +85,7 @@ const SceneLayer = await $arcgis.import("@arcgis/core/layers/SceneLayer.js");
 
 ```typescript
 // Use <arcgis-scene> and add the 3D layer to its map.
-import "@arcgis/map-components/dist/components/arcgis-scene";
+import "@arcgis/map-components/components/arcgis-scene";
 ```
 
 ## Key Concepts
@@ -95,10 +100,29 @@ Set `map.ground = "world-elevation"` so layers sit on terrain.
 `SceneLayer`, `IntegratedMeshLayer`, and `PointCloudLayer` consume i3s `SceneServer` services.
 They stream level-of-detail nodes, so initial load is progressive.
 
-### Concept 3: GaussianSplatLayer (new in 5.0)
+### Concept 3: GaussianSplatLayer (5.0) and what changed in 5.1
 
-`GaussianSplatLayer` renders photorealistic gaussian-splat captures. It is heavy on the GPU —
-budget quality and only load it when the user opts in.
+`GaussianSplatLayer` renders photorealistic gaussian-splat captures published as 3D Tiles:
+
+```typescript
+import GaussianSplatLayer from "@arcgis/core/layers/GaussianSplatLayer.js";
+const splat = new GaussianSplatLayer({
+  url: "https://tiles.arcgis.com/tiles/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Portcoast_industrial/3DTilesServer/tileset.json",
+});
+```
+
+A wrong URL fails **silently**: with an unreachable or unsupported source, `await layer.load()`
+still resolves, `loadError` stays `null` and `fullExtent` is the whole world (-180…180). Check the
+console (CORS/404) and the extent, not just that `load()` resolved.
+
+Since 5.1 splats work with clipping areas, slice, line of sight, elevation profiles and scene
+shadows; shadow cast, viewshed and volume measurement are still in progress.
+
+### Concept 4: `opacity` does nothing on these layers in a SceneView
+
+The SDK documents it as a known limitation: changing `opacity` is not supported in a SceneView for
+`IntegratedMeshLayer`, `IntegratedMesh3DTilesLayer`, `PointCloudLayer` and `GaussianSplatLayer`
+(nor `VoxelLayer`). To fade them, toggle `visible` or clip them instead.
 
 ## Common Pitfalls (Top 3)
 
@@ -119,20 +143,24 @@ map.add(new SceneLayer({ url }));
 
 **Impact:** the layer loads but nothing appears in a 2D view.
 
-### Pitfall 2: Expecting splats/mesh without GPU headroom
+### Pitfall 2: Hard-coding `qualityProfile` to "fix" heavy layers
 
 ```typescript
 // ❌ Anti-pattern
-map.addMany([gaussianSplat, integratedMesh, pointCloud]); // all at once, high quality
+view.qualityProfile = "high"; // or "medium", fixed for every device
+map.addMany([gaussianSplat, integratedMesh, pointCloud]); // all at startup
 ```
 
 ```typescript
 // ✅ Correct
-view.qualityProfile = "medium";
-map.add(integratedMesh); // load heavy layers deliberately
+// Leave qualityProfile alone: the SceneView sets it per device on load.
+map.add(integratedMesh);
+loadSplatButton.onclick = () => map.add(gaussianSplat); // heavy layers on user intent
 ```
 
-**Impact:** stutter or context loss on lower-end GPUs.
+**Impact:** the SDK sets `qualityProfile` automatically from the detected device and recommends not
+setting it unless the target hardware is known; a fixed value is wrong for someone's GPU. If you
+expose it, expose it as a user setting.
 
 ### Pitfall 3: No elevation for ground-aligned layers
 
@@ -165,8 +193,13 @@ const map = new Map({ basemap: "arcgis/imagery", ground: "world-elevation" });
 ## Reference Samples
 
 - [SceneLayer](https://developers.arcgis.com/javascript/latest/sample-code/layers-scenelayer/)
-- [IntegratedMeshLayer](https://developers.arcgis.com/javascript/latest/layers/)
+- [IntegratedMeshLayer](https://developers.arcgis.com/javascript/latest/sample-code/layers-integratedmeshlayer/)
+- [GaussianSplatLayer](https://developers.arcgis.com/javascript/latest/sample-code/layers-gaussiansplatlayer/)
 
 ## Changelog
 
+- **0.2.0** (2026-10-27): SDK 5.1. `GaussianSplatLayer` takes a published `3DTilesServer/tileset.json` or
+  `portalItem`, not a `.ply` (checked by running it); silent-failure check; `IntegratedMesh3DTilesLayer`,
+  `BuildingSceneLayer` and `VoxelLayer` in the decision tree; `opacity` limitation; `qualityProfile`
+  is no longer hard-coded (it contradicted the SDK guidance); 5.1 splat capabilities.
 - **0.1.0** (2026-05-31): Initial release.

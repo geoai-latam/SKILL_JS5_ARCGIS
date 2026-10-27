@@ -42,6 +42,8 @@ declare global {
 export {};
 `;
 
+// Skills whose `view` is a SceneView unless a block says otherwise.
+const SCENE_SKILLS = new Set(["arcgis-3d-layers", "arcgis-scene-environment"]);
 const LANGS = new Set(["ts", "typescript", "js", "javascript", "tsx", "jsx"]);
 // Error codes that only mean "this is a fragment".
 const FRAGMENT_CODES = new Set([2304, 2552, 2582, 1375, 1378, 2451, 2300, 2393, 7006, 7005, 7034, 7031, 18004]);
@@ -81,7 +83,15 @@ function check(blocks) {
   blocks.forEach((b, i) => {
     // An `export {}` keeps each block a module so names do not collide across blocks.
     const f = path.join(tmp, `b${i}.ts`);
-    fs.writeFileSync(f, b.code + "\nexport {};\n");
+    // Fragments lean on context the prose gives ("a Map", "the SceneView"). Supply it on the
+    // block's first line, so reported line numbers stay those of the markdown.
+    const ctx = [];
+    if (/\bnew Map\(/.test(b.code) && !/import\s+(type\s+)?Map\b/.test(b.code)) ctx.push('import Map from "@arcgis/core/Map.js";');
+    const scene = SCENE_SKILLS.has(b.skill) || /SceneView|arcgis-scene/.test(b.code);
+    if (scene && !/\b(const|let|var)\s+view\b/.test(b.code)) {
+      ctx.push('import type __SV from "@arcgis/core/views/SceneView.js"; declare const view: __SV;');
+    }
+    fs.writeFileSync(f, ctx.join(" ") + " " + b.code + "\nexport {};\n");
     fileFor.set(path.normalize(f), b);
   });
   const options = {
