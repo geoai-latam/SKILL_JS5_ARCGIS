@@ -25,12 +25,12 @@
     "eval-descriptions": "node scripts/eval-descriptions.mjs"
   },
   "devDependencies": {
-    "@arcgis/ai-components": "^5.0.19",
-    "@arcgis/charts-components": "^5.0.19",
-    "@arcgis/coding-components": "^5.0.19",
-    "@arcgis/core": "^5.0",
-    "@arcgis/map-components": "^5.0",
-    "@esri/calcite-components": "^5.0",
+    "@arcgis/ai-components": "^5.1.27",
+    "@arcgis/charts-components": "^5.1.27",
+    "@arcgis/coding-components": "^5.1.27",
+    "@arcgis/core": "^5.1.27",
+    "@arcgis/map-components": "^5.1.27",
+    "@esri/calcite-components": "^5.1.1",
     "gray-matter": "^4.0.3",
     "markdownlint-cli2": "^0.18.0",
     "semver": "^7.6.3",
