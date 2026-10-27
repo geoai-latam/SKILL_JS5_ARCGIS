@@ -1,37 +1,38 @@
 # Extended Pitfalls: Portal Content
 
 > Extends the Top 3 in SKILL.md. Format: Anti-pattern / Correct / Impact / Diagnosis.
+> Measured with 5.1.27 against ArcGIS Online in `tests/runtime/casos/arcgis-portal-content.ts`.
 
-## Pitfall 1: Wrong portal URL for Enterprise
+## Pitfall 1: Asking for more than 100 per page
 
 ### Anti-pattern
 
 ```typescript
-const portal = new Portal(); // defaults to ArcGIS Online
+new PortalQueryParams({ query, num: 500 }); // "get everything in one call"
 ```
 
 ### Correct
 
 ```typescript
-const portal = new Portal({ url: "https://gis.myorg.com/portal" });
+new PortalQueryParams({ query, num: 100 }); // then page with nextQueryParams
 ```
 
 ### Impact
 
-You query the wrong organization.
+Measured: asked for 250, got 100, with no error or warning.
 
 ### Diagnosis
 
-Missing org items; set `portal.url`.
+Lists that stop at exactly 100; page until `nextQueryParams.start === -1`.
 
 ---
 
-## Pitfall 2: Over-broad queries
+## Pitfall 2: Over-broad queries and the 10000 window
 
 ### Anti-pattern
 
 ```typescript
-new PortalQueryParams({ query: "water" }); // matches everything mentioning water
+new PortalQueryParams({ query: "water", start: 10001 });
 ```
 
 ### Correct
@@ -42,80 +43,86 @@ new PortalQueryParams({ query: 'water AND type:"Feature Service" AND owner:myorg
 
 ### Impact
 
-Huge, noisy result sets.
+Measured: `"water"` reported `total` exactly `10000` (it is a cap, not a count), and `start` 10001 with `num` 10
+threw `Result window is too large, start + num must be less than or equal to 10000`.
 
 ### Diagnosis
 
-Too many results; tighten the query.
+A `total` of exactly 10000, or that error: narrow the query by type, owner, tags or extent.
 
 ---
 
-## Pitfall 3: Assuming item.url is always present
+## Pitfall 3: Building a layer from `item.url`
 
 ### Anti-pattern
 
 ```typescript
-const layer = new FeatureLayer({ url: item.url }); // some item types have no url
+const layer = new FeatureLayer({ url: item.url }); // empty for a web map, and loses the item's popups and renderer
 ```
 
 ### Correct
 
 ```typescript
-const layer = await Layer.fromPortalItem({ portalItem: item });
+const layer = await Layer.fromPortalItem({ portalItem: item }); // for layer items only
 ```
 
 ### Impact
 
-`undefined` url for non-service item types.
+Measured: a web map item had no `url`; a Feature Service item had one, and `Layer.fromPortalItem` returned a
+`feature` layer configured from the item.
 
 ### Diagnosis
 
-Layer fails to construct; use `Layer.fromPortalItem`.
+`undefined` URLs or layers that ignore the item's saved styling.
 
 ---
 
-## Pitfall 4: Not handling token expiry
+## Pitfall 4: Wrong portal URL for Enterprise
 
 ### Anti-pattern
 
 ```typescript
-// Long-lived session assuming the token never expires
+const portal = new Portal(); // https://www.arcgis.com
 ```
 
 ### Correct
 
 ```typescript
-// IdentityManager refreshes tokens; handle re-auth on 498/499.
+const portal = new Portal({ url: "https://gis.myorg.com/portal" });
 ```
 
 ### Impact
 
-Requests start failing after the token expires.
+Measured: `new Portal()` loads `https://www.arcgis.com`, so you search the wrong organization.
 
 ### Diagnosis
 
-Sudden 498/499 errors; refresh credentials.
+Missing org items; check `portal.url`.
 
 ---
 
-## Pitfall 5: Querying groups without membership
+## Pitfall 5: Treating "does not exist" as "does not exist"
 
 ### Anti-pattern
 
 ```typescript
-await group.queryItems(); // private group, not a member
+await item.load().catch(() => showNotFound()); // the item may exist but be private
 ```
 
 ### Correct
 
 ```typescript
-// Ensure the signed-in user belongs to the group.
+await item.load().catch((e: Error) => {
+  // "Item does not exist or is inaccessible.": offer sign-in before saying it is gone
+  showNotFoundOrSignIn(e);
+});
 ```
 
 ### Impact
 
-Empty/forbidden results for private groups.
+Measured: a missing id rejected with `Item does not exist or is inaccessible.` and `loadStatus` `"failed"`, without
+a sign-in prompt. The server uses that one message for both cases.
 
 ### Diagnosis
 
-No group items; verify membership/permissions.
+Users who swear the item exists; check whether they are signed in.

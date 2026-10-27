@@ -30,14 +30,14 @@ import PortalQueryParams from "@arcgis/core/portal/PortalQueryParams.js";
 const portal = new Portal();
 await portal.load();
 const result = await portal.queryItems(
-  new PortalQueryParams({ query: 'type:"Web Map" AND owner:esri', num: 20, sortField: "modified" }),
+  new PortalQueryParams({ query: 'type:"Web Map" AND owner:esri', num: 20, sortField: "modified", sortOrder: "desc" }),
 );
 const titles = result.results.map((i) => i.title);
 ```
 
 **Notes:**
 
-- Use Lucene-like query syntax.
+- Without `sortOrder: "desc"`, `modified` sorts oldest first (measured).
 - Sign in to include private items.
 
 ---

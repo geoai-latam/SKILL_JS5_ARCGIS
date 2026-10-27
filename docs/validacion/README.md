@@ -49,7 +49,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 20 | `arcgis-map-tools` | aporta con arreglos | snapping-controls NO se conecta al sketch (snappingOptions separados); 3D en 2D = unsupported en silencio; medición por análisis; pitfalls que eran comentarios |
 | 21 | `arcgis-performance` | aporta con arreglos | import() solo ahorra 24 KB de 1494 (el SDK ya se divide); el import raíz no resuelve; 20 vistas sin destroy pierden contexto; destroy() se lleva el mapa compartido |
 | 22 | `arcgis-popup-templates` | aporta con arreglos | 3 pitfalls falsos; los reales: outFields en funciones, zona horaria, separadores |
-| 23 | `arcgis-portal-content` | pendiente | |
+| 23 | `arcgis-portal-content` | aporta con arreglos | su paginación duplicaba (start -1 reinicia); sortField sin sortOrder = lo más viejo |
 | 24 | `arcgis-rest-services` | pendiente | |
 | 25 | `arcgis-scene-environment` | pendiente | |
 | 26 | `arcgis-smart-mapping` | pendiente | |
@@ -780,3 +780,26 @@ nunca, o destruir y perder el mapa compartido.
 - **Lo demás**: `api-detail` gana `expression` y `relationship` y aclara para qué sirve `outFields`; los snippets se actualizaron a 5.1 y `snippet-popup-custom` declara sus `outFields`.
 
 **Por qué aporta**: sin la skill, un agente escribe la función de contenido sin `outFields` y le sale `undefined`, entrega fechas corridas un día y cifras sin separador. Los tres errores fallan en silencio. La versión anterior advertía de tres problemas que no existen.
+
+### 23. `arcgis-portal-content` — aporta con arreglos
+
+**Evidencia (5.1.27 contra ArcGIS Online público, sin sesión, `tests/runtime/casos/arcgis-portal-content.ts`, 15/15 en verde):**
+
+- **El arreglo de paginación que enseñaba la skill tenía un error.** `nextQueryParams` siempre es un objeto, y al terminar trae `start: -1`. Consultarlo vuelve a la primera página. El bucle `while (page.nextQueryParams)` llevaba 446 resultados tras 6 páginas de una búsqueda de 223, y seguía. El `if (first.nextQueryParams)` de la skill vieja duplica la primera página cuando todo cabe en una. La versión correcta pagina hasta `start === -1`: 223 de 223 en 3 páginas.
+- **Topes que fallan en silencio:**
+  - la página por defecto trae 10 resultados;
+  - un `num` de 250 trae 100;
+  - `start` empieza en 1 (el primer `nextQueryParams.start` es 11);
+  - `start + num` por encima de 10000 lanza `Result window is too large`;
+  - `total` se detiene en 10000: una búsqueda de `"water"` dio exactamente 10000.
+- **`sortField: "modified"` sin `sortOrder` ordena ascendente:** los primeros resultados eran de 2020, y con `"desc"` de 2026. El ejemplo y el snippet de la skill vieja devolvían los mapas más viejos creyendo traer los últimos.
+- **`Layer.fromPortalItem` sobre un web map** lanza `Unknown item type 'Web Map'`, y ese item no tiene `url`. Con un Feature Service devuelve una capa `feature`.
+- **Lo que la skill vieja decía y sí es cierto:**
+  - `title` y `type` son `null` antes de `load()`;
+  - `new Portal()` apunta a `https://www.arcgis.com`, con `user` en `null`;
+  - `fetchData()` de un web map trae `operationalLayers` y `baseMap`;
+  - los grupos públicos se pueden consultar (63 de Esri; el primero tiene 45 items).
+- **Un id inexistente** falla rápido con `Item does not exist or is inaccessible.` (`loadStatus` `failed`, sin diálogo de inicio de sesión). Curiosidad: el id de 32 ceros existe en ArcGIS Online.
+- **Relleno quitado:** dos pitfalls extendidos que eran solo un comentario (expiración del token y membresía de grupos), cambiados por otros medidos. El pitfall de contenido privado sin sesión se dejó como concepto: es cierto por diseño y no se puede medir sin una cuenta.
+
+**Por qué aporta:** las tres trampas principales (el bucle infinito, el orden ascendente y el cargador equivocado) son errores que un agente comete casi seguro y que no se notan a simple vista. La versión anterior enseñaba la primera y la segunda en su propio código.

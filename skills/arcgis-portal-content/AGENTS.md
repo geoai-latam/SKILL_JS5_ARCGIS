@@ -1,25 +1,28 @@
 # Agent Guide: arcgis-portal-content
 
-Quick-reference for portal content. Read before searching/loading items.
+Quick-reference for portal content (SDK 5.1). Read before searching/loading items.
 
 ## Quick Decision Tree
 
-1. **Know the id?** → `new PortalItem({ id })` + `load()` (or `item-id` on the map).
-2. **Search?** → `portal.queryItems(new PortalQueryParams({ query }))`.
-3. **Groups/users?** → `portal.queryGroups` / `PortalGroup`.
+1. **Know the id?** → web map: `item-id` on `<arcgis-map>` / `WebMap`; layer item: `Layer.fromPortalItem`;
+   metadata: `new PortalItem({ id })` + `load()`.
+2. **Search?** → `portal.queryItems(new PortalQueryParams({ query, num: 100, sortField, sortOrder }))`.
+3. **Groups?** → `portal.queryGroups` / `group.queryItems`.
 
 ## Setup Checklist
 
+- [ ] Page until `nextQueryParams.start === -1` (the object is always there).
+- [ ] `num` ≤ 100; `start + num` ≤ 10000.
+- [ ] `sortOrder: "desc"` for "latest".
 - [ ] `await item.load()` before reading metadata.
-- [ ] Sign in for private content.
-- [ ] Set `portal.url` for Enterprise.
-- [ ] Page results via `nextQueryParams`.
+- [ ] Set `portal.url` for Enterprise; sign in for private content.
 
 ## Anti-patterns (one-liner reminders)
 
-- ❌ Reading `item.title` before `load()`.
-- ❌ Expecting private items without sign-in.
-- ❌ Ignoring pagination.
+- ❌ `while (page.nextQueryParams)`: restarts at page one forever.
+- ❌ `sortField: "modified"` alone: oldest first.
+- ❌ `Layer.fromPortalItem` on a web map: `Unknown item type 'Web Map'`.
+- ❌ Reading `item.title` before `load()` (`null`).
 
 ## Files in This Skill
 
