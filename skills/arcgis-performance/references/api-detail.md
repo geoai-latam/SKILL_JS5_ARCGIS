@@ -2,30 +2,10 @@
 
 ## Table of Contents
 
-- [Bundle / imports](#bundle--imports)
-- [Layer draw controls](#layer-draw-controls)
 - [View lifecycle](#view-lifecycle)
-
----
-
-## Bundle / imports
-
-| Technique | How |
-|---|---|
-| Per-module ESM | `import FeatureLayer from "@arcgis/core/layers/FeatureLayer.js"` |
-| Code-splitting | `const { default: X } = await import("@arcgis/core/.../X.js")` |
-| Component tree-shaking | import only the `arcgis-*` components you render |
-
----
-
-## Layer draw controls
-
-| Property | Type | Description |
-|---|---|---|
-| `featureReduction` | `{ type: "cluster" \| "selection" \| "binning" }` | Aggregate dense features |
-| `definitionExpression` | `string` | SQL filter limiting fetched features |
-| `minScale` / `maxScale` | `number` | Only draw within a scale range |
-| `SceneView.qualityProfile` | `"low" \| "medium" \| "high"` | 3D rendering quality vs cost |
+- [Watching state](#watching-state)
+- [Layer draw controls](#layer-draw-controls)
+- [Bundle / imports](#bundle--imports)
 
 ---
 
@@ -33,6 +13,42 @@
 
 | Member | Description |
 |---|---|
-| `view.destroy()` | Releases the WebGL context and resources |
-| `handle.remove()` | Stops a watch/when/event subscription |
-| `view.updating` | `true` while the view is fetching/drawing (watch to defer work) |
+| `view.destroy()` | Frees the WebGL context **and destroys `view.map` and its layers** |
+| `view.map = null` | Detach the map first to keep it for another view |
+| `view.fatalError` | Set when the view lost its WebGL context; `view.tryFatalErrorRecovery()` retries |
+| `handle.remove()` | Stops a `watch` / `on` subscription |
+
+---
+
+## Watching state
+
+| Watch | Fires (measured, one 1.5 s `goTo`) |
+|---|---|
+| `() => view.center` | 92 times |
+| `() => view.stationary` (true) | once |
+| `() => view.updating` | when fetching/drawing starts or ends |
+
+`reactiveUtils.when(() => view.stationary, cb)` and `reactiveUtils.whenOnce(...)` are the settled-state helpers.
+
+---
+
+## Layer draw controls
+
+| Property | Type | Description |
+|---|---|---|
+| `minScale` / `maxScale` | `number` | Outside the range the layer view is `suspended` and fetches nothing |
+| `visible` | `boolean` | Toggle without re-fetching (0 requests over 3 toggles, measured) |
+| `featureReduction` | `{ type: "cluster" \| "binning" \| "selection" }` | Aggregate dense points; plain objects autocast |
+| `definitionExpression` | `string` | Server-side filter for what the layer draws |
+| `SceneView.qualityProfile` | `"low" \| "medium" \| "high"` | 3D quality vs cost; set automatically per device |
+
+---
+
+## Bundle / imports
+
+| Technique | Measured effect (Vite, `tests/bundle/medir.mjs`) |
+|---|---|
+| Per-module ESM (`@arcgis/core/<path>.js`) | The only form that resolves; no root or barrel modules |
+| SDK internal splitting | Map + MapView + FeatureLayer: 748 chunks, 1494 KB (430 KB gzip) initial |
+| `import()` of CSVLayer + KMLLayer | −24 KB (−6 KB gzip) initial |
+| Components | Import only the `arcgis-*` tags the page renders |

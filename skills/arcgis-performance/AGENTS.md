@@ -1,32 +1,32 @@
 # Agent Guide: arcgis-performance
 
-Quick-reference for tuning ArcGIS apps. Read before optimizing.
+Quick-reference for performance work (SDK 5.1). Read before tuning a slow or leaky app.
 
 ## Quick Decision Tree
 
-1. **Bundle too big?** → per-module imports + `await import()` for heavy/optional features.
-2. **Jank with many features?** → feature reduction (cluster), `definitionExpression`, scale limits.
-3. **3D heavy?** → lower `qualityProfile`.
-4. **Memory grows in SPA?** → `view.destroy()` + `handle.remove()` on teardown.
+1. **WebGL contexts lost / memory grows?** → `view.destroy()` on unmount (`view.map = null` first to keep the map).
+2. **Jank on pan/zoom?** → watch `view.stationary`; `minScale`/`maxScale`; `featureReduction`; `layer.visible`.
+3. **Big bundle?** → per-module imports and only the components you render; `import()` helps little (24 KB measured).
 
 ## Setup Checklist
 
-- [ ] Imports are per-module (`@arcgis/core/<x>.js`), never `import * as arcgis`.
-- [ ] Heavy/optional layers are dynamically imported.
-- [ ] Dense layers use `featureReduction`.
-- [ ] Teardown destroys the view and removes all handles.
+- [ ] Every view is destroyed on unmount.
+- [ ] A shared map is detached (`view.map = null`) before `destroy()`.
+- [ ] Every `watch`/`on` handle is removed.
+- [ ] No per-frame work: watch settled state.
+- [ ] Detail layers have a scale range.
 
 ## Anti-patterns (one-liner reminders)
 
-- ❌ `import * as arcgis from "@arcgis/core"`.
-- ❌ Leaving views alive on route change.
-- ❌ Rendering 100k+ features with no reduction.
-- ❌ Watch handles that are never removed.
+- ❌ `container.innerHTML = ""` as teardown (views stay alive).
+- ❌ `view.destroy()` and then reusing its map (destroyed with it).
+- ❌ `watch(() => view.center, ...)` for heavy work (92 fires per goTo).
+- ❌ `import ... from "@arcgis/core"` or `"@arcgis/core/layers"` (do not resolve).
 
 ## Files in This Skill
 
 - `SKILL.md` / `SKILL.es.md` — full guides
-- `references/api-detail.md` — perf-related properties
-- `references/examples.md` — bundle / clustering / cleanup
+- `references/api-detail.md` — lifecycle, watches, draw controls, bundle numbers
+- `references/examples.md` — teardown, settled watches, scale ranges
 - `references/pitfalls.md` — extended troubleshooting
-- `scripts/snippet-lazy-import.ts`, `snippet-cleanup.ts`
+- `scripts/snippet-cleanup.ts`, `snippet-lazy-import.ts`

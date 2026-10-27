@@ -1,17 +1,18 @@
 ---
 name: arcgis-performance
 description: >
-  Optimiza apps con ArcGIS Maps SDK for JavaScript 5.0: reduce el bundle con
-  imports ESM por módulo y dynamic import(), baja el trabajo de dibujo con feature
-  reduction y visibilidad de capas, y evita fugas de memoria destruyendo vistas y
-  removiendo handles de watch. Usa esta skill cuando el usuario reporte un mapa
-  lento, un bundle grande, jank al navegar, o crecimiento de memoria con el tiempo.
+  Optimiza apps del ArcGIS Maps SDK for JavaScript 5.1: desmonta las vistas con
+  view.destroy() (sabiendo que también destruye el mapa y las capas), evita los
+  watch de alta frecuencia, pinta menos con rangos de escala, feature reduction y
+  visibilidad, y ten expectativas honestas del bundle (el SDK ya se divide solo).
+  Usa esta skill cuando el usuario reporte un mapa lento, un bundle grande, saltos
+  al desplazarse, contextos WebGL perdidos o memoria que crece con el tiempo.
 lang: es
-version: 0.1.0
+version: 0.2.0
 status: stable
-sdk_version: ">=5.0 <6.0"
+sdk_version: ">=5.1 <6.0"
 created: 2026-05-31
-updated: 2026-05-31
+updated: 2026-10-27
 category: core
 tags:
   - performance
@@ -20,7 +21,7 @@ tags:
   - memory
   - optimization
 packages:
-  - "@arcgis/core@^5.0"
+  - "@arcgis/core@^5.1"
 maintainer: "GeoAI LATAM"
 license: MIT
 ---
@@ -32,45 +33,56 @@ license: MIT
 
 ## Resumen
 
-El rendimiento en el SDK viene de tres palancas: enviar menos código, dibujar menos, y limpiar.
+El rendimiento en el SDK sale de tres palancas: limpiar, pintar menos y enviar menos código. Medido con 5.1.27, las dos
+primeras pesan mucho más que la tercera.
 
-- **Problema que resuelve:** cargas lentas, bundles pesados, y fugas en SPAs de larga vida.
-- **A quién sirve:** desarrolladores afinando una app funcional para producción.
-- **Patrón que enseña:** imports ESM granulares, lazy loading, feature reduction, limpieza determinista.
-- **Qué NO cubre:** el setup inicial (ver `arcgis-starter-app`) ni decisiones de render (`arcgis-visualization`).
+- **Problema que resuelve:** contextos WebGL perdidos, fugas en SPAs de larga vida, saltos al desplazarse, cargas lentas.
+- **A quién sirve:** desarrolladores que afinan una app que ya funciona para producción.
+- **Patrón que enseña:** desmontaje determinista, watch del estado quieto, rangos de escala y reducción, imports
+  granulares.
+- **Qué NO cubre:** la configuración inicial (ver `arcgis-starter-app`) ni las decisiones de render
+  (`arcgis-visualization`).
 
 ## Inicio Rápido
 
 ```typescript
-// Carga diferida de una capa pesada solo cuando se necesita (la separa del bundle principal).
-const { default: CSVLayer } = await import("@arcgis/core/layers/CSVLayer.js");
-map.add(new CSVLayer({ url }));
+// Desmontaje de ruta en una SPA que reutiliza el mismo mapa entre rutas.
+function leaveRoute(view: MapView, handles: { remove(): void }[]) {
+  handles.forEach((h) => h.remove());
+  view.map = null;   // conserva el mapa y sus capas para la próxima vista
+  view.destroy();    // libera el contexto WebGL
+}
 ```
+
+Medido: crear 20 MapViews y solo vaciar el contenedor dejó vivas las 20; Chromium escribió "Too many active WebGL
+contexts. Oldest context will be lost." y 4 vistas terminaron con `fatalError`. Con `destroy()`, ninguna.
 
 ## Árbol de Decisión
 
-1. **¿El bundle es muy grande?**
-   - Sí → importa por módulo (`@arcgis/core/<x>.js`), dynamic-import de features pesadas/opcionales.
-   - No → continúa.
+1. **¿Contextos WebGL perdidos o memoria que crece entre navegaciones?**
+   - Sí → `view.destroy()` al desmontar; pon `view.map = null` antes si el mapa se reutiliza.
 
-2. **¿El render hace jank con muchas features?**
-   - Sí → activa feature reduction (clustering), ajusta `definitionExpression`, baja el quality profile (3D).
-   - No → continúa.
+2. **¿Saltos al desplazar o hacer zoom?**
+   - Trabajo en cada cuadro → vigila `view.stationary`, no `view.center` / `view.extent`.
+   - Demasiados features → `minScale`/`maxScale`, `featureReduction` (cluster o binning), `definitionExpression`.
+   - Prender y apagar capas → `layer.visible`, no quitar y recrear.
 
-3. **¿La memoria crece entre navegaciones?**
-   - Sí → `view.destroy()` y `handle.remove()` en el teardown.
+3. **¿Bundle inicial demasiado grande?**
+   - Importa por módulo (`@arcgis/core/<ruta>.js`, solo los componentes que pintas).
+   - `import()` para lo opcional, sabiendo que el SDK ya carga solo, en diferido, la mayor parte de su código.
 
-**Default:** importa granular, difiere el resto, siempre limpia.
+**Por defecto:** destruir vistas, vigilar el estado quieto, limitar por escala las capas de detalle.
 
 ## Patrones de Import
 
-### ESM Directo (recomendado para npm/Vite/Webpack)
+### ESM directo (recomendado para npm/Vite/Webpack)
 
 ```typescript
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer.js";
+import * as reactiveUtils from "@arcgis/core/core/reactiveUtils.js";
 ```
 
-### Imports Dinámicos (CDN)
+### Imports dinámicos (CDN)
 
 ```javascript
 const FeatureLayer = await $arcgis.import("@arcgis/core/layers/FeatureLayer.js");
@@ -79,49 +91,41 @@ const FeatureLayer = await $arcgis.import("@arcgis/core/layers/FeatureLayer.js")
 ### Map Components (recomendado para proyectos nuevos)
 
 ```typescript
-// Importa solo los componentes que renderizas para que el bundler haga tree-shaking del resto.
+// Importa solo los componentes que pintas.
 import "@arcgis/map-components/components/arcgis-map";
 ```
 
 ## Conceptos Clave
 
-### Concepto 1: Imports granulares y code-splitting
+### Concepto 1: el desmontaje, y lo que destroy() se lleva
 
-Importa desde rutas de módulo específicas para que los bundlers hagan tree-shaking del código no
-usado. Envuelve features opcionales o pesadas en `await import(...)` para que caigan en un chunk
-separado cargado bajo demanda.
+`view.destroy()` libera el contexto WebGL de la vista. **También destruye su mapa y todas sus capas** (medido:
+`map.destroyed === true`, `layer.destroyed === true`, `map.layers.length === 0`). Si el mapa vive más que la vista
+(pestañas, rutas, un store compartido), pon `view.map = null` antes de destruir: medido, el mapa sobrevivió con sus
+capas. Quita también tus handles de `watch`/`on`.
 
-### Concepto 2: Dibujar menos
+### Concepto 2: pintar menos
 
-Usa feature reduction (clustering), `definitionExpression` para limitar features traídas, y
-`maxScale`/`minScale` para que las capas dibujen solo donde importan. En 3D baja `qualityProfile`.
+`minScale`/`maxScale` suspenden una capa fuera de su rango (medido: a escala de país, una capa con `minScale: 50000`
+quedó con `suspended: true` y no pidió nada). `featureReduction` agrega puntos densos (un objeto plano
+`{ type: "cluster" }` se convierte en `FeatureReductionCluster`). Alternar `layer.visible` conserva la capa: medido, 3
+alternancias hicieron **0** pedidos al servicio, y 3 ciclos de quitar y recrear hicieron **24**.
 
-### Concepto 3: Limpieza determinista
+### Concepto 3: expectativas del bundle
 
-Las SPAs de larga vida fugan si las vistas y handles persisten. Llama `view.destroy()` y
-`handle.remove()` por cada watch cuando una ruta se desmonta.
+No hay módulo raíz: `import * from "@arcgis/core"` y `"@arcgis/core/layers"` no resuelven (TS2307), así que esos
+errores de "barrel" rompen el build en vez de inflarlo. El SDK ya se divide solo: un build de Vite con Map + MapView +
+FeatureLayer produjo **748 chunks** con un chunk inicial de 1494 KB (430 KB gzip). Pasar `CSVLayer` y `KMLLayer` a
+`import()` solo ahorró **24 KB (6 KB gzip)** de código inicial (`tests/bundle/medir.mjs`). Usa `import()` para lo
+opcional, pero no esperes que arregle una primera carga lenta.
 
 ## Pitfalls Comunes (Top 3)
 
-### Pitfall 1: Importar todo el namespace
+### Pitfall 1: Dejar vistas vivas
 
 ```typescript
 // ❌ Anti-patrón
-import * as arcgis from "@arcgis/core"; // trae mucho más de lo que usas
-```
-
-```typescript
-// ✅ Correcto
-import FeatureLayer from "@arcgis/core/layers/FeatureLayer.js";
-```
-
-**Impacto:** el bundle se infla y la carga inicial es lenta.
-
-### Pitfall 2: Nunca destruir vistas
-
-```typescript
-// ❌ Anti-patrón
-function leaveRoute() { container.innerHTML = ""; } // el objeto view sigue vivo
+function leaveRoute() { container.innerHTML = ""; } // la vista y su contexto WebGL siguen vivos
 ```
 
 ```typescript
@@ -129,21 +133,41 @@ function leaveRoute() { container.innerHTML = ""; } // el objeto view sigue vivo
 function leaveRoute() { view.destroy(); }
 ```
 
-**Impacto:** contextos WebGL y memoria se acumulan ("Too many active WebGL contexts").
+**Impacto:** medido con 20 vistas: todas siguieron vivas, Chromium soltó los contextos WebGL más viejos ("Too many
+active WebGL contexts") y 4 vistas llegaron a `fatalError`. Con `destroy()`: 0.
 
-### Pitfall 3: Renderizar todas las features sin reducción
+### Pitfall 2: destroy() en una vista cuyo mapa todavía necesitas
 
 ```typescript
 // ❌ Anti-patrón
-const layer = new FeatureLayer({ url }); // 200k puntos, sin reducción
+view.destroy();
+newView.map = sharedMap; // sharedMap se destruyó con la vista vieja, capas incluidas
 ```
 
 ```typescript
 // ✅ Correcto
-const layer = new FeatureLayer({ url, featureReduction: { type: "cluster" } });
+view.map = null;
+view.destroy();
+newView.map = sharedMap;
 ```
 
-**Impacto:** frames perdidos y alto GPU/CPU al navegar datos densos.
+**Impacto:** medido: después de `view.destroy()`, `map.destroyed` y `layer.destroyed` eran `true` y el mapa tenía 0
+capas; la vista siguiente muestra un mapa vacío.
+
+### Pitfall 3: Recalcular en cada cuadro de un desplazamiento
+
+```typescript
+// ❌ Anti-patrón
+reactiveUtils.watch(() => view.center, () => expensiveRecompute());
+```
+
+```typescript
+// ✅ Correcto
+reactiveUtils.watch(() => view.stationary, (stationary) => { if (stationary) expensiveRecompute(); });
+```
+
+**Impacto:** medido durante un `goTo` de 1,5 s: el watch de `center` se disparó **92** veces, el de `stationary`
+**una**.
 
 ## Cuándo leer references/
 
@@ -166,4 +190,9 @@ const layer = new FeatureLayer({ url, featureReduction: { type: "cluster" } });
 
 ## Changelog
 
+- **0.2.0** (2026-10-27): SDK 5.1. Medido en `tests/runtime/casos/arcgis-performance.ts` y `tests/bundle/medir.mjs`.
+  El viejo pitfall 1 (`import * from "@arcgis/core"`) y su gemelo de barrel no resuelven, así que no pueden "inflar el
+  bundle"; el `import()` del inicio rápido ahorró 24 KB de un chunk inicial de 1494 KB porque el SDK ya se divide en
+  unos 748 chunks. Nuevos pitfalls principales, con números: vistas que quedan vivas (4 de 20 perdieron el contexto
+  WebGL), `view.destroy()` que destruye un mapa compartido con sus capas, y `watch(center)` (92 disparos contra 1).
 - **0.1.0** (2026-05-31): Versión inicial.

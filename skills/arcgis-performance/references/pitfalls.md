@@ -1,8 +1,9 @@
 # Extended Pitfalls: Performance
 
 > Extends the Top 3 in SKILL.md. Format: Anti-pattern / Correct / Impact / Diagnosis.
+> Measured with 5.1.27 in `tests/runtime/casos/arcgis-performance.ts` and `tests/bundle/medir.mjs`.
 
-## Pitfall 1: Barrel imports defeating tree-shaking
+## Pitfall 1: Root or barrel imports
 
 ### Anti-pattern
 
@@ -19,35 +20,37 @@ import GraphicsLayer from "@arcgis/core/layers/GraphicsLayer.js";
 
 ### Impact
 
-Bundlers may pull the whole layers barrel, inflating the bundle.
+`@arcgis/core` has no root or folder index modules: these imports fail with TS2307 / "failed to resolve" at build
+time. They do not bloat the bundle; they break it.
 
 ### Diagnosis
 
-Inspect the build's chunk report — unexpected modules indicate a barrel import.
+"Cannot find module '@arcgis/core/layers'"; import each class from its `.js` path.
 
 ---
 
-## Pitfall 2: Watching high-frequency properties without debounce
+## Pitfall 2: Expecting import() to fix a slow first load
 
 ### Anti-pattern
 
 ```typescript
-reactiveUtils.watch(() => view.center, () => expensiveRecompute());
+const { default: CSVLayer } = await import("@arcgis/core/layers/CSVLayer.js"); // "this will shrink the bundle"
 ```
 
 ### Correct
 
 ```typescript
-reactiveUtils.watch(() => view.stationary, (s) => { if (s) expensiveRecompute(); });
+// Use import() for optional features, but find first-load time in what the page draws and fetches.
 ```
 
 ### Impact
 
-`center` fires continuously while panning, starving the main thread.
+Measured: moving CSVLayer and KMLLayer behind `import()` saved 24 KB (6 KB gzip) from a 1494 KB initial chunk; the SDK
+already loads most of its code in ~748 lazy chunks.
 
 ### Diagnosis
 
-Profiler shows the callback firing dozens of times per pan.
+A bundle report where the dynamic chunk is tiny compared to the entry chunk.
 
 ---
 
@@ -69,7 +72,7 @@ import "@arcgis/map-components/components/arcgis-map"; // only what this page re
 
 ### Impact
 
-Unused components bloat the bundle.
+Unused components add code (not measured here; the SDK's own lazy loading reduces but does not remove it).
 
 ### Diagnosis
 
@@ -93,11 +96,12 @@ const parcels = new FeatureLayer({ url, minScale: 50000 }); // only when zoomed 
 
 ### Impact
 
-Heavy detail layers draw when invisible-to-useful, wasting cycles.
+Measured: with `minScale: 50000` at country scale the layer view was `suspended` with `visibleAtCurrentScale: false`,
+so it fetched and drew nothing. Without it, every feature is requested and drawn at every zoom.
 
 ### Diagnosis
 
-Frame drops at low zoom for layers that only matter up close.
+Frame drops and requests at low zoom for layers that only matter up close.
 
 ---
 
@@ -118,7 +122,7 @@ layer.visible = !layer.visible; // keep the instance, just toggle
 
 ### Impact
 
-Repeated network fetches and re-initialization stutter the UI.
+Measured: 3 visibility toggles made 0 requests to the service; 3 remove-and-recreate cycles made 24.
 
 ### Diagnosis
 

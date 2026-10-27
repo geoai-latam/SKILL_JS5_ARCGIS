@@ -47,7 +47,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 18 | `arcgis-knowledge-graphs` | aporta con arreglos (parcial) | sin grafo accesible (token): geometría en properties, no e.geometry; fetch sin sesión queda pendiente, no 403; ejemplos que no compilaban; streaming + bindParameters |
 | 19 | `arcgis-layers` | aporta con arreglos | reemplazar createQuery().where pierde el definitionExpression (29 vs 6); tope de 1000 silencioso (11 vs 51 capitales); outFields de capa no limitan queries |
 | 20 | `arcgis-map-tools` | aporta con arreglos | snapping-controls NO se conecta al sketch (snappingOptions separados); 3D en 2D = unsupported en silencio; medición por análisis; pitfalls que eran comentarios |
-| 21 | `arcgis-performance` | pendiente | |
+| 21 | `arcgis-performance` | aporta con arreglos | import() solo ahorra 24 KB de 1494 (el SDK ya se divide); el import raíz no resuelve; 20 vistas sin destroy pierden contexto; destroy() se lleva el mapa compartido |
 | 22 | `arcgis-popup-templates` | pendiente | |
 | 23 | `arcgis-portal-content` | pendiente | |
 | 24 | `arcgis-rest-services` | pendiente | |
@@ -730,3 +730,33 @@ eran comentarios sin código ("configura las fuentes de snapping", "limpia la he
 snapping compartido por referencia, la variante 2D/3D y la medición como análisis) no está en ninguna otra, y el
 caso del snapping es exactamente el que un agente escribiría mal: poner los dos componentes juntos y darlo por
 conectado.
+
+### 21. `arcgis-performance` — aporta con arreglos
+
+**¿Corre en 5.1?** El código que tenía corría, salvo los dos anti-patrones de import. Pero el consejo principal era
+el más débil. Medí en Chromium (`tests/runtime/casos/arcgis-performance.ts`) y con builds de Vite
+(`tests/bundle/medir.mjs`, que agregué al repo para reproducirlo).
+
+**Lo que estaba mal (y ya se arregló):**
+
+- **El inicio rápido vendía `import()` como la palanca del bundle.** Medido: un build de Map + MapView + FeatureLayer
+  ya sale en **748 chunks**, con un chunk inicial de 1494 KB (430 KB gzip). Pasar `CSVLayer` y `KMLLayer` a `import()`
+  ahorró **24 KB (6 KB gzip)**, un 1,6 %. El SDK ya se carga solo en diferido. Lo dejé como recurso para lo opcional,
+  con el número, y no como solución.
+- **Pitfall 1 imposible:** `import * from "@arcgis/core"` (y el barrel `"@arcgis/core/layers"` de los extendidos) no
+  "infla el bundle": no resuelve (TS2307; el paquete no tiene módulo raíz ni índices). Rompe el build.
+- **El que sí importa, ahora con números:** 20 MapViews sin `destroy()` (solo vaciando el contenedor) quedaron vivas.
+  Chromium escribió "Too many active WebGL contexts" y 4 terminaron con `fatalError`. Con `destroy()`, 0.
+- **Lo que faltaba, y es una trampa del mismo consejo:** `view.destroy()` **también destruye el mapa y sus capas**
+  (medido: `map.destroyed` y `layer.destroyed` en `true`, 0 capas). En una SPA que comparte el mapa entre rutas, la
+  receta vieja ("siempre `view.destroy()`") deja la siguiente vista vacía. La solución, medida: `view.map = null`
+  antes.
+- **Extendidos medidos:**
+  - `watch(() => view.center)`: 92 disparos en un `goTo` de 1,5 s, contra 1 de `stationary`.
+  - Con `minScale`, la capa queda `suspended` y no pide nada.
+  - Alternar `visible`: 0 pedidos; quitar y recrear: 24.
+  - `featureReduction` como objeto plano se convierte bien.
+
+**¿Aporta?** Sí, con arreglos, y ahora apunta a lo que de verdad pesa: la fuga de contextos WebGL, la trampa de que
+`destroy()` se lleva el mapa, y los `watch` por cuadro. Le ahorra a un agente dos errores contrarios: no destruir
+nunca, o destruir y perder el mapa compartido.
