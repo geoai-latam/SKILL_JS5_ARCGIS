@@ -45,7 +45,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 16 | `arcgis-imagery` | aporta con arreglos | la función NDVI que enseñaba devuelve 0–200 (101), no −1..1; pitfall falso del tile layer |
 | 17 | `arcgis-interaction` | aporta con arreglos | hitTest tipado; en capas de servicio el hit trae solo objectid sin outFields; 2 pitfalls falsos (suelo 3D, create apilado) |
 | 18 | `arcgis-knowledge-graphs` | aporta con arreglos (parcial) | sin grafo accesible (token): geometría en properties, no e.geometry; fetch sin sesión queda pendiente, no 403; ejemplos que no compilaban; streaming + bindParameters |
-| 19 | `arcgis-layers` | pendiente | |
+| 19 | `arcgis-layers` | aporta con arreglos | reemplazar createQuery().where pierde el definitionExpression (29 vs 6); tope de 1000 silencioso (11 vs 51 capitales); outFields de capa no limitan queries |
 | 20 | `arcgis-map-tools` | pendiente | |
 | 21 | `arcgis-performance` | pendiente | |
 | 22 | `arcgis-popup-templates` | pendiente | |
@@ -672,3 +672,31 @@ y la documentación de 5.1. En la skill quedó marcado qué es cada cosa.
 relleno y su único código de manejo de resultados (`e.geometry`) fallaba en silencio. La nueva le ahorra a un
 agente los errores que comete sin ella: el objeto plano que no compila, la geometría en el lugar equivocado y la
 concatenación inyectable. Lo pendiente: correr la consulta contra un grafo con credenciales propias de Sebastián.
+
+### 19. `arcgis-layers` — aporta con arreglos
+
+**¿Corre en 5.1?** Sí: todo compilaba y corría. El problema es lo que enseñaba. Medí 15 casos en Chromium
+(`tests/runtime/casos/arcgis-layers.ts`) contra el servicio público de ciudades de EE. UU. (3557 filas,
+`maxRecordCount` 1000) y con CSV y GeoJSON en Blob.
+
+**Lo que estaba mal (y ya se arregló):**
+
+- **El hallazgo más serio, que la skill no tenía:** `definitionExpression` no se aplica a `queryFeatures`. Llega a
+  la consulta solo porque `createQuery()` lo copia en `query.where`. Con la capa filtrada a Texas, reemplazar
+  `q.where` contó **29** ciudades de todo el país; con `(${q.where}) AND ...`, las **6** correctas. Un objeto plano o
+  `new Query()` también dieron 29. El mapa muestra Texas y la lista, el conteo y la exportación muestran el país.
+- **Filtrar en el cliente no es solo lento, es incorrecto:** `queryFeatures()` sin filtro se cortó en 1000 de 3557
+  filas (`exceededTransferLimit: true`, sin error). Filtrando después encontró 11 capitales; en el servidor, 51.
+- **El inicio rápido usaba `outFields: ["*"]`, contra su propio pitfall 1.** Y el pitfall 1 tampoco era cierto como
+  estaba: los `outFields` de la capa **no** limitan las consultas. `createQuery()` arranca con `["*"]` y devolvió los
+  6 campos. Ahora se dice dónde actúa cada uno.
+- **El pitfall 3 era vago ("returnGeometry varía").** Ahora es preciso: `createQuery()` trae `true`; `new Query()`
+  trae `false` y `outFields: null` (medido: geometría `null` y solo el campo de visualización).
+- **Pitfalls extendidos medidos:** `map.layers[0] = nueva` no lanza error y no cambia nada. Una URL rota deja
+  `loadStatus: "failed"`, un error en la consola y `whenLayerView` pendiente a los 10 s. El CSV con nombres propios
+  falla con "Unable to identify latitude and longitude fields"; con `lat`/`lon` los detecta solo. El pitfall
+  "consultar antes de `load()`" era falso: `createQuery()` funciona sin `load()`. Lo cambié por el de `outFields`.
+
+**¿Aporta?** Sí, y es de las que más. El error de `definitionExpression` y el tope silencioso de `maxRecordCount`
+dan números equivocados sin ningún aviso. Es justo lo que un agente escribe sin pensarlo: `q.where = "..."` y
+`queryFeatures()` sin revisar `exceededTransferLimit`.

@@ -9,7 +9,8 @@ import FeatureLayer from "@arcgis/core/layers/FeatureLayer.js";
 
 const layer = new FeatureLayer({ url: "https://.../Cities/FeatureServer/0", outFields: ["NAME", "POP"] });
 const query = layer.createQuery();
-query.where = "POP > 1000000";
+query.where = `(${query.where}) AND POP > 1000000`; // keeps any definitionExpression
+query.outFields = ["NAME", "POP"];
 query.orderByFields = ["POP DESC"];
 query.returnGeometry = true;
 query.num = 10;
@@ -19,7 +20,7 @@ const { features } = await layer.queryFeatures(query);
 **Notes:**
 
 - `num`/`start` page the results; combine with `orderByFields` for stable paging.
-- `returnGeometry = true` is required to zoom to or highlight results.
+- `createQuery()` already sets `returnGeometry = true`; a `new Query()` does not.
 
 ---
 

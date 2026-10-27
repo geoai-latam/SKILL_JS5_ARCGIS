@@ -1,4 +1,4 @@
-// snippet-featurelayer-query.ts — FeatureLayer with a query. Smoke-tested.
+// snippet-featurelayer-query.ts — FeatureLayer with a query. Smoke-tested (SDK 5.1).
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer.js";
 
 const layer = new FeatureLayer({
@@ -9,9 +9,9 @@ const layer = new FeatureLayer({
 
 export async function topCities() {
   const query = layer.createQuery();
-  query.where = "POP > 1000000";
+  query.where = `(${query.where}) AND POP > 1000000`; // keep the definitionExpression
   query.orderByFields = ["POP DESC"];
-  query.returnGeometry = true;
+  query.outFields = ["NAME", "POP"]; // createQuery() starts with ["*"]
   query.num = 10; // pagination: page size
   query.start = 0; // pagination: offset
   const { features } = await layer.queryFeatures(query);

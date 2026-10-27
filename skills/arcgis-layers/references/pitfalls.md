@@ -2,30 +2,31 @@
 
 > Extends the Top 3 in SKILL.md. Format: Anti-pattern / Correct / Impact / Diagnosis.
 
-## Pitfall 1: Querying before the layer loads its fields
+## Pitfall 1: Expecting the layer's outFields to limit queries
 
 ### Anti-pattern
 
 ```typescript
-const layer = new FeatureLayer({ url });
-const q = layer.createQuery(); // objectIdField may be unknown
+const layer = new FeatureLayer({ url, outFields: ["areaname", "pop2000"] });
+const { features } = await layer.queryFeatures(layer.createQuery()); // expecting 2 fields
 ```
 
 ### Correct
 
 ```typescript
-const layer = new FeatureLayer({ url });
-await layer.load();
 const q = layer.createQuery();
+q.outFields = ["areaname", "pop2000"];
+const { features } = await layer.queryFeatures(q);
 ```
 
 ### Impact
 
-Queries can fail or omit the object id before metadata loads.
+Measured: `createQuery().outFields` was `["*"]` and all 6 fields came back. Layer `outFields` only decide what the
+view loads for drawing, hit tests and popups.
 
 ### Diagnosis
 
-Errors about missing `objectIdField`; add `await layer.load()`.
+Wide payloads from queries even though the layer lists few fields; set `outFields` on the query.
 
 ---
 
@@ -34,7 +35,7 @@ Errors about missing `objectIdField`; add `await layer.load()`.
 ### Anti-pattern
 
 ```typescript
-const { features } = await layer.queryFeatures(); // could return 100k rows
+const { features } = await layer.queryFeatures(); // stops at maxRecordCount, silently
 ```
 
 ### Correct
@@ -48,11 +49,12 @@ const { features } = await layer.queryFeatures(q);
 
 ### Impact
 
-Huge responses freeze the UI and may hit server limits.
+Measured on 3557 rows: 1000 came back with `exceededTransferLimit: true` and no error. Code that treats that as
+"everything" undercounts.
 
 ### Diagnosis
 
-Slow query; check the returned feature count and add a `where`/`num`.
+A round number of results (1000, 2000); check `exceededTransferLimit` and page or filter.
 
 ---
 
@@ -61,22 +63,23 @@ Slow query; check the returned feature count and add a `where`/`num`.
 ### Anti-pattern
 
 ```typescript
-const layer = new CSVLayer({ url: "data.csv" }); // no lat/lon fields present
+const layer = new CSVLayer({ url: "data.csv" }); // columns are "norte" and "este"
 ```
 
 ### Correct
 
 ```typescript
-const layer = new CSVLayer({ url: "data.csv", latitudeField: "lat", longitudeField: "lon" });
+const layer = new CSVLayer({ url: "data.csv", latitudeField: "norte", longitudeField: "este" });
 ```
 
 ### Impact
 
-Points do not render because the layer cannot find coordinates.
+Measured: `load()` rejects with "Unable to identify latitude and longitude fields from the CSV file". Common names
+(`lat`/`lon`, `latitude`/`longitude`) are detected without declaring them.
 
 ### Diagnosis
 
-CSVLayer loads but shows no features; set the coordinate fields explicitly.
+That load error; set `latitudeField`/`longitudeField`.
 
 ---
 
@@ -97,7 +100,8 @@ map.layers.add(newLayer, 0);
 
 ### Impact
 
-The Collection does not emit a change; the view never updates.
+Measured: no error, and nothing changed: `map.layers.getItemAt(0)` was still the old layer and the new one was not
+in the collection. A `Collection` is not an array.
 
 ### Diagnosis
 
@@ -110,7 +114,7 @@ Layer swap has no visible effect; use Collection methods.
 ### Anti-pattern
 
 ```typescript
-map.add(new FeatureLayer({ url })); // 403/404 fails silently in the corner
+map.add(new FeatureLayer({ url })); // bad URL: one console error, nothing in the UI
 ```
 
 ### Correct
@@ -123,7 +127,8 @@ map.add(layer);
 
 ### Impact
 
-A broken URL or auth issue shows as a missing layer with no clear cause.
+Measured with a layer id that does not exist: `loadStatus` became `"failed"` with a `loadError`, the console got one
+error, and `view.whenLayerView(layer)` was still pending after 10 s. Code awaiting it hangs.
 
 ### Diagnosis
 

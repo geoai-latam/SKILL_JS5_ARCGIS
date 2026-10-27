@@ -15,15 +15,15 @@
 | Property | Type | Description |
 |---|---|---|
 | `url` | `string` | Feature service layer URL |
-| `outFields` | `string[]` | Attributes to fetch |
-| `definitionExpression` | `string` | Server-side SQL filter |
+| `outFields` | `string[]` | Attributes the view loads (not a query limit) |
+| `definitionExpression` | `string` | Server-side filter for drawing; reaches queries only via `createQuery()` |
 | `popupTemplate` | `PopupTemplate` | Popup configuration |
 | `renderer` | `Renderer` | Symbology |
 
 | Method | Returns | Description |
 |---|---|---|
-| `createQuery()` | `Query` | A query preset to the layer's config |
-| `queryFeatures(query?)` | `Promise<FeatureSet>` | Run a query |
+| `createQuery()` | `Query` | `where` = definitionExpression or `1=1`, `returnGeometry: true`, `outFields: ["*"]` |
+| `queryFeatures(query?)` | `Promise<FeatureSet>` | Capped at `maxRecordCount`; check `exceededTransferLimit` |
 | `queryFeatureCount(query?)` | `Promise<number>` | Count matches |
 | `queryRelatedFeatures(query)` | `Promise<Record<number, FeatureSet>>` | Related records |
 | `load()` | `Promise<Layer>` | Load metadata |
@@ -32,7 +32,8 @@
 
 ## Query
 
-`layer.createQuery()` returns a `Query`.
+`layer.createQuery()` returns a `Query` (`@arcgis/core/rest/support/Query.js`). A `new Query()` starts with
+`returnGeometry: false` and `outFields: null`, and ignores the layer's `definitionExpression`.
 
 | Property | Type | Description |
 |---|---|---|
@@ -49,7 +50,7 @@
 
 | Class | Module | Source |
 |---|---|---|
-| `GeoJSONLayer` | `layers/GeoJSONLayer.js` | GeoJSON URL |
-| `CSVLayer` | `layers/CSVLayer.js` | CSV with lat/lon |
+| `GeoJSONLayer` | `layers/GeoJSONLayer.js` | GeoJSON URL or Blob URL (WGS84); adds an `__OBJECTID` field |
+| `CSVLayer` | `layers/CSVLayer.js` | CSV; detects `lat`/`lon`-style names, else `latitudeField`/`longitudeField` |
 | `GraphicsLayer` | `layers/GraphicsLayer.js` | Client-side graphics |
 | `TileLayer` | `layers/TileLayer.js` | Cached tile service |
