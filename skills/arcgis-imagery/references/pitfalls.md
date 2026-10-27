@@ -62,6 +62,7 @@ new RasterFunction({ functionName: "Hillshade", functionArguments: { /* no Raste
 
 ```typescript
 new RasterFunction({ functionName: "Hillshade", functionArguments: { Raster: baseFunction } });
+// or: rasterFunctionUtils.colormap({ colorRampName: "ndvi3", raster: ndviFunction })
 ```
 
 ### Impact
@@ -85,16 +86,17 @@ Unexpected output; pass the upstream function as `Raster`.
 ### Correct
 
 ```typescript
-// Use layer.identify(point) to read pixel values.
+// Pixel values: layer.identify({ geometry }), getSamples or fetchPixels.
+// Scenes of a mosaic: layer.queryRasters({ geometry, outFields }).
 ```
 
 ### Impact
 
-No feature query API for pixels.
+`queryFeatures` does not exist on imagery layers; `queryRasters` queries the catalog, not pixels.
 
 ### Diagnosis
 
-Method missing; use `identify`.
+Method missing; use `identify` for pixels, `queryRasters` for scenes.
 
 ---
 

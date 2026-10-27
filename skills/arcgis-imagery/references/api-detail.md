@@ -13,9 +13,13 @@
 | Class | Module | Processing |
 |---|---|---|
 | `ImageryLayer` | `layers/ImageryLayer.js` | Dynamic (server) — supports raster functions, mosaic rules |
-| `ImageryTileLayer` | `layers/ImageryTileLayer.js` | Cached tiles — fixed |
+| `ImageryTileLayer` | `layers/ImageryTileLayer.js` | Tiles / COG / CRF, processed in the client (also takes `rasterFunction`) |
 
-Key `ImageryLayer` properties: `url`, `rasterFunction`, `mosaicRule`, `renderingRule`, `format`.
+Key `ImageryLayer` properties: `url`, `rasterFunction`, `mosaicRule`, `bandIds`, `format`, `serviceRasterInfo`.
+`renderingRule` (4.x) is not in the 5.1 typings.
+
+Pixel and catalog access: `identify(params)`, `getSamples(params)`, `fetchPixels(extent, w, h)`,
+`queryRasters(query)` (catalog items as a `FeatureSet`).
 
 ---
 
@@ -30,6 +34,25 @@ Key `ImageryLayer` properties: `url`, `rasterFunction`, `mosaicRule`, `rendering
 | `outputPixelType` | `string` | Optional output type |
 
 Chain by setting another `RasterFunction` as the `Raster` argument.
+
+The classic server `"NDVI"` function returns a scaled 0–200 integer (measured: 101 for a real NDVI of
+0.015), and its `VisibleBandID`/`InfraredBandID` are 0-based.
+
+---
+
+## rasterFunctionUtils
+
+`@arcgis/core/layers/support/rasterFunctionUtils.js` (since 4.28): helpers that return a
+`RasterFunction` with real values. Band ids are 0-based.
+
+| Helper | Parameters |
+|---|---|
+| `bandArithmeticNDVI` | `{ redBandId, nirBandId, scientificOutput?, raster? }` |
+| `bandArithmeticNDWI` / `bandArithmeticMNDWI` / `bandArithmeticNBR` / `bandArithmeticSAVI` / `bandArithmeticEVI` | band ids per index |
+| `bandArithmeticCustom` | `{ bandIndexes: "(b4 - b3) / (b4 + b3)" , raster? }` |
+| `stretchMinMax` / `stretchStandardDeviation` / `stretchPercentClip` | stretches |
+| `colormap` | `{ colorRampName \| colormap, raster }` |
+| `threshold` / `computeChange` / `convolution` | analysis |
 
 ---
 

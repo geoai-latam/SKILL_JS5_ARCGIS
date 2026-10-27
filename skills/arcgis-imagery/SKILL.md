@@ -1,17 +1,18 @@
 ---
 name: arcgis-imagery
 description: >
-  Display and analyze raster imagery with the ArcGIS Maps SDK for JavaScript 5.0:
-  ImageryLayer (dynamic, server-processed) and ImageryTileLayer (cached), raster
-  functions for on-the-fly processing (NDVI, hillshade), and mosaic rules. Use
-  this skill whenever the user adds satellite/elevation imagery, applies a raster
+  Display and analyze raster imagery with the ArcGIS Maps SDK for JavaScript 5.1:
+  ImageryLayer (server-processed) and ImageryTileLayer (client-processed tiles and
+  COGs), raster functions with rasterFunctionUtils (NDVI and other indices with
+  0-based band ids), mosaic rules and queryRasters. Use this skill whenever the
+  user adds satellite/elevation imagery, computes an index, applies a raster
   function, or controls a mosaic dataset.
 lang: en
-version: 0.1.0
+version: 0.2.0
 status: stable
-sdk_version: ">=5.0 <6.0"
+sdk_version: ">=5.1 <6.0"
 created: 2026-05-31
-updated: 2026-05-31
+updated: 2026-10-27
 category: specialized
 tags:
   - imagery
@@ -22,7 +23,7 @@ tags:
 requires:
   - arcgis-layers
 packages:
-  - "@arcgis/core@^5.0"
+  - "@arcgis/core@^5.1"
 maintainer: "GeoAI LATAM"
 license: MIT
 ---
@@ -45,21 +46,29 @@ Imagery layers stream raster data; raster functions process it on the fly withou
 
 ```typescript
 import ImageryLayer from "@arcgis/core/layers/ImageryLayer.js";
-const layer = new ImageryLayer({ url: "https://.../ImageServer" });
+import * as rasterFunctionUtils from "@arcgis/core/layers/support/rasterFunctionUtils.js";
+
+const layer = new ImageryLayer({
+  url: "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Toronto/ImageServer", // Blue, Green, Red, NIR
+  rasterFunction: rasterFunctionUtils.bandArithmeticNDVI({ redBandId: 2, nirBandId: 3 }), // 0-based
+});
 ```
+
+Measured with 5.1.27: `identify` returns `0.0148` over Queen's Park and `-0.263` over the harbour,
+the same as `(NIR − R) / (NIR + R)` computed by hand from the raw pixels.
 
 ## Decision Tree
 
-1. **Dynamic, server-processed imagery (raster functions, mosaic rules)?**
-   - Yes → `ImageryLayer`.
+1. **An ArcGIS ImageServer (dynamic, mosaic datasets)?**
+   - Yes → `ImageryLayer`; processing runs on the server (`rasterFunction`, `mosaicRule`).
 
-2. **Pre-rendered cached tiles (fast, fixed)?**
-   - Yes → `ImageryTileLayer`.
+2. **A tiled imagery service or a cloud raster (COG / CRF)?**
+   - Yes → `ImageryTileLayer`; it also takes a `rasterFunction`, processed **in the client**.
 
-3. **On-the-fly processing (NDVI, hillshade, stretch)?**
-   - Yes → set `rasterFunction` (chainable).
+3. **An index (NDVI, NDWI, NBR, SAVI, EVI...)?**
+   - `rasterFunctionUtils.bandArithmeticNDVI(...)` and friends: true values, 0-based band ids.
 
-**Default:** `ImageryLayer` for analysis; `ImageryTileLayer` for fast display.
+**Default:** `rasterFunction` + `rasterFunctionUtils`; `renderingRule` is the 4.x name.
 
 ## Import Patterns
 
@@ -67,12 +76,13 @@ const layer = new ImageryLayer({ url: "https://.../ImageServer" });
 
 ```typescript
 import ImageryLayer from "@arcgis/core/layers/ImageryLayer.js";
+import * as rasterFunctionUtils from "@arcgis/core/layers/support/rasterFunctionUtils.js";
 ```
 
 ### Dynamic Imports (CDN)
 
 ```javascript
-const RasterFunction = await $arcgis.import("@arcgis/core/layers/support/RasterFunction.js");
+const rasterFunctionUtils = await $arcgis.import("@arcgis/core/layers/support/rasterFunctionUtils.js");
 ```
 
 ### Map Components (recommended for new projects)
@@ -86,62 +96,75 @@ import "@arcgis/map-components/components/arcgis-map";
 
 ### Concept 1: ImageryLayer vs ImageryTileLayer
 
-`ImageryLayer` requests server-processed images and supports raster functions and mosaic rules.
-`ImageryTileLayer` serves cached tiles — faster but fixed processing.
+`ImageryLayer` asks an ImageServer for each image; the server applies the raster function and the
+mosaic rule. `ImageryTileLayer` reads tiles (or a COG/CRF) and renders and processes them in the
+browser: it accepts `rasterFunction` too (measured: it keeps it), so "tiles are pre-rendered, raster
+functions are ignored" is false.
 
-### Concept 2: Raster functions
+### Concept 2: Raster functions and band ids
 
-A `RasterFunction` (`functionName` + `functionArguments`) processes pixels on the fly (e.g. NDVI,
-Hillshade, Stretch). Chain them via a function's `Raster` argument.
+`rasterFunctionUtils` (since 4.28) builds the `RasterFunction` for you: band arithmetic
+(`bandArithmeticNDVI`, `NDWI`, `NBR`, `SAVI`, `EVI`, `custom`), stretches, `colormap`, `threshold`.
+Band ids are **0-based** indexes into the service's bands: for Blue, Green, Red, NIR it is red 2 and
+NIR 3; for Landsat 8 (Coastal, Blue, Green, Red, NIR, ...) it is red 3 and NIR 4. Read the order
+from `layer.serviceRasterInfo` before writing the ids. Chain functions by passing one as the
+`raster` of the next.
 
-### Concept 3: Mosaic rules
+### Concept 3: Mosaic rules and catalog queries
 
-`mosaicRule` controls how overlapping rasters in a mosaic dataset are selected/ordered (by date,
-attribute, or lock-to-raster) before display.
+`mosaicRule` orders the overlapping rasters of a mosaic dataset (by attribute, date, lock-to-raster).
+To list the scenes themselves, `layer.queryRasters({ geometry, outFields })` returns a `FeatureSet`
+of catalog items; pixel values come from `identify`, `getSamples` or `fetchPixels`.
 
 ## Common Pitfalls (Top 3)
 
-### Pitfall 1: Raster functions on a tile layer
+### Pitfall 1: Reading the server NDVI function as -1..1
 
 ```typescript
 // ❌ Anti-pattern
-new ImageryTileLayer({ url, rasterFunction }); // tiles are pre-rendered
+const rf = new RasterFunction({ functionName: "NDVI", functionArguments: { VisibleBandID: 2, InfraredBandID: 3 } });
+// identify → 101: "NDVI > 0.3 means vegetation" never matches
 ```
 
 ```typescript
 // ✅ Correct
-new ImageryLayer({ url, rasterFunction }); // dynamic processing
+const rf = rasterFunctionUtils.bandArithmeticNDVI({ redBandId: 2, nirBandId: 3 }); // identify → 0.0148
 ```
 
-**Impact:** the function is ignored because tiles are fixed.
+**Impact:** measured on the same pixel: the classic `"NDVI"` raster function returns **101** (and
+74 over water), the scaled 0–200 integer output (`100 × (1 + NDVI)`); `bandArithmeticNDVI` returns
+0.0148 and -0.263. Thresholds written for real NDVI silently select nothing or everything.
 
-### Pitfall 2: Wrong band indices for NDVI
+### Pitfall 2: Counting bands from 1
 
 ```typescript
 // ❌ Anti-pattern
-new RasterFunction({ functionName: "NDVI", functionArguments: {} });
+rasterFunctionUtils.bandArithmeticNDVI({ redBandId: 4, nirBandId: 5 }); // Landsat 8 band numbers
 ```
 
 ```typescript
 // ✅ Correct
-new RasterFunction({ functionName: "NDVI", functionArguments: { VisibleBandID: 2, InfraredBandID: 3 } });
+rasterFunctionUtils.bandArithmeticNDVI({ redBandId: 3, nirBandId: 4 }); // Landsat 8, 0-based
 ```
 
-**Impact:** garbage output from default/incorrect bands.
+**Impact:** with sensor band numbers you compute the index on the wrong bands. Measured on the
+4-band Toronto service: green instead of red gives 85 instead of 101 (no error). An out-of-range
+id, or no arguments at all, gave the default result, so a wrong id is not always visible either.
 
-### Pitfall 3: Heavy dynamic imagery without caching expectations
+### Pitfall 3: renderingRule from 4.x
 
 ```typescript
 // ❌ Anti-pattern
-// Expecting ImageryLayer to be as fast as cached tiles
+new ImageryLayer({ url, renderingRule: { functionName: "NDVI" } });
 ```
 
 ```typescript
 // ✅ Correct
-// Use ImageryTileLayer where fixed, fast display is enough.
+new ImageryLayer({ url, rasterFunction: rasterFunctionUtils.bandArithmeticNDVI({ redBandId: 2, nirBandId: 3 }) });
 ```
 
-**Impact:** slow pans/zooms from per-request server processing.
+**Impact:** `renderingRule` is not in the 5.1 typings (TypeScript fails). Measured untyped: it does
+not populate `rasterFunction` (it stays `null`).
 
 ## When to Read references/
 
@@ -164,4 +187,9 @@ new RasterFunction({ functionName: "NDVI", functionArguments: { VisibleBandID: 2
 
 ## Changelog
 
+- **0.2.0** (2026-10-27): SDK 5.1. Measured with identify on a public 4-band service: the classic `"NDVI"`
+  raster function returns a scaled 0–200 value (101), not -1..1; `rasterFunctionUtils.bandArithmeticNDVI` returns
+  real NDVI and is now the default. Band ids are 0-based (Landsat 8 red/NIR = 3/4). Pitfall 1 was false:
+  `ImageryTileLayer` takes raster functions (client side). `renderingRule` is gone from the 5.1 typings. Added
+  `queryRasters`. Run in `tests/runtime/casos/arcgis-imagery.ts`.
 - **0.1.0** (2026-05-31): Initial release.

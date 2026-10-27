@@ -42,7 +42,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 13 | `arcgis-embeddable-maps` | aporta con arreglos | el script 5.x no registra el elemento; hide-* no existen |
 | 14 | `arcgis-feature-effects` | aporta con arreglos | pitfall falso (sin filtro); faltaban límites 3D/heatmap y layerView.filter |
 | 15 | `arcgis-geometry-operations` | aporta con arreglos | el Inicio Rápido lanzaba con lon/lat; recomendaba geometryEngine (deprecado) |
-| 16 | `arcgis-imagery` | pendiente | |
+| 16 | `arcgis-imagery` | aporta con arreglos | la función NDVI que enseñaba devuelve 0–200 (101), no −1..1; pitfall falso del tile layer |
 | 17 | `arcgis-interaction` | pendiente | |
 | 18 | `arcgis-knowledge-graphs` | pendiente | |
 | 19 | `arcgis-layers` | pendiente | |
@@ -574,3 +574,36 @@ decía que "distorsiona". Su arreglo (`geodesicBufferOperator`) también lanzaba
 **¿Aporta?** Ahora sí, y mucho. Un agente que escribe de memoria usa `geometryEngine` (lo que salía
 en la documentación de 4.x) o el `bufferOperator` planar con lon/lat. Lo primero está deprecado y lo
 segundo lanza error. La versión anterior enseñaba las dos cosas.
+
+### 16. `arcgis-imagery` — aporta con arreglos
+
+**¿Corre en 5.1?** Sí: compila y la capa carga. El problema es lo que hace. Medí con `identify` en
+Chromium (`tests/runtime/casos/arcgis-imagery.ts`) sobre el servicio público Toronto de
+sampleserver6 (4 bandas: Azul, Verde, Rojo, NIR). El servicio Landsat público responde la metadata,
+pero `identify` y las consultas espaciales tardaron más de 60 s, incluso por REST directo, así que
+lo usé solo para el orden de bandas.
+
+**Lo que estaba mal (y ya se arregló):**
+
+- **La función ráster que enseñaba (`functionName: "NDVI"`) no devuelve NDVI entre -1 y 1.** Medido:
+  **101** sobre un parque y **74** sobre agua, la salida entera escalada de 0 a 200. A mano, con los
+  píxeles crudos, da 0,015 y -0,263. Un umbral como "NDVI > 0,3" nunca se cumple, y nada avisa.
+  `rasterFunctionUtils.bandArithmeticNDVI` (desde 4.28) devuelve exactamente 0,0148 y -0,263, así que
+  ahora es el patrón por defecto.
+- **Los ids de banda van desde 0.** Lo confirmé con resultados (verde en vez de rojo da 85, no 101).
+  Para Landsat 8, rojo/NIR son 3/4, no los números de banda del sensor (4/5). La skill no lo decía.
+  Un id fuera de rango, o sin argumentos, dio el resultado por defecto sin error. Por eso el pitfall
+  "sin argumentos da basura" no se reprodujo en este servicio, y se reescribió.
+- **Pitfall 1, falso:** "ImageryTileLayer ignora las funciones ráster". En 5.1, `ImageryTileLayer`
+  tiene `rasterFunction` y la procesa en el cliente (también con COG y CRF).
+- **`renderingRule` (4.x) estaba en la API de la skill y ya no está en los tipos de 5.1.** Medido sin
+  tipos: no llena `rasterFunction`.
+- **Agregado:** `queryRasters` (medido: devuelve las escenas del catálogo), `getSamples` y
+  `fetchPixels`.
+- **De paso:** el ejemplo de la documentación de Esri usa `colorRampName: "NDVI3"`, pero el tipo pide
+  `"ndvi3"`. El verificador lo atrapó.
+
+**¿Aporta?** Sí, y la versión anterior hacía daño. Un agente que sigue la doc de 4.x escribe
+`renderingRule` o la función `"NDVI"` y usa el valor como NDVI real: un error de escala que no lanza
+nada. Ahora la skill enseña la función que da el valor real, con las bandas contadas como las cuenta
+el SDK.

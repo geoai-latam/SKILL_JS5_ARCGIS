@@ -11,15 +11,16 @@ Quick-reference for raster imagery. Read before adding imagery.
 
 ## Setup Checklist
 
-- [ ] Pick ImageryLayer (dynamic) vs ImageryTileLayer (cached).
-- [ ] Provide correct band ids for NDVI/index functions.
+- [ ] Pick ImageryLayer (server) vs ImageryTileLayer (client: tiles, COG, CRF).
+- [ ] Indices with `rasterFunctionUtils.bandArithmetic*`, band ids 0-based from `serviceRasterInfo`.
 - [ ] Chain raster functions via the `Raster` argument.
 - [ ] Set `mosaicRule` for mosaic datasets.
 
 ## Anti-patterns (one-liner reminders)
 
-- ❌ Raster function on a tile layer.
-- ❌ Wrong/empty band arguments.
+- ❌ Reading the server `"NDVI"` function as -1..1 (it returns 0–200).
+- ❌ Sensor band numbers (1-based) as band ids.
+- ❌ `renderingRule` (4.x; not in the 5.1 typings).
 - ❌ Expecting dynamic imagery to match tile speed.
 
 ## Files in This Skill
