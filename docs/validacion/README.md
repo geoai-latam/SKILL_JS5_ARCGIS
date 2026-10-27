@@ -34,7 +34,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 5 | `arcgis-charts` | aporta con arreglos | antes no corría: `config` inventado; ahora `createModel` + `model`, ruta sin `.js`, Calcite fijado en ~5.1.2 |
 | 6 | `arcgis-cim-symbols` | aporta con arreglos | orden de capas al revés y el pitfall de `enable` falso (medido); Quick Start vacío; overrides con la trampa de `"size"` |
 | 7 | `arcgis-coding-components` | aporta con arreglos | antes era relleno con API inventada (`arcgisChange`, `sqlEditor.layer`); ahora perfil + diagnósticos medidos; SQL/code editor son `@internal` |
-| 8 | `arcgis-coordinates-projection` | pendiente | |
+| 8 | `arcgis-coordinates-projection` | aporta con arreglos | datum medido (492 m reetiquetando Bogotá 1975, 27 transformaciones a 22 m), mezcla de SR da `false` en silencio, 9377 en vez de 3116 |
 | 9 | `arcgis-core-maps` | pendiente | |
 | 10 | `arcgis-core-utilities` | pendiente | |
 | 11 | `arcgis-custom-rendering` | pendiente | |
@@ -293,3 +293,39 @@ corriera: el Inicio Rápido, los pitfalls y el árbol eran comentarios.
 equivocado, y escucha un evento que no existe (es lo que hacía la skill). Lo que no se adivina es
 qué componentes son internos y que el asistente de IA viene encendido. Antes era relleno: el
 contenido no tenía código y lo poco concreto era inventado.
+
+### 8. `arcgis-coordinates-projection` — aporta con arreglos
+
+**¿Corre en 5.1?** Los 2 snippets y los 34 bloques compilan contra 5.1.27. Catorce comprobaciones
+en Chromium (`tests/runtime/casos/arcgis-coordinates-projection.ts`), todas con puntos reales en
+Colombia: la Plaza de Bolívar en 4326, 3116, 9377 y Bogotá 1975.
+
+**Lo que estaba bien:** que hay que cargar `projectOperator` antes de `execute`. Era cierto, y el
+error que da es `p is not a function`, que no menciona "load"; ahora la skill trae ese mensaje.
+
+**Lo que estaba mal o faltaba (y ya se arregló):**
+
+- **El pitfall de mezclar sistemas usaba `geometryEngine` (deprecado) y no decía el síntoma.**
+  Medido con `intersectsOperator`: el mismo polígono en 4326 y en 3857 devuelve `false`, sin error.
+- **El datum era una línea genérica.** Medido:
+  - Tomar coordenadas en Bogotá 1975 (4218) como si fueran WGS84 las corre 492 m.
+  - `execute` aplica sola una transformación por defecto: el resultado sin opciones es igual al de
+    `getTransformation`.
+  - Hay 27 transformaciones candidatas, y en Bogotá difieren hasta 22 m.
+  - Ahora se enseñan `geographicTransformationUtils`, `getTransformations` con área de interés y el
+    límite de 5.1: solo transformaciones por ecuación, no por grilla.
+- **El ejemplo de "cuadrícula nacional" usaba la 3116 (Bogota zone).** Desde las resoluciones 471
+  y 529 de 2020 del IGAC, el sistema plano oficial es MAGNA-SIRGAS / Origen-Nacional (EPSG 9377).
+  Valores medidos en los dos.
+- **`webMercatorUtils` hace cosas sin avisar:**
+  - `canProject(4686, 3857)` es `false`, pero `geographicToWebMercator` convierte igual.
+  - La latitud 90 da y = 103 676 511, fuera del rango ±20 037 508; no recorta en los polos.
+  - Con los ejes al revés (`x` = lat), Bogotá cae en aguas antárticas sin error.
+- **`executeMany` con una geometría en otro sistema la devuelve `null`**, sin error.
+- **Z:** pasa sin cambio en una proyección horizontal (medido). El pitfall "se pierden z/m" no se
+  reproducía; ahora dice lo cierto: un cambio de sistema vertical no se soporta y lanza error.
+
+**¿Aporta?** Sí. El Inicio Rápido ya era correcto para 5.x. Lo que un agente no sabe es lo que
+falla en silencio: `false` en vez de un error, 492 m de corrimiento por reetiquetar, `null` en
+`executeMany`, y que 3116 ya no es el sistema oficial de Colombia. Para un público de LATAM es de las
+skills que más rinden.

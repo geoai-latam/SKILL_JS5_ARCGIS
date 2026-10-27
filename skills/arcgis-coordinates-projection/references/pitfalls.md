@@ -8,18 +8,20 @@
 
 ```typescript
 for (const g of geoms) { await projectOperator.load(); projectOperator.execute(g, sr); }
+// and executeMany with geometries in different SRs
 ```
 
 ### Correct
 
 ```typescript
-await projectOperator.load();
-const out = projectOperator.executeMany(geoms, sr);
+if (!projectOperator.isLoaded()) await projectOperator.load();
+const out = projectOperator.executeMany(geoms, sr); // all geoms in one SR
 ```
 
 ### Impact
 
-Redundant loads and slow loops.
+Redundant loads and slow loops; and measured: a geometry in a different SR inside `executeMany`
+comes back `null`, without an error.
 
 ### Diagnosis
 
@@ -27,51 +29,58 @@ Slow projection; load once, batch with `executeMany`.
 
 ---
 
-## Pitfall 2: Assuming the view is always 3857
+## Pitfall 2: webMercatorUtils on data it does not understand
 
 ### Anti-pattern
 
 ```typescript
-const wm = webMercatorUtils.geographicToWebMercator(point); // view might be 4326
+// ❌ Anti-pattern
+const wm = webMercatorUtils.geographicToWebMercator(pointInMagnaSirgas4686);
+const polo = webMercatorUtils.geographicToWebMercator(new Point({ x: 0, y: 90 }));
 ```
 
 ### Correct
 
 ```typescript
-// Project to view.spatialReference, which may not be web mercator.
+if (!projectOperator.isLoaded()) await projectOperator.load();
+const wm = projectOperator.execute(pointInMagnaSirgas4686, SpatialReference.WebMercator);
 ```
 
 ### Impact
 
-Misaligned graphics when the view uses another SR.
+Measured with 5.1.27: `canProject(4686, 3857)` is `false`, but `geographicToWebMercator` converts
+the 4686 point anyway and stamps it 102100. Latitude is not clamped: 89.9 → y = 44 927 335 and 90 →
+103 676 511, outside the ±20 037 508 of the projection. No error in either case.
 
 ### Diagnosis
 
-Graphics offset; project to `view.spatialReference`.
+Check `canProject` and the latitude range before the shortcut, or use `projectOperator`.
 
 ---
 
-## Pitfall 3: Datum differences ignored
+## Pitfall 3: Swapped axes
 
 ### Anti-pattern
 
 ```typescript
-// Treating two similar WKIDs as identical across datums
+// ❌ Anti-pattern: "lat, lon" order from a CSV or a GPS app
+const p = new Point({ x: 4.5981, y: -74.0761 });
 ```
 
 ### Correct
 
 ```typescript
-// Use a geographic/datum transformation when WKIDs differ in datum.
+const p = new Point({ longitude: -74.0761, latitude: 4.5981 });
 ```
 
 ### Impact
 
-Meter-level offsets between datums.
+Measured: Bogotá lands at 511858, -12546351 in Web Mercator (Antarctic waters) with no error, since
+-74 is a valid latitude.
 
 ### Diagnosis
 
-Consistent small offset; apply a datum transformation.
+Points on the wrong continent; use `longitude`/`latitude` names instead of `x`/`y`.
 
 ---
 
@@ -99,24 +108,25 @@ Unnecessary projection calls; guard on wkid.
 
 ---
 
-## Pitfall 5: Losing z/m values
+## Pitfall 5: Expecting the projection to handle heights
 
 ### Anti-pattern
 
 ```typescript
-// Assuming projection preserves z/m the same way for all systems
+// ❌ Anti-pattern: ellipsoidal heights to a system with another vertical datum
 ```
 
 ### Correct
 
 ```typescript
-// Verify hasZ/hasM expectations after projecting.
+// Z passes through a horizontal projection unchanged (measured: z=2600 stays 2600 into 3116).
+// Vertical datum changes are not supported: convert heights outside the SDK.
 ```
 
 ### Impact
 
-Dropped elevation/measure values.
+Z is kept as it was, not converted; with different vertical coordinate systems `execute` throws.
 
 ### Diagnosis
 
-Missing z/m post-projection; check geometry flags.
+Heights identical before and after: that is expected; an exception names the vertical system.
