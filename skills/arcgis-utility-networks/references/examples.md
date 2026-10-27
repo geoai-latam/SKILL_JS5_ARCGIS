@@ -1,41 +1,49 @@
 # Examples: Utility Networks
 
-## Example 1: Load a utility network
+## Example 1: Load the network from a web map
 
-**Use case:** prepare a network for tracing.
+**Use case:** prepare a network for tracing, after the app signed in.
 
 ```typescript
-import UtilityNetwork from "@arcgis/core/networks/UtilityNetwork.js";
+import WebMap from "@arcgis/core/WebMap.js";
 
-const un = new UtilityNetwork({ layerUrl: "https://.../FeatureServer/0" });
-await un.load();
-console.log("domain networks:", un.dataElement?.domainNetworks?.length);
+const webMap = new WebMap({ portalItem: { id: "YOUR_UN_WEBMAP_ID" } });
+await webMap.load();
+const un = webMap.utilityNetworks?.at(0);
+if (un) {
+  await un.load();
+  console.log(un.domainNetworkNames, un.sharedNamedTraceConfigurations.map((c) => c.title));
+}
 ```
 
 **Notes:**
 
-- `await load()` resolves topology and config.
-- Read `dataElement` for the schema.
+- On a secured service without a session, `load()` stays pending while a sign-in dialog opens.
+- `sharedNamedTraceConfigurations` lists the configurations saved with the web map.
 
 ---
 
-## Example 2: Run a connected trace
+## Example 2: Run a trace with a named configuration
 
-**Use case:** find everything connected to a starting point.
+**Use case:** everything downstream of a device terminal.
 
 ```typescript
+import TraceParameters from "@arcgis/core/rest/networks/support/TraceParameters.js";
 import * as trace from "@arcgis/core/rest/networks/trace.js";
 
-const result = await trace.trace(networkServiceUrl, {
-  traceType: "connected",
-  traceLocations: [{ globalId, terminalId, type: "starting-point" }],
+const params = new TraceParameters({
+  namedTraceConfigurationGlobalId: cfgId,
+  traceLocations: [{ type: "starting-point", globalId: deviceGlobalId, terminalId: 2 }],
 });
+const result = await trace.trace(networkServiceUrl, params);
+if (result.startingPointsIgnored) console.warn(result.warnings);
 ```
 
 **Notes:**
 
-- Provide at least one starting point.
-- Use the network's trace configuration when required.
+- `params` must be a `TraceParameters` instance; a plain object throws a `TypeError`.
+- With a loaded network, `un.trace({ namedTraceConfigurationGlobalId, traceLocations })` does the same and takes plain
+  objects.
 
 ---
 
@@ -44,12 +52,22 @@ const result = await trace.trace(networkServiceUrl, {
 **Use case:** a ready-made trace UI.
 
 ```html
-<arcgis-map id="myMap">
-  <!-- Utility Network Trace Analysis component bound to the map -->
+<arcgis-map item-id="YOUR_UN_WEBMAP_ID">
+  <arcgis-utility-network-trace-analysis slot="top-right"></arcgis-utility-network-trace-analysis>
 </arcgis-map>
+```
+
+```typescript
+import "@arcgis/map-components/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-utility-network-trace-analysis";
+
+const analysis = document.querySelector("arcgis-utility-network-trace-analysis")!;
+analysis.addEventListener("arcgisTraceResultFeaturesReady", () => {
+  console.log(analysis.traceResultFeatures.length);
+});
 ```
 
 **Notes:**
 
-- The component handles starting-point selection and config.
-- Great for standard trace workflows without custom code.
+- The map must come from a web map that stores the network and its configurations.
+- The component does not support proxied services, stored credentials, or the `circuit` trace type.

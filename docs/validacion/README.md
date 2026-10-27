@@ -57,7 +57,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 28 | `arcgis-starter-app` | aporta con arreglos | el scaffold generaba un main.ts que lanza (detail null), sin strict y con .env sin ignorar |
 | 29 | `arcgis-tables-forms` | aporta con arreglos | pitfall 1 falso (la tabla carga la capa); los relacionados omiten padres sin filas; editingEnabled y submit() fallan en silencio |
 | 30 | `arcgis-time-animation` | aporta con arreglos | el slider no toma el rango solo; el anti-patrón de zona horaria era falso; un startField mal escrito no filtra en silencio |
-| 31 | `arcgis-utility-networks` | pendiente | |
+| 31 | `arcgis-utility-networks` | aporta con arreglos | parámetro con el nombre REST (se descarta), objeto plano que lanza, componente deprecado desde 5.0; sin trazado real (servicio con token) |
 | 32 | `arcgis-visualization` | pendiente | |
 | 33 | `arcgis-widgets-advanced` | pendiente | |
 | 34 | `arcgis-widgets-ui` | pendiente | |
@@ -971,3 +971,30 @@ nunca, o destruir y perder el mapa compartido.
 - **`stops.interval` tiene que ser un `TimeInterval`.** Un `{ value, unit }` suelto corre por autocast, pero en TypeScript strict falla con TS2740. Lo encontró el verificador sobre los bloques nuevos.
 
 **Por qué aporta:** el error más probable de un agente es meter el slider en el mapa y esperar que funcione solo, y aquí quedó medido que no funciona. Detrás vienen dos fallos silenciosos: la fecha local que corre la ventana y el `startField` mal escrito. La skill vieja apuntaba a una trampa de fecha que no existe.
+
+### 31. `arcgis-utility-networks` — aporta con arreglos
+
+**Evidencia y su límite.** El caso `tests/runtime/casos/arcgis-utility-networks.ts` corrió contra el SDK 5.1.27 en Chromium y dio 7/7 en verde, pero **sin credenciales**. El único servicio público de utility network, Naperville de Esri en sampleserver7, responde «Token Required», y la validación no inicia sesión por nadie. Por eso ningún trazado corrió de punta a punta. Lo que sí se midió:
+
+- qué hacen las clases del cliente con sus parámetros;
+- qué ve una app antes de autenticarse;
+- cómo se porta el componente fuera de un web map.
+
+El resto se contrastó con los tipos del SDK.
+
+**Errores de la skill vieja, que un agente habría copiado:**
+
+1. **El nombre del parámetro de configuración era el de REST.** La skill decía `traceConfigurationGlobalId`, tanto en `api-detail.md` como en el «Correcto» de un pitfall. Medido: `TraceParameters` lo descarta en silencio. `namedTraceConfigurationGlobalId` queda en `null` y el `toJSON()` sale sin configuración. El nombre de JS es `namedTraceConfigurationGlobalId`, que se serializa como `traceConfigurationGlobalId`.
+2. **El ejemplo del trace de REST se caía.** Pasaba un objeto plano a `trace.trace(url, {...})`, y lanza `TypeError: n2.toJSON is not a function` (medido). Era además el bloque que fallaba con TS2740 en el verificador.
+3. **El ejemplo del componente era un comentario vacío** dentro de `<arcgis-map>`, y el import de «Map Components» solo importaba `arcgis-map`.
+4. **Cinco de los ocho pitfalls eran solo comentarios**, sin código: puntos de inicio, terminales, topología, barreras y trazados grandes.
+5. **`un.dataElement?.domainNetworks`** fue reemplazado por `domainNetworkNames`, que tiene tipos.
+
+**Lo que se midió o se confirmó en los tipos:**
+
+- **`arcgis-utility-network-trace` está `@deprecated since 5.0`.** El reemplazo es `arcgis-utility-network-trace-analysis`, y la skill no lo nombraba. Es el error de versión que un agente cometería.
+- **El componente nuevo necesita un web map que guarde la red.** En un mapa con solo un basemap llegó a `state: "ready"` y pintó sus pestañas. La consola dijo «The property `utilityNetworks` is empty but must have at least one element».
+- **Con un servicio protegido y sin sesión, `load()` no falla.** Sigue pendiente a los 15 s con `loadStatus: "loading"`, y se abre un diálogo de inicio de sesión. Es lo mismo que en `arcgis-rest-services`.
+- **`un.trace()` llena `gdbVersion` y `moment`**, según los tipos. `TraceResult` trae `startingPointsIgnored` y `warnings`, y en los tipos 5.1 `shortest-path` aparece como deprecado.
+
+**Veredicto: aporta con arreglos.** El nombre del parámetro, el objeto plano y el componente deprecado son tres errores concretos que un agente comete sin la skill, y los tres quedaron medidos o comprobados en los tipos. El límite: el comportamiento de un trazado real (terminales, `startingPointsIgnored`) no se pudo medir, y la skill lo declara en `pitfalls.md`.
