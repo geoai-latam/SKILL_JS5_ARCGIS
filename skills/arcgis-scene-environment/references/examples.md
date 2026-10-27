@@ -10,7 +10,12 @@ import SceneView from "@arcgis/core/views/SceneView.js";
 const view = new SceneView({
   map,
   environment: {
-    lighting: { type: "sun", date: new Date(Date.UTC(2026, 5, 21, 18)), directShadowsEnabled: true },
+    lighting: {
+      type: "sun",
+      date: new Date(Date.UTC(2026, 5, 21, 18)), // 13:00 in Bogotá
+      directShadowsEnabled: true,
+      cameraTrackingEnabled: false, // keep this instant while navigating
+    },
     atmosphereEnabled: true,
   },
 });
@@ -19,7 +24,7 @@ const view = new SceneView({
 **Notes:**
 
 - `directShadowsEnabled` turns on cast shadows.
-- `date` sets the sun position (UTC recommended).
+- `date` sets the sun position; with the default `cameraTrackingEnabled: true` it shifts as the camera moves.
 
 ---
 
@@ -51,5 +56,5 @@ const view = new SceneView({
 
 **Notes:**
 
-- Weather affects mood and visuals.
-- Lower `qualityProfile` if performance suffers.
+- Visual only, and only where `view.environment.weatherAvailable` is `true` (global scene, near the ground).
+- Parameters are clamped to 0–1.

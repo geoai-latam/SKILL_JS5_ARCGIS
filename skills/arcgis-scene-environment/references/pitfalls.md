@@ -1,121 +1,128 @@
 # Extended Pitfalls: Scene Environment
 
 > Extends the Top 3 in SKILL.md. Format: Anti-pattern / Correct / Impact / Diagnosis.
+> Measured with 5.1.27 in `tests/runtime/casos/arcgis-scene-environment.ts`.
 
-## Pitfall 1: Date without time zone awareness
+## Pitfall 1: Dates without an explicit time zone
 
 ### Anti-pattern
 
 ```typescript
-lighting: { type: "sun", date: new Date("2026-06-21") }; // local midnight
+const a = new Date("2026-06-21");       // UTC midnight: 19:00 on 20 June in Bogotá
+const b = new Date("2026-06-21T12:00"); // the browser's zone: noon somewhere different for each user
 ```
 
 ### Correct
 
 ```typescript
-lighting: { type: "sun", date: new Date(Date.UTC(2026, 5, 21, 18)) };
+const noonBogota = new Date("2026-06-21T12:00:00-05:00"); // or new Date(Date.UTC(2026, 5, 21, 17))
 ```
 
 ### Impact
 
-Sun position is off (e.g. night when you wanted noon).
+Measured: `new Date("2026-06-21")` was stored as `2026-06-21T00:00:00.000Z`, and `"2026-06-21T12:00"` became
+`17:00Z` in a Bogotá browser. A date-only string is UTC; a date-time without offset is local.
 
 ### Diagnosis
 
-Lighting looks wrong for the hour; build the date in UTC.
+The sun is in the wrong place, or different users see different shadows; write the offset.
 
 ---
 
-## Pitfall 2: Shadows without ground/objects
+## Pitfall 2: Assuming the sun starts at "now"
 
 ### Anti-pattern
 
 ```typescript
-// Shadows enabled but nothing 3D to cast/receive them
+new SceneView({ map, environment: { lighting: { type: "sun", directShadowsEnabled: true } } }); // "current shadows"
 ```
 
 ### Correct
 
 ```typescript
-// Add 3D layers and ground so shadows are visible.
+new SceneView({ map, environment: { lighting: { type: "sun", date: new Date(), directShadowsEnabled: true } } });
 ```
 
 ### Impact
 
-No visible shadows.
+Measured: with no `date`, the sun sat on 15 March at local solar noon under the camera (16:56 UTC over Bogotá).
 
 ### Diagnosis
 
-Shadows "missing"; ensure 3D content + ground.
+Shadows that never match the clock; pass `date`.
 
 ---
 
-## Pitfall 3: Weather expected to affect data
+## Pitfall 3: Setting environment on a MapView
 
 ### Anti-pattern
 
 ```typescript
-// Assuming rainy weather changes layer values
+new MapView({ map, environment: { lighting: { type: "sun" } } } as never); // 2D has no environment
 ```
 
 ### Correct
 
 ```typescript
-// Weather is visual only; drive data changes separately.
+new SceneView({ map, environment: { lighting: { type: "sun" } } });
 ```
 
 ### Impact
 
-Confusion between visuals and data.
+Measured: no error; the object was kept as a plain property (no `declaredClass`) and did nothing. TypeScript
+rejects it, which is why the anti-pattern needs `as never`.
 
 ### Diagnosis
 
-Data unchanged by weather; that's expected.
+Lighting settings with no effect in a 2D app.
 
 ---
 
-## Pitfall 4: Atmosphere hiding content at horizon
+## Pitfall 4: Weather parameters outside 0–1
 
 ### Anti-pattern
 
 ```typescript
-atmosphereEnabled: true; // heavy haze obscures distant features
+environment.weather = { type: "snowy", precipitation: 3 }; // "three times the snow"
 ```
 
 ### Correct
 
 ```typescript
-// Tune camera/atmosphere; disable atmosphere for analytical clarity.
+environment.weather = { type: "snowy", precipitation: 1, snowCover: "enabled" };
 ```
 
 ### Impact
 
-Distant features washed out.
+Measured: `precipitation` 3 was clamped to `1`; `cloudCover` stayed at its default `0.5`; `snowCover` defaults to
+`"disabled"`.
 
 ### Diagnosis
 
-Hazy horizon; adjust or disable atmosphere.
+Sliders above 1 that change nothing.
 
 ---
 
-## Pitfall 5: Animating the sun every frame
+## Pitfall 5: Shadows, weather and quality on weak GPUs
 
 ### Anti-pattern
 
 ```typescript
-setInterval(() => { view.environment.lighting.date = nextDate(); }, 16);
+const scene = new SceneView({ map, qualityProfile: "high",
+  environment: { weather: { type: "rainy" }, lighting: { type: "sun", directShadowsEnabled: true } } });
 ```
 
 ### Correct
 
 ```typescript
-// Step the sun a few times per second, not every frame.
+const scene = new SceneView({ map, qualityProfile: "medium" }); // "medium" is the default; "low" also exists
 ```
 
 ### Impact
 
-Unnecessary re-rendering cost.
+Frame drops on weak devices (not measured). Measured: `qualityProfile` defaults to `"medium"` and can be changed
+after construction.
 
 ### Diagnosis
 
-High GPU during sun animation; reduce the rate.
+Low frame rate with shadows or weather on; lower the profile or turn one off.

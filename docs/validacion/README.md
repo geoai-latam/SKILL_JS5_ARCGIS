@@ -51,7 +51,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 22 | `arcgis-popup-templates` | aporta con arreglos | 3 pitfalls falsos; los reales: outFields en funciones, zona horaria, separadores |
 | 23 | `arcgis-portal-content` | aporta con arreglos | su paginación duplicaba (start -1 reinicia); sortField sin sortOrder = lo más viejo |
 | 24 | `arcgis-rest-services` | aporta con arreglos | sin key no hay 401: diálogo y promesa colgada; raíz del servicio = 0 features |
-| 25 | `arcgis-scene-environment` | pendiente | |
+| 25 | `arcgis-scene-environment` | aporta con arreglos | cameraTrackingEnabled mueve la fecha al navegar; clima no disponible en local/altura |
 | 26 | `arcgis-smart-mapping` | pendiente | |
 | 27 | `arcgis-spatial-analysis` | pendiente | |
 | 28 | `arcgis-starter-app` | pendiente | |
@@ -828,3 +828,26 @@ nunca, o destruir y perder el mapa compartido.
 - **`places` no recibe URL**: se corrigió en `api-detail`.
 
 **Por qué aporta**: los tres errores principales fallan en silencio o de forma opaca, y la versión anterior describía mal dos de ellos.
+
+### 25. `arcgis-scene-environment` — aporta con arreglos
+
+**Evidencia** (5.1.27, `tests/runtime/casos/arcgis-scene-environment.ts`, 9/9 en verde, SceneView real):
+
+- **Valores por defecto medidos:**
+  - `lighting` `sun`, con `directShadowsEnabled` en `false`: el Pitfall 1 viejo era cierto y se queda;
+  - `cameraTrackingEnabled` en `true`;
+  - `date` = **15 de marzo al mediodía solar local bajo la cámara** (16:56Z sobre Bogotá), no «ahora»;
+  - `weather` `sunny`, atmósfera y estrellas encendidas, `qualityProfile` `medium`.
+- **Pitfall nuevo y grave: el estudio de sombras se mueve solo.** Con `cameraTrackingEnabled` por defecto, mover la cámara de Bogotá a Tokio cambió la fecha de `17:00Z` a `02:44Z`: conserva la hora local, no el instante. Con `false` se queda en 17:00Z. La skill vieja no lo mencionaba.
+- **El clima no aparece y no avisa.** `weather.type` vale `rainy` en los tres casos medidos, pero `weatherAvailable` solo es `true` en una escena global a 3 km. Da `false` a 3000 km y en una escena local, sin ningún error.
+- **El pitfall de fechas estaba mal explicado.** `new Date("2026-06-21")` es medianoche **UTC**, no medianoche local como decía la skill. En cambio, `"2026-06-21T12:00"` sin offset sí es hora local del navegador (17:00Z en Bogotá).
+- **Otros hallazgos:**
+  - un `environment` pasado a una MapView no lanza error: queda como propiedad plana sin efecto (cierto, pasó a la lista extendida);
+  - `precipitation: 3` se recorta a 1;
+  - `snowCover` es `disabled` por defecto;
+  - `qualityProfile` se puede cambiar después de crear la vista;
+  - cambiar la luz a `virtual` en caliente hace autocast;
+  - `arcgis-daylight` y `arcgis-weather` se registran.
+- **Relleno quitado:** tres extendidos que eran solo comentario: sombras sin objetos, el clima que no cambia los datos y la atmósfera que tapa el horizonte. El pitfall de GPU queda en la lista extendida marcado «no medido».
+
+**Por qué aporta:** un estudio de sombras a una hora fija es el uso analítico principal de esta API. Sin la skill, un agente deja las sombras apagadas, no fija la fecha y deja el seguimiento de cámara encendido, y la hora cambia en cuanto el usuario navega. El clima en una escena local falla igual de callado.
