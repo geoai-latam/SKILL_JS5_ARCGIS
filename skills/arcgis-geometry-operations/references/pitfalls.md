@@ -13,16 +13,16 @@ intersectionOperator.execute(webMercatorGeom, wgs84Geom);
 ### Correct
 
 ```typescript
-// Project both geometries to the same spatial reference first.
+// Project one of them first (projectOperator, see arcgis-coordinates-projection).
 ```
 
 ### Impact
 
-Wrong or empty results from mixed coordinate systems.
+Measured with 5.1.27: no exception; the result is `null`, which looks like "they do not overlap".
 
 ### Diagnosis
 
-Unexpected empty overlay; compare `geometry.spatialReference`.
+An overlay that is always empty; compare `geometry.spatialReference.wkid` of both inputs.
 
 ---
 
@@ -52,72 +52,78 @@ Runtime errors on null geometry.
 
 ---
 
-## Pitfall 3: Using planar area for large polygons
+## Pitfall 3: Planar area in Web Mercator far from the equator
 
 ### Anti-pattern
 
 ```typescript
-geometryEngine.planarArea(bigPolygon);
+areaOperator.execute(bigPolygonInWebMercator, { unit: "square-kilometers" });
 ```
 
 ### Correct
 
 ```typescript
-geometryEngine.geodesicArea(bigPolygon, "square-kilometers");
+await geodeticAreaOperator.load();
+geodeticAreaOperator.execute(bigPolygonInWebMercator, { unit: "square-kilometers" });
 ```
 
 ### Impact
 
-Significant area error far from the projection center.
+Web Mercator meters grow with latitude: measured, a planar 1000 m buffer covers 0.787 km² of real
+ground at 60°N (a 1 km circle is 3.142). Planar area over-reports by the same factor.
 
 ### Diagnosis
 
-Area looks off for large/again far-from-center polygons.
+Areas that look right near the equator and wrong at high latitudes.
 
 ---
 
-## Pitfall 4: Forgetting to simplify before union
+## Pitfall 4: Forgetting load() on geodetic operators
 
 ### Anti-pattern
 
 ```typescript
-geometryEngine.union(rawPolygons);
+geodeticLengthOperator.execute(route, { unit: "kilometers" });
 ```
 
 ### Correct
 
 ```typescript
-geometryEngine.union(rawPolygons.map((p) => geometryEngine.simplify(p)));
+await geodeticLengthOperator.load();
+geodeticLengthOperator.execute(route, { unit: "kilometers" });
 ```
 
 ### Impact
 
-Slivers/holes from non-simple inputs.
+Measured: `execute` throws an opaque "m is not a function"; `isLoaded()` is `false`.
 
 ### Diagnosis
 
-Odd union artifacts; simplify inputs.
+A minified "is not a function" from inside `@arcgis/core`; check `op.isLoaded()`.
 
 ---
 
-## Pitfall 5: Heavy sync work freezing the UI
+## Pitfall 5: Writing new code with geometryEngine
 
 ### Anti-pattern
 
 ```typescript
-for (const g of thousands) geometryEngine.buffer(g, 50);
+import * as geometryEngine from "@arcgis/core/geometry/geometryEngine.js";
+geometryEngine.union(polygons);
 ```
 
 ### Correct
 
 ```typescript
-// Use operators' executeMany, or run analysis in a worker.
+import * as unionOperator from "@arcgis/core/geometry/operators/unionOperator.js";
+unionOperator.executeMany(polygons);
 ```
 
 ### Impact
 
-UI jank on large batches.
+It works in 5.1 with no runtime warning, but it is deprecated since 4.32: TypeScript shows the
+strike-through, and it is a module that will go away.
 
 ### Diagnosis
 
-Long task warnings; batch or offload to a worker.
+`@deprecated` hints in the editor; see the migration table in `api-detail.md`.

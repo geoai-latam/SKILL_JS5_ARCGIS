@@ -1,17 +1,18 @@
 ---
 name: arcgis-geometry-operations
 description: >
-  Realiza operaciones de geometría del lado cliente con el ArcGIS Maps SDK for
-  JavaScript 5.0: la nueva operators API por operación (bufferOperator,
-  intersectionOperator, unionOperator, ...) y el clásico geometryEngine síncrono
-  (contains, intersects, geodesicBuffer, simplify). Usa esta skill cuando el
-  usuario haga buffer, intersección, unión, mida, o pruebe relaciones espaciales.
+  Realiza operaciones de geometría del lado cliente con los operadores de geometría
+  del ArcGIS Maps SDK for JavaScript 5.1 (bufferOperator, geodesicBufferOperator,
+  intersectionOperator, unionOperator, containsOperator, simplifyOperator,
+  geodeticAreaOperator, ...): cuáles piden load(), planar vs geodésico, y cómo
+  dejar geometryEngine (deprecado desde 4.32). Usa esta skill cuando el usuario
+  haga buffer, intersección, unión, mida, o pruebe relaciones espaciales.
 lang: es
-version: 0.1.0
+version: 0.2.0
 status: stable
-sdk_version: ">=5.0 <6.0"
+sdk_version: ">=5.1 <6.0"
 created: 2026-05-31
-updated: 2026-05-31
+updated: 2026-10-27
 category: spatial
 tags:
   - geometryengine
@@ -22,7 +23,7 @@ tags:
 requires:
   - arcgis-core-maps
 packages:
-  - "@arcgis/core@^5.0"
+  - "@arcgis/core@^5.1"
 maintainer: "GeoAI LATAM"
 license: MIT
 ---
@@ -34,32 +35,47 @@ license: MIT
 
 ## Resumen
 
-El SDK calcula geometría localmente — buffers, overlays, relaciones y mediciones — sin un servicio.
+El SDK calcula geometría localmente (buffers, overlays, relaciones y mediciones) sin un servicio.
 
 - **Problema que resuelve:** matemática espacial (buffer/overlay/relate/medir) en el navegador.
 - **A quién sirve:** desarrolladores que construyen herramientas de análisis y selección.
-- **Patrón que enseña:** prefiere la operators API de 5.0; usa geometryEngine para amplitud.
+- **Patrón que enseña:** un módulo operador por operación; operadores geodésicos para lon/lat.
 - **Qué NO cubre:** geoprocessing en servidor (ver `arcgis-spatial-analysis`) ni proyección (`arcgis-coordinates-projection`).
 
 ## Inicio Rápido
 
 ```typescript
-import * as bufferOperator from "@arcgis/core/geometry/operators/bufferOperator.js";
-const ring = bufferOperator.execute(point, 1000, { unit: "meters" });
+import * as geodesicBufferOperator from "@arcgis/core/geometry/operators/geodesicBufferOperator.js";
+import Point from "@arcgis/core/geometry/Point.js";
+
+await geodesicBufferOperator.load(); // los operadores geodésicos lanzan error sin esto
+const bogota = new Point({ longitude: -74.08, latitude: 4.6 });
+const ring = geodesicBufferOperator.execute(bogota, 1000, { unit: "meters" });
 ```
+
+Medido con 5.1.27: el área geodésica del anillo es 3,138 km² (un círculo de 1 km da 3,142). El
+`bufferOperator` planar sobre este mismo punto en lon/lat **lanza** "Unable to convert from a linear
+unit to an angular unit".
 
 ## Árbol de Decisión
 
-1. **¿Operación única y bien definida (buffer/intersección/unión/...)?**
-   - Sí → el módulo operator correspondiente (`bufferOperator`, `intersectionOperator`, ...).
+1. **¿Geometría en lon/lat (wkid 4326) y una distancia en metros?**
+   - Sí → `geodesicBufferOperator`, `geodeticLengthOperator`, `geodeticAreaOperator`,
+     `geodeticDistanceOperator`, cada uno después de `await op.load()`.
 
-2. **¿Muchas operaciones o un test de relación que aún no es operator?**
-   - Sí → métodos de `geometryEngine` (sync) como `contains`, `within`, `crosses`.
+2. **¿Geometría en un sistema proyectado (Web Mercator, MAGNA-SIRGAS 9377, UTM)?**
+   - Área pequeña cerca del centro de la proyección → `bufferOperator`, `areaOperator`,
+     `lengthOperator` planares (sin `load()`).
+   - Área grande o latitud alta en Web Mercator → igual geodésico (el planar se va 4× a 60°N).
 
-3. **¿Geodésico (áreas grandes / lat-lon)?**
-   - Sí → usa variantes geodésicas (`geodesicBuffer`, `geodesicBufferOperator`).
+3. **¿Prueba de relación?**
+   - `containsOperator`, `withinOperator`, `intersectsOperator`, `crossesOperator`,
+     `touchesOperator`, `disjointOperator`, `equalsOperator`, `relateOperator`.
 
-**Default:** operators para código nuevo; geometryEngine donde no exista un operator.
+4. **¿Código viejo con `geometryEngine.*`?**
+   - Reemplázalo: cada método tiene su operador, y `geometryEngine` está deprecado desde 4.32.
+
+**Default:** solo operadores; los geodésicos para todo lo que esté en lon/lat.
 
 ## Patrones de Import
 
@@ -72,78 +88,92 @@ import * as intersectionOperator from "@arcgis/core/geometry/operators/intersect
 ### Imports Dinámicos (CDN)
 
 ```javascript
-const geometryEngine = await $arcgis.import("@arcgis/core/geometry/geometryEngine.js");
+const intersectionOperator = await $arcgis.import("@arcgis/core/geometry/operators/intersectionOperator.js");
 ```
 
 ### Map Components (recomendado para proyectos nuevos)
 
 ```typescript
-// Opera sobre geometrías que lees de la view del componente (hitTest, sketch, query).
+// Opera sobre geometrías que lees de la vista del componente (hitTest, sketch, query).
 import "@arcgis/map-components/components/arcgis-map";
 ```
 
 ## Conceptos Clave
 
-### Concepto 1: Operators API (nueva en 5.0)
+### Concepto 1: Un módulo por operación
 
-Cada operación es su propio módulo que exporta `execute` (única) y `executeMany` (lote), ej.
-`bufferOperator.execute(geometry, distance, { unit })`. Tree-shakeable y compatible con workers.
+Cada operador (`@arcgis/core/geometry/operators/*`, disponibles desde 4.31) exporta `execute` y, la
+mayoría, `executeMany`. Los resultados pueden ser `null`: protégelos siempre. Los geodésicos
+(`geodesicBuffer`, `geodeticArea`, `geodeticLength`, `geodeticDistance`, `geodeticDensify`,
+`geodesicProximity`) necesitan `await op.load()` antes; sin eso, medido, `execute` lanza "m is not a
+function" e `isLoaded()` da `false`.
 
-### Concepto 2: geometryEngine (clásico, síncrono)
+### Concepto 2: geometryEngine está deprecado
 
-`geometryEngine` expone muchas operaciones y tests de relación en un módulo: `contains`,
-`intersects`, `simplify`, `geodesicBuffer`, `geodesicLength`, `union`.
+`geometryEngine` sigue funcionando en 5.1.27 (medido: `contains` devuelve `true` igual que
+`containsOperator`) y no escribe ningún aviso en tiempo de ejecución, pero sus tipos lo marcan
+deprecado desde 4.32. El mapa: `contains` → `containsOperator`, `simplify` → `simplifyOperator`,
+`geodesicBuffer` → `geodesicBufferOperator`, `geodesicLength` → `geodeticLengthOperator`,
+`geodesicArea` → `geodeticAreaOperator`, `union` → `unionOperator.executeMany`, `clip` →
+`clipOperator`.
 
 ### Concepto 3: Planar vs geodésico
 
-La matemática planar funciona dentro de una zona proyectada; para extensiones grandes o coordenadas
-geográficas usa las variantes geodésicas para evitar distorsión de distancia/área.
+Las cuentas planares usan las coordenadas tal como vienen. En lon/lat rechaza los metros (lanza
+error). En Web Mercator usa metros proyectados, que crecen con la latitud: medido, un buffer planar
+de 1000 m cubre 3,099 km² en Bogotá (1,4 % menos) y 0,787 km² a 60°N (75 % menos).
 
 ## Pitfalls Comunes (Top 3)
 
-### Pitfall 1: Buffer planar en coordenadas geográficas
+### Pitfall 1: Buffer planar sobre lon/lat
 
 ```typescript
 // ❌ Anti-patrón
-bufferOperator.execute(latLonPoint, 1000, { unit: "meters" }); // distorsionado en áreas grandes
+bufferOperator.execute(latLonPoint, 1000, { unit: "meters" });
 ```
 
 ```typescript
 // ✅ Correcto
 import * as geodesicBufferOperator from "@arcgis/core/geometry/operators/geodesicBufferOperator.js";
+await geodesicBufferOperator.load();
 geodesicBufferOperator.execute(latLonPoint, 1000, { unit: "meters" });
 ```
 
-**Impacto:** tamaño/forma de buffer incorrectos lejos del ecuador.
+**Impacto:** medido: no distorsiona; lanza "Unable to convert from a linear unit to an angular
+unit". Olvidar el `load()` en la versión correcta también lanza error.
 
-### Pitfall 2: Operar sobre geometría inválida/auto-intersecante
+### Pitfall 2: Medir geometría auto-intersecada
 
 ```typescript
 // ❌ Anti-patrón
-intersectionOperator.execute(messyPolygon, other); // puede dar resultado erróneo
+areaOperator.execute(bowtie); // un anillo en forma de ocho
 ```
 
 ```typescript
 // ✅ Correcto
-const clean = geometryEngine.simplify(messyPolygon);
-intersectionOperator.execute(clean, other);
+const clean = simplifyOperator.isSimple(bowtie) ? bowtie : simplifyOperator.execute(bowtie);
+areaOperator.execute(clean as Polygon);
 ```
 
-**Impacto:** resultados de overlay incorrectos por geometría no simple.
+**Impacto:** medido sobre un moño de 10×10: el área del anillo crudo es **0** (los dos lóbulos se
+cancelan); después de `simplifyOperator` son 2 anillos y 50. La intersección con una caja dio 50 en
+los dos casos.
 
-### Pitfall 3: Bloquear la UI con ops en lote enormes
+### Pitfall 3: Esperar que executeMany no congele la UI
 
 ```typescript
 // ❌ Anti-patrón
-bigGeoms.forEach((g) => bufferOperator.execute(g, 100)); // sync en el hilo principal
+const buffers = bufferOperator.executeMany(bigGeoms, distances, { union: true }); // "va en lote"
 ```
 
 ```typescript
 // ✅ Correcto
-const buffers = bufferOperator.executeMany(bigGeoms, distances); // por lote
+// execute y executeMany son síncronos. Para trabajo pesado, córrelo en un Web Worker,
+// o pártelo en tandas entre cuadros.
 ```
 
-**Impacto:** caída de frames al bufferear miles de geometrías una por una.
+**Impacto:** medido con 5.000 puntos: un loop de `execute` tardó 150 ms y `executeMany` 113 ms, los
+dos bloqueando el hilo principal; con `union: true` tardó 2,9 s.
 
 ## Cuándo leer references/
 
@@ -166,4 +196,10 @@ const buffers = bufferOperator.executeMany(bigGeoms, distances); // por lote
 
 ## Changelog
 
+- **0.2.0** (2026-10-27): SDK 5.1. El Inicio Rápido lanzaba error con la entrada más común: un `bufferOperator`
+  planar sobre un punto en lon/lat con metros lanza "Unable to convert from a linear unit to an angular unit" (no
+  "distorsiona"). El arreglo geodésico también pide `load()` (sin eso lanza). `geometryEngine`, presentado como
+  respaldo, está deprecado desde 4.32: ahora solo operadores, con el mapa de migración. Los operadores son de 4.31,
+  no "nuevos en 5.0". Medido: error planar en Web Mercator por latitud, área 0 del moño, `executeMany` también es
+  síncrono, referencias espaciales distintas dan `null`. En `tests/runtime/casos/arcgis-geometry-operations.ts`.
 - **0.1.0** (2026-05-31): Versión inicial.

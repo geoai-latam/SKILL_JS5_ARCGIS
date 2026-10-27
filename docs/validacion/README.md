@@ -41,7 +41,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 12 | `arcgis-editing` | aporta con arreglos | dos pitfalls falsos (SR y refresh); los errores no rechazan la promesa |
 | 13 | `arcgis-embeddable-maps` | aporta con arreglos | el script 5.x no registra el elemento; hide-* no existen |
 | 14 | `arcgis-feature-effects` | aporta con arreglos | pitfall falso (sin filtro); faltaban límites 3D/heatmap y layerView.filter |
-| 15 | `arcgis-geometry-operations` | pendiente | |
+| 15 | `arcgis-geometry-operations` | aporta con arreglos | el Inicio Rápido lanzaba con lon/lat; recomendaba geometryEngine (deprecado) |
 | 16 | `arcgis-imagery` | pendiente | |
 | 17 | `arcgis-interaction` | pendiente | |
 | 18 | `arcgis-knowledge-graphs` | pendiente | |
@@ -542,3 +542,35 @@ sentido ni en el otro.
 **¿Aporta?** Sí, con matices. La sintaxis de los efectos es la de CSS y cualquier modelo la adivina.
 Lo que aporta es lo que no da error: la unidad faltante que solo avisa por consola, `opacity(0%)` que
 sigue respondiendo a los clics, el featureEffect sin filtro y los efectos que no se ven en 3D.
+
+### 15. `arcgis-geometry-operations` — aporta con arreglos
+
+**¿Corre en 5.1?** El Inicio Rápido, no. Hacía `bufferOperator.execute(point, 1000, { unit: "meters" })`.
+Con un punto en lon/lat, que es la entrada más común (`new Point({ longitude, latitude })`), medido
+en Chromium con 5.1.27 **lanza** "Unable to convert from a linear unit to an angular unit". La skill
+decía que "distorsiona". Su arreglo (`geodesicBufferOperator`) también lanzaba, porque le faltaba
+`load()`: "m is not a function". Diez comprobaciones en
+`tests/runtime/casos/arcgis-geometry-operations.ts`.
+
+**Lo que estaba mal (y ya se arregló):**
+
+- **`geometryEngine` era el respaldo recomendado** (árbol, AGENTS, snippet, dos ejemplos), pero está
+  deprecado desde 4.32. El verificador de tipos ya lo marcaba en dos bloques. Todavía funciona en
+  5.1.27 y no avisa nada en tiempo de ejecución, así que nadie se entera. Ahora la skill usa solo
+  operadores y trae la tabla de migración método por método. "Si no hay operador, usa geometryEngine"
+  era falso: hay operador para todos los casos que la skill mostraba.
+- **"Operators API new in 5.0" era falso:** son de 4.31.
+- **El error planar, medido:** un buffer planar de 1000 m en Web Mercator cubre 3,099 km² en Bogotá
+  (1,4 % menos) y 0,787 km² a 60°N (75 % menos), contra 3,142 km² de un círculo de 1 km. El
+  geodésico da 3,138 km².
+- **Pitfall 2 (geometría auto-intersecada):** "la intersección da mal" no se reprodujo (dio 50 en los
+  dos casos). Lo que sí falla en silencio es el área: el moño crudo mide **0**. Simplificado, mide 50.
+- **Pitfall 3:** "usa `executeMany` para no bloquear la UI" era falso. Los dos son síncronos: 5.000
+  buffers tardaron 150 ms con loop, 113 ms con `executeMany` y 2,9 s con `union: true`. La salida es un
+  Worker.
+- **Agregado:** la lista de los 9 operadores que piden `load()` (sacada de los tipos), y que
+  referencias espaciales distintas dan `null` sin lanzar.
+
+**¿Aporta?** Ahora sí, y mucho. Un agente que escribe de memoria usa `geometryEngine` (lo que salía
+en la documentación de 4.x) o el `bufferOperator` planar con lon/lat. Lo primero está deprecado y lo
+segundo lanza error. La versión anterior enseñaba las dos cosas.
