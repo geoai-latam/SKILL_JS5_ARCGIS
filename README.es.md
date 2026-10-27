@@ -52,7 +52,7 @@ está en [`skills/README.md`](./skills/README.md).
 npx skills add sforero77/SKILL_JS5_ARCGIS
 
 # Una skill específica
-npx skills add sforero77/SKILL_JS5_ARCGIS/arcgis-starter-app
+npx skills add sforero77/SKILL_JS5_ARCGIS --skill arcgis-starter-app
 
 # Marketplace de Claude Code (requiere un .claude-plugin/marketplace.json — ver abajo)
 # /plugin marketplace add sforero77/SKILL_JS5_ARCGIS

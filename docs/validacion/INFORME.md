@@ -111,7 +111,7 @@ Solo se cotejaron dos skills contra su `master`. No es una comparación de las 3
     `cambios-sdk-5.1.md`;
   - cada afirmación ejecutada contra el SDK real, con su caso de runtime;
   - pitfalls medidos en vez de supuestos, y los falsos fuera;
-  - un verificador que compila los 1064 bloques y ahora coteja `exports`;
+  - un verificador que compila los 1059 bloques y ahora coteja `exports`;
   - versión bilingüe ES/EN.
 
 Antes de abrir el repo conviene decidir dos cosas, y las dos son de Sebastián:

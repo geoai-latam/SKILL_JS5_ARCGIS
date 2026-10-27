@@ -47,11 +47,11 @@ is [`docs/validacion/README.md`](./docs/validacion/README.md). The catalog is
 ## Install
 
 ```bash
-# All skills, via the Skills CLI (requires the repo to be public)
+# All skills, via the Skills CLI
 npx skills add sforero77/SKILL_JS5_ARCGIS
 
 # A specific skill
-npx skills add sforero77/SKILL_JS5_ARCGIS/arcgis-starter-app
+npx skills add sforero77/SKILL_JS5_ARCGIS --skill arcgis-starter-app
 
 # Claude Code marketplace (requires a .claude-plugin/marketplace.json — see below)
 # /plugin marketplace add sforero77/SKILL_JS5_ARCGIS
