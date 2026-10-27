@@ -79,6 +79,27 @@ function extractBlocks(file) {
   return blocks;
 }
 
+// TypeScript can resolve a deep path by directory even when the package's `exports` map does
+// not publish it (it does with `typeRoots`), but Vite and Node refuse it: the import that
+// type-checks fails at build time. Check every SDK specifier against the real `exports` map.
+const exportsOf = new Map();
+function exported(spec) {
+  const m = spec.match(/^(@[^/]+\/[^/]+)(\/.*)?$/);
+  if (!m) return true;
+  if (!exportsOf.has(m[1])) {
+    const pj = path.join(REPO_ROOT, "node_modules", m[1], "package.json");
+    exportsOf.set(m[1], fs.existsSync(pj) ? JSON.parse(fs.readFileSync(pj, "utf8")).exports ?? null : null);
+  }
+  const ex = exportsOf.get(m[1]);
+  if (!ex || typeof ex !== "object") return true;
+  const sub = "." + (m[2] ?? "");
+  return Object.keys(ex).some((k) => {
+    if (!k.includes("*")) return k === sub;
+    const [a, z] = k.split("*");
+    return sub.startsWith(a) && sub.endsWith(z) && sub.length >= a.length + z.length;
+  });
+}
+
 function check(blocks) {
   const tmp = path.join(REPO_ROOT, "node_modules", ".cache", "check-code-blocks");
   fs.rmSync(tmp, { recursive: true, force: true });
@@ -112,6 +133,9 @@ function check(blocks) {
     moduleResolution: ts.ModuleResolutionKind.Bundler,
     skipLibCheck: true,
     allowJs: true,
+    // Without it, `import "pkg/wrong/path"` (a side-effect import, which is how every
+    // component is registered) type-checks even when the path is not exported.
+    noUncheckedSideEffectImports: true,
     jsx: ts.JsxEmit.Preserve,
     lib: ["lib.es2022.d.ts", "lib.dom.d.ts", "lib.dom.iterable.d.ts"],
     types: ["vite/client", "@arcgis/map-components"],
@@ -138,6 +162,11 @@ function check(blocks) {
   for (const [f, b] of fileFor) {
     const sf = program.getSourceFile(f);
     b.errors = [];
+    for (const [i, line] of b.code.split("\n").entries()) {
+      for (const [, spec] of line.matchAll(/(?:\bfrom\s*|\bimport\s*\(?\s*)["'](@(?:arcgis|esri)\/[^"']+)["']/g)) {
+        if (!exported(spec)) b.errors.push({ line: b.start + i, code: 2307, msg: `'${spec}' is not in the package's "exports": Vite and Node reject it even though tsc resolves it.` });
+      }
+    }
     b.deprecated = [];
     b.free = new Set();
     const where = (d) => {

@@ -61,7 +61,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 32 | `arcgis-visualization` | aporta con arreglos | 2 pitfalls falsos (caja del campo, orden de stops); medido por píxel: sin defaultSymbol no se dibuja, valores únicos con caja, heatmap en polígonos |
 | 33 | `arcgis-widgets-advanced` | aporta con arreglos | position= (no existe: cae al slot por defecto, medido) en todos los ejemplos; estadísticas del perfil en la analysis view; perfil sin ground no avanza |
 | 34 | `arcgis-widgets-ui` | aporta con arreglos | position= en todos los ejemplos (ahora slot); enlace roto medido (view null, sin error); pitfall de solapamiento falso |
-| 35 | `arcgis-ai-components` | pendiente | |
+| 35 | `arcgis-ai-components` | aporta con arreglos (propuestos, sin aplicar: WIP) | sus imports dist/components rompen en Vite (no están en exports; tsc no lo ve); agentes de ArcGIS sin web map: Orchestrator not initialized; falta agent-utils 5.1 (FunctionAgent medido) |
 
 `arcgis-ai-components` va al final a propósito: tiene 596 líneas sin guardar de antes de esta
 rama, y guardarlas o descartarlas lo decide Sebastián. Se valida la versión del working tree sin
@@ -1069,3 +1069,24 @@ El resto se contrastó con los tipos del SDK.
 - **Un tag sin su import mide 0 px y no da error.** Con guion es un elemento desconocido válido.
 
 **Por qué aporta:** sin la skill, un agente que viene de 4.x escribe `position`, y no se entera de que la leyenda quedó sin enlazar porque nada falla. Las dos cosas quedaron medidas. Los pitfalls de relleno y el falso se fueron.
+
+### 35. `arcgis-ai-components` — aporta con arreglos (propuestos, sin aplicar: WIP)
+
+**Evidencia.** El caso `tests/runtime/casos/arcgis-ai-components.ts` corrió contra el SDK 5.1.27 en Chromium y dio 4/4 en verde. Los seis archivos de la skill con trabajo sin guardar **no se tocaron**. Los arreglos están en `docs/validacion/propuestas/arcgis-ai-components.md`, para aplicarlos cuando Sebastián decida qué hace con ese trabajo.
+
+**Lo que rompe hoy:**
+
+1. **Ningún import de la skill pasa por Vite.** Todos usan `@arcgis/ai-components/dist/components/<tag>`, y esa ruta no está en el `exports` del paquete. Node da `ERR_PACKAGE_PATH_NOT_EXPORTED` y Vite da `Missing "./dist/components/arcgis-assistant" specifier`. tsc la resuelve por directorio, y por eso el smoke test la daba por buena. El verificador de bloques ahora coteja cada ruta `@arcgis/*` y `@esri/*` contra `exports`. En las otras 34 skills no encontró nada nuevo, solo un bloque anti-patrón de charts que ya estaba marcado. `scripts/snippet-assistant.ts`, que no es WIP, quedó arreglado.
+2. **Cinco bloques no compilan**, los cinco por estructura: JSON en un bloque TypeScript, JSX con dos raíces, un comentario HTML en `tsx` y un `return` suelto.
+3. **Instalar con pnpm rompe el build.** pnpm resolvió `langchain@1.5.20`, que pide `@langchain/core ^1.3.0`, junto con `@langchain/core@1.1.48`. Vite falla con `Missing "./utils/gateway" specifier`. El repo ahora fija `@langchain/core@^1.3.0` en devDependencies. Sin eso, el caso de runtime no arrancaba.
+
+**Lo que se midió:**
+
+- **Los agentes de ArcGIS necesitan un web map.** Sin `item-id` el assistant emite `arcgisError("WebMap portal item is missing.")` y `submitMessage()` rechaza con `Orchestrator not initialized yet.`.
+- **La sesión se pide al primer mensaje.** Un assistant con un solo agente propio llega a `arcgisReady`, y el primer mensaje abre «Iniciar sesión». No se inició sesión.
+- **5.1 trae `agent-utils`** (`FunctionAgent`, `LLMAgent`, `WorkflowAgent` y los flujos), y la skill no lo enseña. Un `FunctionAgent` da su `.registration`, su grafo corre sin LLM y `arcgis-assistant-agent` lo acepta. Ya no hay que escribir el `StateGraph` a mano.
+- **No es pitfall:** `reference-element` acepta `#myMap` y también `myMap` (código del toolkit). `layer-styling-agent` existe pero es `@internal`, así que está bien omitido.
+
+**Lo que no se midió:** ninguna respuesta del LLM, porque requiere un usuario nominal de ArcGIS Online.
+
+**Por qué aporta:** sin la skill, un agente no sabe que el assistant solo funciona con un usuario nominal, que los agentes de ArcGIS exigen un web map con embeddings, ni que es beta y hay que fijar la versión. El trabajo sin guardar ya corrige `layer-filter`, que no existe, y agrega el agente `knowledge`. Pero tal como está, el primer `import` rompe el build. Con los arreglos de la propuesta, aporta.
