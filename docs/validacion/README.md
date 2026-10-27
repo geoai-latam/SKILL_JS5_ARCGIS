@@ -33,7 +33,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 4 | `arcgis-authentication` | aporta con arreglos | La key en VITE_ igual viaja en el bundle; keys AAPK retiradas el 27-jun-2026 (Invalid Token, ejecutado); OAuth tarde abre el diálogo del SDK, no falla |
 | 5 | `arcgis-charts` | aporta con arreglos | antes no corría: `config` inventado; ahora `createModel` + `model`, ruta sin `.js`, Calcite fijado en ~5.1.2 |
 | 6 | `arcgis-cim-symbols` | aporta con arreglos | orden de capas al revés y el pitfall de `enable` falso (medido); Quick Start vacío; overrides con la trampa de `"size"` |
-| 7 | `arcgis-coding-components` | pendiente | |
+| 7 | `arcgis-coding-components` | aporta con arreglos | antes era relleno con API inventada (`arcgisChange`, `sqlEditor.layer`); ahora perfil + diagnósticos medidos; SQL/code editor son `@internal` |
 | 8 | `arcgis-coordinates-projection` | pendiente | |
 | 9 | `arcgis-core-maps` | pendiente | |
 | 10 | `arcgis-core-utilities` | pendiente | |
@@ -250,3 +250,46 @@ Chromium (`tests/runtime/casos/arcgis-cim-symbols.ts`): pintan cada símbolo con
 equivoca justo en lo que no da error: el orden de capas, los puntos y los píxeles, el alfa, la
 mayúscula del override. Antes, dos de sus cinco "reglas" eran falsas y una tercera enseñaba el orden
 al revés: hacía daño en lo que más se copia.
+
+### 7. `arcgis-coding-components` — aporta con arreglos
+
+**¿Corre en 5.1?** Ahora sí: el snippet y los 32 bloques compilan contra 5.1.27, y siete
+comprobaciones en Chromium (`tests/runtime/casos/arcgis-coding-components.ts`) montan
+`arcgis-arcade-editor` y leen los diagnósticos que emite. Antes la skill no traía código que
+corriera: el Inicio Rápido, los pitfalls y el árbol eran comentarios.
+
+**Lo que estaba mal (y ya se arregló):**
+
+- **API inventada en las referencias.**
+  - El evento `arcgisChange` no existe; los reales son `arcgisScriptChange` y
+    `arcgisDiagnosticsChange`.
+  - `sqlEditor.layer` no existe.
+  - El perfil `{ variables: [{ name: "$feature", type: "feature" }] }` no le da campos al editor.
+  - Para "validar antes de aplicar" se apoyaba en una validez que no se expone: no hay `isValid`.
+- **Ofrecía como opciones componentes que no son API pública.** `arcgis-sql-expression-editor`,
+  `arcgis-sql-layer-editor`, `arcgis-code-editor` y `arcgis-code-viewer` están marcados `@internal`
+  en las declaraciones de 5.1.27. Ahora el árbol lo dice y propone qué usar en su lugar.
+- **Los pitfalls eran plausibles pero sin síntoma.** Ahora están medidos:
+  - Sin perfil, hasta un `$feature.state_name` correcto sale "'$feature' is not defined", el
+    mismo mensaje que un campo inexistente.
+  - Con perfil, el campo inexistente trae la lista de los campos reales.
+  - Con el perfil `labeling`, `FeatureSetByName` y `$map` salen "not defined": el perfil de
+    edición tiene que ser el mismo del lugar donde se ejecuta.
+- **Faltaba lo de 5.1:**
+  - El asistente de Arcade (beta) viene encendido por defecto; se apaga con `disableAssistant`.
+  - `arcadeAssistant` queda deprecado.
+  - `enableDebugger`.
+  - Los tipos `I*` quedan deprecados.
+- **El script de la CDN es un módulo** (hallazgo que aplica a todas las skills). Ejecutado con
+  `tests/runtime/cdn.mjs`:
+  - `<script type="module" src="https://js.arcgis.com/5.1/">` registra map, charts, coding, ai y
+    Calcite.
+  - Con `<script>` clásico falla con "Cannot use import statement outside a module" y no registra
+    nada.
+  - La skill 5 (charts), ya registrada, usaba la etiqueta clásica más un segundo script
+    innecesario; se corrigió en este mismo commit.
+
+**¿Aporta?** Sí, después de reescribirla. Sin ella, un agente monta el editor sin perfil o con el
+equivocado, y escucha un evento que no existe (es lo que hacía la skill). Lo que no se adivina es
+qué componentes son internos y que el asistente de IA viene encendido. Antes era relleno: el
+contenido no tenía código y lo poco concreto era inventado.

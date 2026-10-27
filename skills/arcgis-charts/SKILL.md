@@ -81,9 +81,9 @@ import "@arcgis/charts-components/components/arcgis-chart";
 ### Dynamic Imports (CDN)
 
 ```html
-<!-- Core + the charts package from the CDN, same version as the rest of the SDK -->
-<script src="https://js.arcgis.com/5.1/"></script>
-<script type="module" src="https://js.arcgis.com/5.1/charts-components/"></script>
+<!-- One module script loads core and every component package, charts included (a classic
+     <script> without type="module" fails: "Cannot use import statement outside a module") -->
+<script type="module" src="https://js.arcgis.com/5.1/"></script>
 ```
 
 ### Map Components (recommended for new projects)
@@ -205,6 +205,6 @@ in the UI. With 5.1.2 the same code renders.
 
 - **0.2.0** (2026-10-27): SDK 5.1. Rewritten on the real API: `arcgis-chart` has no `config`; charts are
   `createModel()` + `model` (measured: the old code rendered nothing). `createModel` import without `.js`;
-  Calcite 5.2 breaks charts 5.1 (measured, pin `~5.1.2`); `syncViewSelection` and the 5.1 renames; real CDN URL.
-  Run in `tests/runtime/casos/arcgis-charts.ts`.
+  Calcite 5.2 breaks charts 5.1 (measured, pin `~5.1.2`); `syncViewSelection` and the 5.1 renames;
+  module CDN script (the 5.1 core script already brings charts). Run in `tests/runtime/casos/arcgis-charts.ts`.
 - **0.1.0** (2026-05-31): Initial release.

@@ -11,7 +11,9 @@
 
 ## arcgis-chart
 
-`@arcgis/charts-components/components/arcgis-chart` (CDN: `https://js.arcgis.com/5.1/charts-components/`)
+`@arcgis/charts-components/components/arcgis-chart`
+
+CDN: `<script type="module" src="https://js.arcgis.com/5.1/">` already registers it.
 
 | Property | Type | Description |
 |---|---|---|

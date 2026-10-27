@@ -2,40 +2,64 @@
 
 ## Table of Contents
 
-- [Editor components](#editor-components)
+- [Components and their status](#components-and-their-status)
 - [arcgis-arcade-editor](#arcgis-arcade-editor)
-- [SQL & code editors](#sql--code-editors)
+- [Profiles](#profiles)
 
 ---
 
-## Editor components
+## Components and their status
 
-| Component | Import | Purpose |
-|---|---|---|
-| `arcgis-arcade-editor` | `dist/components/arcgis-arcade-editor` | Author Arcade with assistance |
-| `arcgis-sql-expression-editor` | `dist/components/arcgis-sql-expression-editor` | Build SQL where clauses |
-| `arcgis-code-editor` | `dist/components/arcgis-code-editor` | Generic code editing |
-| `arcgis-arcade-coding-assistant` | `dist/components/arcgis-arcade-coding-assistant` | AI assist for Arcade |
+Checked against the declarations of `@arcgis/coding-components` 5.1.27.
+
+| Component | Status |
+|---|---|
+| `arcgis-arcade-editor` | Public |
+| `arcgis-sql-expression-editor` | `@internal` |
+| `arcgis-sql-layer-editor` | `@internal` |
+| `arcgis-code-editor` | `@internal` |
+| `arcgis-code-viewer` | `@internal` |
+
+Import path: `@arcgis/coding-components/components/<tag>`. CDN: the core module script
+`<script type="module" src="https://js.arcgis.com/5.1/">` already registers them.
 
 ---
 
 ## arcgis-arcade-editor
 
-| Property | Description |
-|---|---|
-| `script` | The Arcade expression being edited |
-| `profile` | Variable/function context (matches runtime) |
-| `testData` | Optional feature for live results |
+| Property | Type | Description |
+|---|---|---|
+| `script` | `string` | The expression |
+| `profile` | `PredefinedProfile` \| `EditorProfileDefinition` | What is valid (see below) |
+| `testData` | `{ profileVariableInstances, spatialReference?, timeZone? }` | Enables the Run UX; without it, hidden |
+| `enableDebugger` | `boolean` | Breakpoints, stepping, console (5.1) |
+| `disableAssistant` | `boolean` | Turns off the Arcade assistant (beta), on by default (5.1) |
+| `hideSideBar` | `boolean` | Minimal layout |
+| `editorOptions` | Monaco options | e.g. `{ fontSize: 16 }` |
+| `suggestions` / `snippets` | arrays | Your own suggestions and snippets |
 
-| Event | Description |
+| Event | Detail |
 |---|---|
-| `arcgisChange` | Fires as the script changes |
+| `arcgisScriptChange` | `string`: the new script |
+| `arcgisDiagnosticsChange` | `Diagnostic[]`: empty when valid |
+
+| Method | Description |
+|---|---|
+| `setFocus()` | Focus the editor |
+
+There is no `arcgisChange` event, no `isValid` property and no `layer` property.
 
 ---
 
-## SQL & code editors
+## Profiles
 
-| Editor | Key inputs |
-|---|---|
-| `arcgis-sql-expression-editor` | layer fields, current `where` |
-| `arcgis-code-editor` | language, value |
+```typescript
+// Predefined: the id of the place the expression runs + the definitions it needs
+editor.profile = { id: "popup", definitions: { $feature: layer } };
+```
+
+Predefined ids (`ArcadeProfileId` in 5.1.27) include `"popup"`, `"popup-element"`, `"labeling"`,
+`"visualization"`, `"field-calculation"`, `"form-calculation"`, `"form-constraint"`,
+`"feature-z"`, `"popup-feature-reduction"`, `"measure-visualization"` and more. A definition for
+`$feature` can be a layer instance, `{ fields }`, `{ url }` or `{ portalItem: { id }, layerId }`.
+Custom profiles use `{ variables: ProfileVariable[], bundles? }`.

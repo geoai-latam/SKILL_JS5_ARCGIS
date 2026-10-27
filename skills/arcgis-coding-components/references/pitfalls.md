@@ -2,100 +2,107 @@
 
 > Extends the Top 3 in SKILL.md. Format: Anti-pattern / Correct / Impact / Diagnosis.
 
-## Pitfall 1: Setting properties before the element upgrades
+## Pitfall 1: Listening for an event that does not exist
 
 ### Anti-pattern
 
 ```typescript
-editor.script = "..."; // element not defined yet
+// ❌ Anti-pattern
+editor.addEventListener("arcgisChange", (e) => save((e as CustomEvent).detail));
 ```
 
 ### Correct
 
 ```typescript
-import "@arcgis/coding-components/components/arcgis-arcade-editor";
-customElements.whenDefined("arcgis-arcade-editor").then(() => { editor.script = "..."; });
+editor.addEventListener("arcgisScriptChange", (e) => save(e.detail));
 ```
 
 ### Impact
 
-The property is dropped.
+`arcgisChange` is not an event of the editor: the listener never runs and nothing is saved.
 
 ### Diagnosis
 
-Editor empty; wait for definition.
+TypeScript types `addEventListener` for the element: an unknown name only compiles with a cast.
 
 ---
 
-## Pitfall 2: SQL editor without a layer
+## Pitfall 2: Treating the SQL editor as public API
 
 ### Anti-pattern
 
 ```typescript
-// arcgis-sql-expression-editor with no layer
+// ❌ Anti-pattern
+sqlEditor.layer = featureLayer; // no such property, and the component is @internal
 ```
 
 ### Correct
 
 ```typescript
-sqlEditor.layer = featureLayer;
+// Build the where clause in your own UI, then check it against the layer:
+const n = await layer.queryFeatureCount({ where: clause });
 ```
 
 ### Impact
 
-No field autocomplete/validation.
+`arcgis-sql-expression-editor` is `@internal` in 5.1.27 (its profile is `{ id, definitions }`,
+not a `layer` property): it can change or disappear in any release.
 
 ### Diagnosis
 
-Weak suggestions; bind a layer.
+The declaration's docblock says `@internal`.
 
 ---
 
-## Pitfall 3: Ignoring diagnostics
+## Pitfall 3: A predefined profile without the definition it needs
 
 ### Anti-pattern
 
 ```typescript
-apply(editor.script); // even with errors
+// ❌ Anti-pattern
+editor.profile = { id: "popup", definitions: {} };
 ```
 
 ### Correct
 
 ```typescript
-// Check the editor's diagnostics/validity first.
+editor.profile = { id: "popup", definitions: { $feature: layer } };
 ```
 
 ### Impact
 
-Invalid expressions reach runtime.
+Without `$feature`'s definition the editor cannot list fields; with a loaded layer it flags each
+wrong field name with the list of real ones (measured).
 
 ### Diagnosis
 
-Runtime expression errors; validate first.
+Completion offers no field names after `$feature.`.
 
 ---
 
-## Pitfall 4: Theme/assets not loaded
+## Pitfall 4: Shipping the Arcade assistant by accident
 
 ### Anti-pattern
 
 ```typescript
-// Editor renders unstyled
+// ❌ Anti-pattern: the 5.1 default, in an app that must not send code to an AI service
+const editor = document.createElement("arcgis-arcade-editor");
 ```
 
 ### Correct
 
 ```typescript
-// Ensure component styles/assets load (via npm import or CDN).
+editor.disableAssistant = true;
 ```
 
 ### Impact
 
-Broken editor appearance.
+In 5.1 the assistant (beta) is on by default and appears for signed-in users of an ArcGIS Online
+org that allows AI assistants. `arcadeAssistant` (the 5.0 way to configure it) is deprecated.
 
 ### Diagnosis
 
-Unstyled editor; check assets.
+An AI panel in the editor that you never added.
 
 ---
 
@@ -104,19 +111,20 @@ Unstyled editor; check assets.
 ### Anti-pattern
 
 ```typescript
-// Saving arbitrary user scripts straight into shared configs
+// ❌ Anti-pattern: every arcgisScriptChange goes straight to the shared web map
 ```
 
 ### Correct
 
 ```typescript
-// Validate + review before persisting shared/production expressions.
+// Apply only with zero diagnostics, run testData first, and save explicitly.
 ```
 
 ### Impact
 
-Bad expressions affect everyone.
+A runtime error in a valid-but-wrong expression (a division by zero, a missing value) breaks the
+popup or the labels for everyone.
 
 ### Diagnosis
 
-Shared maps break; add review/validation.
+Errors show up in the map, not in the editor: test with `testData` before saving.

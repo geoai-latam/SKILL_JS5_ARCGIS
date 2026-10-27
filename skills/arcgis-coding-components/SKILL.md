@@ -1,17 +1,17 @@
 ---
 name: arcgis-coding-components
 description: >
-  Embed code-editing UIs with the ArcGIS Maps SDK for JavaScript 5.0 coding
-  components: arcgis-arcade-editor (Arcade authoring with syntax highlighting,
-  suggestions, and live results) and arcgis-code-editor / sql-expression-editor.
-  Use this skill whenever the user builds an in-app editor for Arcade, SQL, or
-  code with autocomplete and validation.
+  Embed an Arcade expression editor with the ArcGIS Maps SDK for JavaScript 5.1
+  coding components: arcgis-arcade-editor with a profile (validation and
+  autocomplete against real fields), diagnostics events, test data, the 5.1
+  debugger and the Arcade assistant switch. Use this skill whenever the user
+  builds an in-app editor for Arcade expressions (popups, labels, renderers).
 lang: en
-version: 0.1.0
+version: 0.2.0
 status: stable
-sdk_version: ">=5.0 <6.0"
+sdk_version: ">=5.1 <6.0"
 created: 2026-05-31
-updated: 2026-05-31
+updated: 2026-10-27
 category: new-in-5.0
 tags:
   - coding
@@ -22,45 +22,64 @@ tags:
 requires:
   - arcgis-arcade
 packages:
-  - "@arcgis/coding-components@^5.0"
-  - "@arcgis/core@^5.0"
+  - "@arcgis/coding-components@^5.1"
+  - "@arcgis/core@^5.1"
 maintainer: "GeoAI LATAM"
 license: MIT
 ---
 
 # Coding Components
 
-> **When to use:** Activate this skill whenever the user builds an in-app editor for Arcade, SQL, or
-> code with highlighting, autocomplete, and validation.
+> **When to use:** Activate this skill whenever the user builds an in-app editor for Arcade
+> expressions (popups, labels, renderers, field calculation) with validation and autocomplete.
 
 ## Overview
 
-The coding components provide editor UIs (Arcade, SQL, generic code) with assistance built in.
+`arcgis-arcade-editor` is a full Arcade editor: syntax highlighting, completion from a profile,
+diagnostics, a test run against sample data, a debugger (5.1) and an AI assistant (beta).
 
-- **Problem it solves:** letting end users author expressions/code safely in-app.
-- **Who it serves:** developers building expression builders and admin tools.
-- **Pattern it teaches:** drop the editor component, give it a script + context, read the result.
-- **What it does NOT cover:** running Arcade (see `arcgis-arcade`) or chart configs (see `arcgis-charts`).
+- **Problem it solves:** letting users write Arcade in your app without breaking the map.
+- **Who it serves:** developers building expression builders, admin tools and configurators.
+- **Pattern it teaches:** editor `profile` = runtime profile; read `arcgisDiagnosticsChange`
+  before applying `arcgisScriptChange`.
+- **What it does NOT cover:** running Arcade (see `arcgis-arcade`) or SQL `where` clauses: the
+  SQL editors of this package are internal (see Concept 4).
 
 ## Quick Start
 
 ```typescript
 import "@arcgis/coding-components/components/arcgis-arcade-editor";
-// <arcgis-arcade-editor></arcgis-arcade-editor> — set .script and a profile
+import type FeatureLayer from "@arcgis/core/layers/FeatureLayer.js";
+import type Graphic from "@arcgis/core/Graphic.js";
+
+declare const layer: FeatureLayer; // loaded, so the editor knows its fields
+declare const sample: Graphic;     // one feature to run the script against
+
+const editor = document.querySelector("arcgis-arcade-editor")!;
+editor.profile = { id: "popup", definitions: { $feature: layer } }; // same profile you run with
+editor.testData = { profileVariableInstances: { $feature: sample } }; // shows the Run button
+editor.script = "$feature.state_name";
+
+let errores = 0;
+editor.addEventListener("arcgisDiagnosticsChange", (e) => { errores = e.detail.length; });
+editor.addEventListener("arcgisScriptChange", (e) => {
+  if (errores === 0) saveExpression(e.detail); // only apply a script that validates
+});
+declare function saveExpression(script: string): void;
 ```
 
 ## Decision Tree
 
-1. **Editing Arcade?**
-   - Yes → `arcgis-arcade-editor` (with suggestions + live results).
+1. **Users write Arcade?**
+   - Yes → `arcgis-arcade-editor` with the profile you will execute in.
+2. **Users write a SQL `where` clause?**
+   - The package's `arcgis-sql-expression-editor` and `arcgis-sql-layer-editor` are marked
+     `@internal` in 5.1.27: not public API. Build the clause with your own UI and validate it with
+     a `queryFeatureCount` on the layer.
+3. **Generic code (JSON, CSS…)?**
+   - `arcgis-code-editor` is also `@internal`; use Monaco or CodeMirror directly.
 
-2. **Editing SQL (where clauses)?**
-   - Yes → `arcgis-sql-expression-editor`.
-
-3. **Generic code editor?**
-   - Yes → `arcgis-code-editor`.
-
-**Default:** `arcgis-arcade-editor` for Arcade authoring.
+**Default:** `arcgis-arcade-editor`, always with a profile.
 
 ## Import Patterns
 
@@ -72,77 +91,104 @@ import "@arcgis/coding-components/components/arcgis-arcade-editor";
 
 ### Dynamic Imports (CDN)
 
-```javascript
-// The unified 5.0 CDN includes coding-components; reference the custom element.
-const script = "https://js.arcgis.com/5.0/";
+```html
+<!-- The core module script already registers the coding components (and charts, map, AI):
+     a classic <script> without type="module" registers nothing -->
+<script type="module" src="https://js.arcgis.com/5.1/"></script>
+<arcgis-arcade-editor></arcgis-arcade-editor>
 ```
 
 ### Map Components (recommended for new projects)
 
 ```typescript
 import "@arcgis/map-components/components/arcgis-map";
+import "@arcgis/coding-components/components/arcgis-arcade-editor";
 ```
 
 ## Key Concepts
 
-### Concept 1: Arcade editor
+### Concept 1: The profile decides what is valid
 
-`arcgis-arcade-editor` edits an Arcade `script` with syntax highlighting, autocomplete from a
-profile, and (optionally) live results against a test feature.
+`profile` is a predefined profile (`{ id: "popup" | "labeling" | "visualization" |
+"field-calculation" | …, definitions: { $feature: layer } }`) or your own definition
+(`{ variables: [...], bundles: [...] }`). With it, the editor knows the variables, the functions
+and the layer's fields: measured with 5.1.27, `$feature.NO_EXISTE` is flagged with the list of real
+field names. **Without a profile, even `$feature` is "not defined"**.
 
-### Concept 2: Profiles drive suggestions
+### Concept 2: Diagnostics are the validation
 
-Like the Arcade runtime, the editor uses a profile to know which variables/functions are valid,
-powering autocomplete and validation.
+`arcgisDiagnosticsChange` sends the current list of diagnostics (empty when the script is valid);
+`arcgisScriptChange` sends the text. There is no `isValid` property: keep the last diagnostics and
+check them before applying the script. Syntax errors ("Unexpected end of Arcade expression"),
+unknown fields and variables that the profile does not have all arrive this way.
 
-### Concept 3: SQL & generic editors
+### Concept 3: Test data, debugger and assistant
 
-`arcgis-sql-expression-editor` assists building `where` clauses against a layer's fields;
-`arcgis-code-editor` is a general code surface.
+`testData = { profileVariableInstances: { $feature: graphic } }` shows the Run button; without
+`testData` the run UX is hidden. `enableDebugger` (5.1) adds breakpoints and a console. The Arcade
+assistant (beta) is **on by default** in 5.1 when the user is signed in to an ArcGIS Online org that
+allows AI: set `disableAssistant = true` if your app must not offer it. `arcadeAssistant` is
+deprecated in 5.1.
+
+### Concept 4: Only the Arcade editor is public
+
+In 5.1.27 the declarations mark `arcgis-sql-expression-editor`, `arcgis-sql-layer-editor`,
+`arcgis-code-editor` and `arcgis-code-viewer` as `@internal`: they register and run, but they are
+not documented API and can change in any release. The 5.1 `I*` type names (`IPredefinedProfile`,
+`IEditorProfileDefinition`…) are deprecated in favour of the names without `I`.
 
 ## Common Pitfalls (Top 3)
 
-### Pitfall 1: No profile = no useful autocomplete
+### Pitfall 1: No profile
 
 ```typescript
 // ❌ Anti-pattern
-// arcgis-arcade-editor with no profile configured
+editor.script = "$feature.state_name"; // no profile set
 ```
 
 ```typescript
 // ✅ Correct
-// Provide the same profile your runtime uses (e.g. popup/renderer).
+editor.profile = { id: "popup", definitions: { $feature: layer } };
+editor.script = "$feature.state_name";
 ```
 
-**Impact:** suggestions/validation are generic or wrong.
+**Impact:** measured with 5.1.27: without a profile a correct script gets "'$feature' is not
+defined", and a wrong field name gets the same message: users cannot tell real errors apart.
 
-### Pitfall 2: Editing here but running with a different profile
+### Pitfall 2: Editing with one profile, running with another
+
+```typescript
+// ❌ Anti-pattern: authored as a label, used in a popup (or the other way around)
+editor.profile = { id: "labeling", definitions: { $feature: layer } };
+```
+
+```typescript
+// ✅ Correct: the id of the place the expression will run
+editor.profile = { id: "popup", definitions: { $feature: layer } };
+```
+
+**Impact:** measured: `Count(FeatureSetByName($map, "x"))` gets "'FeatureSetByName' is not
+defined" and "'$map' is not defined" in `labeling`; the data-access bundle exists only in some
+profiles. A script that validates in one place fails in the other.
+
+### Pitfall 3: Applying the script without looking at the diagnostics
 
 ```typescript
 // ❌ Anti-pattern
-// Author with profile A, execute with profile B
+editor.addEventListener("arcgisScriptChange", (e) => { layer.labelingInfo[0].labelExpressionInfo.expression = e.detail; });
 ```
 
 ```typescript
 // ✅ Correct
-// Keep the editor and runtime profiles consistent.
+let errores = 0;
+editor.addEventListener("arcgisDiagnosticsChange", (e) => { errores = e.detail.length; });
+editor.addEventListener("arcgisScriptChange", (e) => {
+  if (errores === 0) layer.labelingInfo[0].labelExpressionInfo.expression = e.detail;
+});
 ```
 
-**Impact:** scripts that validate in the editor fail at runtime.
-
-### Pitfall 3: Not validating before applying
-
-```typescript
-// ❌ Anti-pattern
-layer.renderer.valueExpression = editor.script; // even if invalid
-```
-
-```typescript
-// ✅ Correct
-// Check the editor's validity/diagnostics before applying.
-```
-
-**Impact:** broken expressions get pushed into renderers/popups.
+**Impact:** every keystroke pushes a half-written expression into the map; there is no `isValid`
+to rely on.
 
 ## When to Read references/
 
@@ -155,8 +201,8 @@ layer.renderer.valueExpression = editor.script; // even if invalid
 ## Related Skills
 
 - `arcgis-arcade` — run the authored expressions
-- `arcgis-layers` — fields for SQL/where editors
-- `arcgis-visualization` — apply valueExpression results
+- `arcgis-layers` — the layer whose fields the profile exposes
+- `arcgis-visualization` — where a renderer expression ends up
 
 ## Reference Samples
 
@@ -165,4 +211,8 @@ layer.renderer.valueExpression = editor.script; // even if invalid
 
 ## Changelog
 
+- **0.2.0** (2026-10-27): SDK 5.1. Rewritten: the 0.1.0 guide had no working code (comments only).
+  Real profile, `testData`, diagnostics and script events; measured what the editor flags with and without a
+  profile; the SQL and code editors are `@internal` (no longer offered); assistant on by default and
+  `disableAssistant`; `enableDebugger`; module CDN script. Run in `tests/runtime/casos/arcgis-coding-components.ts`.
 - **0.1.0** (2026-05-31): Initial release.

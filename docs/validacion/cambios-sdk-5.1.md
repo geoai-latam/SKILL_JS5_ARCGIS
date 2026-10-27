@@ -44,3 +44,9 @@ Paquetes instalados para validar: `@arcgis/core`, `@arcgis/map-components`,
   (medido el 2026-10-27).
 - **`createModel` se importa sin `.js`**: `@arcgis/charts-components/model/shared/setup-utils`. La
   ruta con `.js` que imprimen las notas no está en el mapa de exports y Vite falla.
+- **El script de la CDN es un módulo ES** (`https://js.arcgis.com/5.1/` → `index.js`, que importa
+  Calcite, core, ai, charts, coding, common y map-components). Con `<script type="module">` registra
+  todos los componentes; con un `<script>` clásico falla ("Cannot use import statement outside a
+  module") y no registra nada (`tests/runtime/cdn.mjs`).
+- **Los editores SQL y de código de `@arcgis/coding-components` son `@internal`** en 5.1.27; el único
+  público es `arcgis-arcade-editor`. El asistente de Arcade viene encendido por defecto.
