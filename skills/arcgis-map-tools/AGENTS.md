@@ -1,30 +1,31 @@
 # Agent Guide: arcgis-map-tools
 
-Quick-reference for interactive tools. Read before adding sketch/measure/snap.
+Quick-reference for interactive tools (SDK 5.1). Read before adding sketch/measure/snap.
 
 ## Quick Decision Tree
 
-1. **Draw/edit?** → `arcgis-sketch`.
-2. **Measure?** → `arcgis-measurement` (2d/3d variants per view).
-3. **Snap?** → `arcgis-snapping-controls` + sketch.
+1. **Draw/edit?** → `arcgis-sketch` (adds its own "Sketch Layer").
+2. **Measure?** → 2D: `*-measurement-2d`; 3D: `direct-line`/`area` `*-3d`; code: measurement analyses.
+3. **Snap?** → `snappingControls.snappingOptions = sketch.snappingOptions` + `featureSources`.
 
 ## Setup Checklist
 
-- [ ] Match measurement variant to the view (2d vs 3d).
-- [ ] Persist sketch output via `applyEdits` if needed.
-- [ ] Configure snapping sources.
-- [ ] Bind components to the map/scene.
+- [ ] The map has a basemap or a layer (an empty map never gets ready).
+- [ ] Share one `SnappingOptions` between sketch and snapping controls.
+- [ ] Add `FeatureSnappingLayerSource` for feature snapping.
+- [ ] Match the measurement variant to the view; set `unit` explicitly if reports read it.
+- [ ] Persist sketch output with `applyEdits` if needed.
 
 ## Anti-patterns (one-liner reminders)
 
-- ❌ 3d measurement on a 2D map.
+- ❌ Assuming snapping controls drive the sketch (separate objects, measured).
+- ❌ 3D measurement on a 2D map (`state: "unsupported"`).
 - ❌ Assuming sketch saves to the service.
-- ❌ Snapping with no sources.
 
 ## Files in This Skill
 
 - `SKILL.md` / `SKILL.es.md` — full guides
-- `references/api-detail.md` — tool component attributes/events
-- `references/examples.md` — sketch / measure / snap
+- `references/api-detail.md` — components, analyses, snapping defaults
+- `references/examples.md` — snapping, fixed units, measure in code
 - `references/pitfalls.md` — extended troubleshooting
 - `scripts/snippet-tools.ts`

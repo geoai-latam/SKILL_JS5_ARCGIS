@@ -46,7 +46,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 17 | `arcgis-interaction` | aporta con arreglos | hitTest tipado; en capas de servicio el hit trae solo objectid sin outFields; 2 pitfalls falsos (suelo 3D, create apilado) |
 | 18 | `arcgis-knowledge-graphs` | aporta con arreglos (parcial) | sin grafo accesible (token): geometría en properties, no e.geometry; fetch sin sesión queda pendiente, no 403; ejemplos que no compilaban; streaming + bindParameters |
 | 19 | `arcgis-layers` | aporta con arreglos | reemplazar createQuery().where pierde el definitionExpression (29 vs 6); tope de 1000 silencioso (11 vs 51 capitales); outFields de capa no limitan queries |
-| 20 | `arcgis-map-tools` | pendiente | |
+| 20 | `arcgis-map-tools` | aporta con arreglos | snapping-controls NO se conecta al sketch (snappingOptions separados); 3D en 2D = unsupported en silencio; medición por análisis; pitfalls que eran comentarios |
 | 21 | `arcgis-performance` | pendiente | |
 | 22 | `arcgis-popup-templates` | pendiente | |
 | 23 | `arcgis-portal-content` | pendiente | |
@@ -700,3 +700,33 @@ concatenación inyectable. Lo pendiente: correr la consulta contra un grafo con 
 **¿Aporta?** Sí, y es de las que más. El error de `definitionExpression` y el tope silencioso de `maxRecordCount`
 dan números equivocados sin ningún aviso. Es justo lo que un agente escribe sin pensarlo: `q.where = "..."` y
 `queryFeatures()` sin revisar `exceededTransferLimit`.
+
+### 20. `arcgis-map-tools` — aporta con arreglos
+
+**¿Corre en 5.1?** Lo poco que tenía código sí: imports de componentes y HTML anidado. Pero la mitad de la skill
+eran comentarios sin código ("configura las fuentes de snapping", "limpia la herramienta", "fija la unidad"). Medí
+8 casos en Chromium con los componentes montados dentro de `arcgis-map`
+(`tests/runtime/casos/arcgis-map-tools.ts`).
+
+**Lo que estaba mal (y ya se arregló):**
+
+- **Falso, y es el error que más cuesta: "los controles de snapping se conectan al sketch activo".** Medido: con
+  `arcgis-sketch` y `arcgis-snapping-controls` en el mismo mapa, cada uno tiene **su propio** `snappingOptions`.
+  Activar el snapping en los controles deja el del sketch en `enabled: false`: el usuario lo prende y no se ajusta
+  nada. Se arregla con `controls.snappingOptions = sketch.snappingOptions`. Ahora es el pitfall 1 y está en el
+  inicio rápido.
+- **Pitfall de 3D en 2D, ahora preciso:** `arcgis-direct-line-measurement-3d` dentro de `arcgis-map` resuelve
+  `start()`, queda en `state: "unsupported"` y solo avisa en la consola. `arcgis-measurement` acepta
+  `activeTool = "direct-line"` en 2D sin mostrar ninguna herramienta.
+- **Lo que faltaba:** los valores por defecto medidos. El snapping viene apagado, con `featureEnabled: true` pero 0
+  `featureSources`, así que nunca se ajusta a otras capas; ahora enseña `FeatureSnappingLayerSource`. La unidad es el
+  sistema `"metric"`, que cambia entre m y km. `arcgis-measurement` arranca sin herramienta. El sketch agrega una
+  capa "Sketch Layer" visible en la lista de capas. También la medición por código con análisis: una línea de 0,05°
+  a 4,6°N dio 5,5 km geodésicos, y un cuadrado de 0,01° dio 1,23 km² (los dos cuadran con el cálculo a mano).
+- **De paso, para core-maps:** un `arcgis-map` sin basemap ni capas nunca resuelve `viewOnReady()`, y las
+  herramientas no aparecen. Quedó como pitfall extendido.
+
+**¿Aporta?** Sí, con arreglos. Se cruza con `arcgis-interaction` en el sketch, pero lo propio de esta skill (el
+snapping compartido por referencia, la variante 2D/3D y la medición como análisis) no está en ninguna otra, y el
+caso del snapping es exactamente el que un agente escribiría mal: poner los dos componentes juntos y darlo por
+conectado.

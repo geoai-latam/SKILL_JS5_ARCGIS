@@ -1,33 +1,34 @@
 # Extended Pitfalls: Map Tools
 
 > Extends the Top 3 in SKILL.md. Format: Anti-pattern / Correct / Impact / Diagnosis.
+> Measured with 5.1.27 in `tests/runtime/casos/arcgis-map-tools.ts`.
 
-## Pitfall 1: Two sketch tools fighting for input
+## Pitfall 1: A map with no basemap and no layers
 
 ### Anti-pattern
 
 ```html
-<arcgis-sketch></arcgis-sketch>
-<arcgis-editor></arcgis-editor> <!-- both grab pointer -->
+<arcgis-map center="-74.08,4.6" zoom="12"><arcgis-measurement></arcgis-measurement></arcgis-map>
 ```
 
 ### Correct
 
 ```html
-<!-- Use one drawing tool at a time, or coordinate their active states. -->
+<arcgis-map basemap="osm" center="-74.08,4.6" zoom="12"><arcgis-measurement></arcgis-measurement></arcgis-map>
 ```
 
 ### Impact
 
-Conflicting pointer handling.
+Measured: `viewOnReady()` never resolved (40 s), so no tool came up. The view needs a spatial reference from a
+basemap or a layer. `arcgis-sketch` alone escaped this because it adds its own layer.
 
 ### Diagnosis
 
-Erratic drawing; run a single active tool.
+Tools that never become ready on an empty map.
 
 ---
 
-## Pitfall 2: Measurement units assumed
+## Pitfall 2: Assuming the unit
 
 ### Anti-pattern
 
@@ -38,85 +39,86 @@ Erratic drawing; run a single active tool.
 ### Correct
 
 ```html
-<!-- Set the unit explicitly; defaults vary by locale/view. -->
+<arcgis-distance-measurement-2d unit="kilometers"></arcgis-distance-measurement-2d>
 ```
 
 ### Impact
 
-Readings interpreted in the wrong unit.
+Measured: the default is the `"metric"` system, which shows meters or kilometers depending on length; reports
+that parse the number without the unit mix scales.
 
 ### Diagnosis
 
-Surprising magnitudes; set the unit.
+Values that jump by a factor of 1000; set `unit` (and `hide-unit-select` if it must not change).
 
 ---
 
-## Pitfall 3: Sketch on a layer that's read-only in UX
+## Pitfall 3: Picking a tool `arcgis-measurement` does not have in this view
 
 ### Anti-pattern
 
 ```typescript
-// Drawing into a layer users think is editable but isn't persisted
+measurement.activeTool = "direct-line"; // in a 2D map
 ```
 
 ### Correct
 
 ```typescript
-// Make persistence explicit (applyEdits) and reflect it in the UI.
+measurement.activeTool = measurement.view?.type === "3d" ? "direct-line" : "distance";
 ```
 
 ### Impact
 
-Users lose work expecting auto-save.
+Measured: accepted silently, `activeWidget` stayed `null`, no tool on screen.
 
 ### Diagnosis
 
-Complaints about lost edits; clarify persistence.
+An empty measurement panel; check `activeWidget`.
 
 ---
 
-## Pitfall 4: Not cleaning up tool graphics
+## Pitfall 4: Not clearing tool graphics
 
 ### Anti-pattern
 
 ```typescript
-// Leaving measurement/sketch graphics after closing the tool
+measurement.remove(); // not measured: the tool may leave its graphics behind
 ```
 
 ### Correct
 
 ```typescript
-// Clear the tool when done (it manages its own graphics layer).
+await measurement.clear(); // back to activeTool null, state "disabled" (measured)
 ```
 
 ### Impact
 
-Stale graphics clutter the map.
+Stale lines and labels left on the map.
 
 ### Diagnosis
 
-Leftover lines/labels; clear/destroy the tool.
+Leftover measurement graphics; call `clear()` before hiding the tool.
 
 ---
 
-## Pitfall 5: Snapping perceived as broken
+## Pitfall 5: Feature snapping with no sources
 
 ### Anti-pattern
 
 ```typescript
-// Snapping enabled but tolerance too small / no sources
+sketch.snappingOptions.enabled = true; // featureEnabled true, but featureSources is empty
 ```
 
 ### Correct
 
 ```typescript
-// Increase tolerance and add snapping sources.
+sketch.snappingOptions.featureSources.add(new FeatureSnappingLayerSource({ layer: parcels, enabled: true }));
 ```
 
 ### Impact
 
-Users can't snap and assume it's off.
+Measured defaults: `featureEnabled: true` with 0 `featureSources`, so only self snapping can happen.
 
 ### Diagnosis
 
-No snap behavior; check tolerance and sources.
+Snapping to the shape being drawn works, snapping to other features never does.

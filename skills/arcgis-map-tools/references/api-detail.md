@@ -4,7 +4,8 @@
 
 - [arcgis-sketch](#arcgis-sketch)
 - [Measurement components](#measurement-components)
-- [arcgis-snapping-controls](#arcgis-snapping-controls)
+- [Measurement analyses](#measurement-analyses)
+- [Snapping](#snapping)
 
 ---
 
@@ -14,32 +15,52 @@
 
 | Member | Description |
 |---|---|
-| `reference-element` / nested | Bind to the map |
-| `creationMode` | `single` \| `continuous` \| `update` |
-| `arcgisCreate` / `arcgisUpdate` / `arcgisDelete` events | Geometry lifecycle |
+| nested in `arcgis-map` / `arcgis-scene`, or `reference-element` | Bind to the view |
+| `layer` | Created ("Sketch Layer") and added to the map if not set |
+| `creationMode` | `"continuous"` (default), `"single"`, `"update"` |
+| `snappingOptions` | Its own `SnappingOptions`; share it with snapping controls |
+| `arcgisCreate` / `arcgisUpdate` / `arcgisDelete` | Geometry lifecycle; check `detail.state` |
 
 ---
 
 ## Measurement components
 
-| Component | View | Measures |
+| Component | View | Notes |
 |---|---|---|
-| `arcgis-measurement` | 2D/3D | distance or area (switchable) |
-| `arcgis-distance-measurement-2d` | 2D | distance |
-| `arcgis-area-measurement-2d` | 2D | area |
-| `arcgis-direct-line-measurement-3d` | 3D | direct distance |
-| `arcgis-area-measurement-3d` | 3D | area |
+| `arcgis-measurement` | 2D/3D | `activeTool`: `"distance"`, `"area"` (2D) or `"direct-line"`, `"area"` (3D); `null` at start |
+| `arcgis-distance-measurement-2d` | 2D | `unit`, `unitOptions`, `start()`, `clear()`, `analysis` |
+| `arcgis-area-measurement-2d` | 2D | same, area units |
+| `arcgis-direct-line-measurement-3d` | 3D | `state: "unsupported"` in a 2D map |
+| `arcgis-area-measurement-3d` | 3D | |
+| `arcgis-volume-measurement` | 3D | volumes (5.x) |
+
+`unit` defaults to the system `"metric"`; `unitOptions` lists metric, imperial and the explicit units (meters,
+kilometers, feet, miles, nautical-miles, ...). `hideUnitSelect`, `hideStartButton`, `hideVisualization` trim the UI.
 
 ---
 
-## arcgis-snapping-controls
+## Measurement analyses
 
-`@arcgis/map-components/components/arcgis-snapping-controls`
+| Class | Geometry | Result (`whenAnalysisView(a).result`) |
+|---|---|---|
+| `analysis/DistanceMeasurementAnalysis.js` | `Polyline` | `{ length, mode }` |
+| `analysis/AreaMeasurementAnalysis.js` | `Polygon` | `{ area, perimeter, mode }` |
 
-| Option | Description |
+Add them to `view.analyses`; `mode` was `"geodesic"` for WGS84 input.
+
+---
+
+## Snapping
+
+`@arcgis/core/views/interactive/snapping/SnappingOptions.js`
+
+| Property | Sketch default (measured) |
 |---|---|
-| feature snapping | Snap to other features' vertices/edges |
-| self snapping | Snap to the geometry being drawn |
-| grid snapping | Snap to a grid |
+| `enabled` | `false` |
+| `selfEnabled` | `true` |
+| `featureEnabled` | `true` (needs `featureSources`) |
+| `featureSources` | empty: add `FeatureSnappingLayerSource({ layer, enabled: true })` |
+| `distance` | `5` (px) |
+| `gridEnabled` | `false` |
 
-Wire snapping sources so there are targets to snap to.
+`arcgis-snapping-controls` edits whatever `snappingOptions` you give it.
