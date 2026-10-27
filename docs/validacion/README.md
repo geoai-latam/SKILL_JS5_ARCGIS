@@ -43,7 +43,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 14 | `arcgis-feature-effects` | aporta con arreglos | pitfall falso (sin filtro); faltaban límites 3D/heatmap y layerView.filter |
 | 15 | `arcgis-geometry-operations` | aporta con arreglos | el Inicio Rápido lanzaba con lon/lat; recomendaba geometryEngine (deprecado) |
 | 16 | `arcgis-imagery` | aporta con arreglos | la función NDVI que enseñaba devuelve 0–200 (101), no −1..1; pitfall falso del tile layer |
-| 17 | `arcgis-interaction` | pendiente | |
+| 17 | `arcgis-interaction` | aporta con arreglos | hitTest tipado; en capas de servicio el hit trae solo objectid sin outFields; 2 pitfalls falsos (suelo 3D, create apilado) |
 | 18 | `arcgis-knowledge-graphs` | pendiente | |
 | 19 | `arcgis-layers` | pendiente | |
 | 20 | `arcgis-map-tools` | pendiente | |
@@ -607,3 +607,36 @@ lo usé solo para el orden de bandas.
 `renderingRule` o la función `"NDVI"` y usa el valor como NDVI real: un error de escala que no lanza
 nada. Ahora la skill enseña la función que da el valor real, con las bandas contadas como las cuenta
 el SDK.
+
+### 17. `arcgis-interaction` — aporta con arreglos
+
+**¿Corre en 5.1?** El código del inicio rápido corría, pero los bloques de errores comunes y los extendidos usaban
+`results[0].graphic`, que en 5.x no compila: el resultado de `hitTest` es una unión tipada (`graphic`, `media`,
+`route`, `raster`, `layer`) y hay que comprobar `type === "graphic"`. Medí 12 casos en Chromium
+(`tests/runtime/casos/arcgis-interaction.ts`) con clics sintéticos sobre la superficie de la vista, una capa
+cliente y el servicio público de estados de EE. UU.
+
+**Lo que estaba mal (y ya se arregló):**
+
+- **El hueco más caro: los atributos.** En una `FeatureLayer` de servicio, el graphic del hit trae solo
+  `objectid` (medido: 1 campo). Con `outFields: ["*"]`, 9 campos y `state_name = "Kansas"`. Sin error, solo
+  `undefined`. La skill no lo decía. Ahora es el pitfall 1 y está en el inicio rápido.
+- **Falso: "en 3D el hitTest devuelve impactos del terreno".** El suelo no está en `results`: un clic en terreno
+  vacío da `results: []` y el punto en `response.ground.mapPoint`.
+- **Falso: "llamar `create()` dos veces apila operaciones".** El segundo `create()` cancela el primero
+  (`polygon:cancel`) y deja activa la nueva herramienta.
+- **Matizado: "sin `include` agarras una etiqueta".** Un clic sobre la etiqueta devuelve el graphic del propio
+  feature. Lo real es que, sin filtro, el primer resultado es la capa de arriba (medido: la GraphicsLayer encima
+  de la FeatureLayer). No medí un mapa base vectorial porque necesita API key.
+- **Relleno:** el pitfall 4 recomendaba `await doExpensiveWorkOffThread()`, pero un `async` no saca nada del
+  hilo. Lo reemplacé por `promiseUtils.debounce` sobre `pointer-move`. Medido: el SDK entrega los 30 de 30
+  movimientos sin limitar; con debounce corrieron 2 hitTests y 28 se abortaron con `AbortError`, que hay que
+  tragarse.
+- **Datos que faltaban:** `create()` devuelve una Promise en 5.x. Un punto dispara `start` y `complete` (la doc
+  dice que solo `complete`). Un polígono de 3 vértices disparó 4 `active`. `destroy()` deja los gráficos
+  dibujados en la capa. `arcgis-sketch` crea y agrega su propia capa, y viene en `creationMode: "continuous"`.
+  En la tabla de la API quedaron los cinco tipos de hit y `exclude`.
+
+**¿Aporta?** Sí. Un agente sin ella escribe `results[0].graphic` (4.x, no compila) o, peor, lee
+`graphic.attributes.nombre` de una capa de servicio y recibe `undefined` sin ningún error. Las dos cosas las
+corrige ahora la skill, con la medida al lado.

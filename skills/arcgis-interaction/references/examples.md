@@ -1,21 +1,25 @@
 # Examples: Interaction
 
-## Example 1: Identify a clicked feature
+## Example 1: Identify a clicked feature from a service layer
 
-**Use case:** select the feature under the cursor on one layer.
+**Use case:** show a name from the feature under the cursor.
 
 ```typescript
+import FeatureLayer from "@arcgis/core/layers/FeatureLayer.js";
+
+const states = new FeatureLayer({ url: "https://.../USA/MapServer/2", outFields: ["state_name"] });
+view.map?.add(states);
 view.on("click", async (event) => {
-  const { results } = await view.hitTest(event, { include: [myLayer] });
-  const hit = results[0];
-  if (hit && "graphic" in hit) console.log(hit.graphic.attributes);
+  const { results } = await view.hitTest(event, { include: [states] });
+  const hit = results.find((r) => r.type === "graphic");
+  if (hit?.type === "graphic") console.log(hit.graphic.attributes.state_name);
 });
 ```
 
 **Notes:**
 
-- `include` keeps basemap/labels out of the result.
-- Each result may reference a different layer; filter accordingly.
+- Without `outFields`, the hit only carries `objectid` (measured).
+- `include` keeps other layers out; results come top layer first.
 
 ---
 
@@ -30,33 +34,51 @@ import GraphicsLayer from "@arcgis/core/layers/GraphicsLayer.js";
 const layer = new GraphicsLayer();
 view.map?.add(layer);
 const sketch = new SketchViewModel({ view, layer });
-sketch.on("create", (e) => { if (e.state === "complete") console.log(e.graphic.geometry); });
-sketch.create("polygon");
+sketch.on("create", (e) => { if (e.state === "complete") console.log(e.graphic?.geometry); });
+void sketch.create("polygon");
 ```
 
 **Notes:**
 
-- Only handle the `complete` state for final geometry.
-- Use the drawn geometry as a spatial filter or edit candidate.
+- Only handle `complete`; `active` fires once per vertex and cursor move.
+- Starting another `create()` cancels this one (`state: "cancel"`).
 
 ---
 
-## Example 3: Throttled pointer tracking
+## Example 3: Hover highlight without flooding hitTest
 
-**Use case:** show coordinates as the pointer moves.
+**Use case:** highlight the feature under the pointer.
 
 ```typescript
-let last = 0;
-const handle = view.on("pointer-move", (event) => {
-  const now = performance.now();
-  if (now - last < 50) return; // throttle to ~20fps
-  last = now;
-  console.log(event.x, event.y);
+import * as promiseUtils from "@arcgis/core/core/promiseUtils.js";
+
+const layerView = await view.whenLayerView(myLayer);
+let current: { remove(): void } | undefined;
+const hover = promiseUtils.debounce(async (e: { x: number; y: number }) => {
+  const hit = (await view.hitTest(e, { include: [myLayer] })).results.find((r) => r.type === "graphic");
+  current?.remove();
+  current = hit?.type === "graphic" ? layerView.highlight(hit.graphic) : undefined;
+});
+const handle = view.on("pointer-move", (e) => {
+  hover(e).catch((err) => { if (!promiseUtils.isAbortError(err)) throw err; });
 });
 // handle.remove() on cleanup
 ```
 
 **Notes:**
 
-- Always throttle `pointer-move`.
-- Remove the handle to avoid leaks.
+- The SDK delivers every move; `debounce` keeps one hitTest in flight.
+- Swallow `AbortError`: it is the expected result for the skipped calls.
+
+---
+
+## Example 4: SceneView click on terrain
+
+**Use case:** get the clicked ground location in 3D.
+
+```typescript
+sceneView.on("click", async (event) => {
+  const response = await sceneView.hitTest(event);
+  if (response.results.length === 0) console.log("terrain at", response.ground.mapPoint);
+});
+```
