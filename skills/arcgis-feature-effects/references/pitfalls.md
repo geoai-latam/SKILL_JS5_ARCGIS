@@ -32,6 +32,7 @@ No color change from `effect`; move styling to the renderer.
 ### Anti-pattern
 
 ```typescript
+// Expecting this to glow only "the important ones"
 layer.featureEffect = new FeatureEffect({ includedEffect: "bloom(2,1px,0)" });
 ```
 
@@ -46,11 +47,12 @@ layer.featureEffect = new FeatureEffect({
 
 ### Impact
 
-Without a filter there is no "included" subset to emphasize.
+Measured with 5.1.27: without a filter **every** feature counts as included, so the whole layer gets
+`includedEffect` (and `excludedEffect` never applies).
 
 ### Diagnosis
 
-Nothing is emphasized; supply a `filter`.
+The whole layer glows, or a dimming you set as `excludedEffect` never shows; supply a `filter`.
 
 ---
 
@@ -89,12 +91,14 @@ tileLayer.effect = "grayscale(100%)"; // layer-wide effect is fine
 ### Correct
 
 ```typescript
-layer.definitionExpression = "POP > 100000"; // to exclude from interaction
+layerView.filter = new FeatureFilter({ where: "POP > 100000" }); // client side, no new request
+// or, on the server: layer.definitionExpression = "POP > 100000";
 ```
 
 ### Impact
 
-Invisible-but-present features still respond to clicks/queries.
+Measured: an `opacity(0%)` feature is still returned by `view.hitTest` and counted by
+`layerView.queryFeatureCount()`.
 
 ### Diagnosis
 

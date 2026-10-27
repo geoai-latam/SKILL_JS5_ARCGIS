@@ -18,7 +18,9 @@ Quick-reference for layer/feature effects. Read before adding visual emphasis.
 ## Anti-patterns (one-liner reminders)
 
 - ❌ `blur(2)` without a unit.
-- ❌ Using `opacity(0%)` to "hide" (still clickable).
+- ❌ Using `opacity(0%)` to "hide" (still in hitTest): use `layerView.filter`.
+- ❌ `featureEffect` without `filter` expecting a subset (everything is "included").
+- ❌ Effects in a SceneView or on a heatmap (ignored).
 - ❌ Bloom on a dense full layer.
 
 ## Files in This Skill

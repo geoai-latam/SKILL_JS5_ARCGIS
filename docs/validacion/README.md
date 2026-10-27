@@ -40,7 +40,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 11 | `arcgis-custom-rendering` | aporta con arreglos | el ejemplo dejaba la escena en negro; externalRenderers no existe; sí hay WebGL 2D |
 | 12 | `arcgis-editing` | aporta con arreglos | dos pitfalls falsos (SR y refresh); los errores no rechazan la promesa |
 | 13 | `arcgis-embeddable-maps` | aporta con arreglos | el script 5.x no registra el elemento; hide-* no existen |
-| 14 | `arcgis-feature-effects` | pendiente | |
+| 14 | `arcgis-feature-effects` | aporta con arreglos | pitfall falso (sin filtro); faltaban límites 3D/heatmap y layerView.filter |
 | 15 | `arcgis-geometry-operations` | pendiente | |
 | 16 | `arcgis-imagery` | pendiente | |
 | 17 | `arcgis-interaction` | pendiente | |
@@ -504,3 +504,41 @@ porque es HTML.
 SDK, o la ruta 4.x con el número cambiado, y los nombres de los atributos. La versión anterior
 enseñaba las dos cosas mal y el embed salía en blanco sin ningún aviso. Es una skill corta, pero cada
 línea que tiene ahora está medida o viene de la referencia de Esri.
+
+### 14. `arcgis-feature-effects` — aporta con arreglos
+
+**¿Corre en 5.1?** Sí: los 33 bloques y los 2 snippets compilan contra 5.1.27. Probé el efecto real
+midiendo píxeles en Chromium (`tests/runtime/casos/arcgis-feature-effects.ts`) con dos cuadrados
+rojos sobre fondo blanco: `grayscale(100%)` → `rgb(54,54,54)`; `blur(8px)` los esparce unos 10 px; el
+ejemplo 2 (incluido gris, excluido al 40 %) da `rgb(54,54,54)` y `rgb(255,153,153)`.
+
+**Lo que estaba mal (y ya se arregló):**
+
+- **Pitfall extendido 2, falso:** decía que "un featureEffect sin filtro no resalta nada". Medido: sin
+  filtro todos cuentan como incluidos, así que la capa entera toma el `includedEffect` y el
+  `excludedEffect` nunca se aplica.
+- **El "ocultar de verdad" mandaba a `definitionExpression`, que hace una petición nueva al servidor.**
+  Agregué `layerView.filter`, en el cliente. Medido: el feature sale del hitTest y el layer view cuenta
+  1 de 2.
+- **Faltaban límites que la documentación de 5.1 sí trae:** los efectos no se aplican en un SceneView
+  (medido: asignarlo no lanza y no se ve nada) ni con heatmap. También faltaban los efectos por escala
+  (`[{ scale, value }]`) y `excludedLabelsVisible`. Esta última viene en `false` por defecto, así que
+  las etiquetas de los excluidos desaparecen, y puede sorprender.
+- **Pitfall 1, precisado:** `blur(2)` no lanza. La consola dice `Invalid Effect` y la capa se pinta
+  sin ningún efecto.
+
+**Se comprobó y es cierto:**
+
+- `opacity(0%)` deja el feature invisible, pero `hitTest` lo devuelve y el layer view lo sigue
+  contando (pitfall 2).
+- La forma con comas de `drop-shadow` es la de la documentación.
+
+**Lo que no cuadró con la documentación:** según ella, el efecto no funciona con clustering. Con un
+cluster de 2 puntos que no llegó a agrupar, el gris sí se aplicó. No lo pongo como hecho, ni en un
+sentido ni en el otro.
+
+**Sin medir:** el costo de bloom en una capa densa (pitfall 3).
+
+**¿Aporta?** Sí, con matices. La sintaxis de los efectos es la de CSS y cualquier modelo la adivina.
+Lo que aporta es lo que no da error: la unidad faltante que solo avisa por consola, `opacity(0%)` que
+sigue respondiendo a los clics, el featureEffect sin filtro y los efectos que no se ven en 3D.

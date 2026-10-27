@@ -1,17 +1,17 @@
 ---
 name: arcgis-feature-effects
 description: >
-  Apply visual effects in the ArcGIS Maps SDK for JavaScript 5.0: layer-wide
+  Apply visual effects in the ArcGIS Maps SDK for JavaScript 5.1: layer-wide
   effects (bloom, blur, drop-shadow, brightness, grayscale) via layer.effect, and
   filtered emphasis via layer.featureEffect with a FeatureFilter and included/
   excluded effects. Use this skill whenever the user wants to highlight, dim, glow,
   or filter-emphasize features visually.
 lang: en
-version: 0.1.0
+version: 0.2.0
 status: stable
-sdk_version: ">=5.0 <6.0"
+sdk_version: ">=5.1 <6.0"
 created: 2026-05-31
-updated: 2026-05-31
+updated: 2026-10-27
 category: visualization
 tags:
   - effects
@@ -22,7 +22,7 @@ tags:
 requires:
   - arcgis-layers
 packages:
-  - "@arcgis/core@^5.0"
+  - "@arcgis/core@^5.1"
 maintainer: "GeoAI LATAM"
 license: MIT
 ---
@@ -89,17 +89,27 @@ import "@arcgis/map-components/components/arcgis-map";
 ### Concept 1: Effect strings
 
 `effect` is a CSS-like string: `bloom(...)`, `blur(2px)`, `drop-shadow(...)`, `brightness(1.2)`,
-`grayscale(50%)`, `opacity(40%)`. Chain multiple with spaces.
+`grayscale(50%)`, `opacity(40%)`, `hue-rotate(270deg)`. Chain several with spaces; they apply in
+order. It can also be an array of `{ scale, value }` stops for scale-dependent effects. Measured with
+5.1.27: `grayscale(100%)` turns a pure red square into `rgb(54,54,54)`; `blur(8px)` spreads it over
+~10 px.
 
 ### Concept 2: featureEffect with a filter
 
-`FeatureEffect` pairs a `FeatureFilter` (a `where`, geometry, or time filter) with `includedEffect`
-(applied to matches) and `excludedEffect` (applied to the rest).
+`FeatureEffect` pairs a `FeatureFilter` (`where`, `geometry` + `spatialRelationship`, `timeExtent`)
+with `includedEffect` (matches) and `excludedEffect` (the rest). Measured: with
+`where: "POP > 1000000"`, the matching square went gray and the other faded to `rgb(255,153,153)`
+(40 % opacity). **Without a filter, every feature counts as included**: both squares took the
+`includedEffect`. Labels of excluded features are hidden by default
+(`excludedLabelsVisible: false`); set it to `true` to keep them.
 
-### Concept 3: Effects vs renderers
+### Concept 3: Effects vs renderers vs filters
 
-Effects are post-processing on top of the rendered symbols. They do not replace the renderer —
-use them for emphasis, not core styling.
+Effects are post-processing on top of the rendered symbols: they do not replace the renderer, and
+they do not remove anything. To really drop features from the view (and from clicks), use
+`layerView.filter` (client side) or `layer.definitionExpression` (server side). Effects are
+**ignored in a SceneView** and on heatmap layers (per the 5.1 docs; measured: assigning one in 3D
+does not throw and does nothing visible).
 
 ## Common Pitfalls (Top 3)
 
@@ -115,22 +125,25 @@ layer.effect = "blur(2)"; // missing unit
 layer.effect = "blur(2px)";
 ```
 
-**Impact:** the effect is ignored or throws because the value needs a unit.
+**Impact:** measured: no exception; the console logs `Invalid Effect` and the layer draws with no
+effect at all. Only the console tells you.
 
 ### Pitfall 2: Expecting featureEffect to hide features
 
 ```typescript
 // ❌ Anti-pattern
-layer.featureEffect = new FeatureEffect({ filter, excludedEffect: "opacity(0%)" }); // still drawn/clickable
+layer.featureEffect = new FeatureEffect({ filter, excludedEffect: "opacity(0%)" }); // still clickable
 ```
 
 ```typescript
 // ✅ Correct
-layer.featureEffect = new FeatureEffect({ filter }); // visual de-emphasis
-layer.definitionExpression = "POP > 100000";          // to truly remove
+const layerView = await view.whenLayerView(layer);
+layerView.filter = new FeatureFilter({ where: "POP > 1000000" }); // gone from the view and from hitTest
 ```
 
-**Impact:** `opacity(0%)` only hides visually; features remain for hitTest/queries.
+**Impact:** measured: with `opacity(0%)` the feature is invisible, yet `view.hitTest` on it returns
+it and `layerView.queryFeatureCount()` still counts 2. With `layerView.filter`, hitTest returns
+nothing there and the layer view counts 1 (the layer itself still has 2).
 
 ### Pitfall 3: Overusing heavy effects on dense layers
 
@@ -144,7 +157,7 @@ denseLayer.effect = "bloom(3, 2px, 0)"; // expensive on 100k features
 focusLayer.featureEffect = new FeatureEffect({ filter, includedEffect: "bloom(2, 1px, 0)" });
 ```
 
-**Impact:** frame drops when heavy effects cover the whole dense layer.
+**Impact:** frame drops when heavy effects cover the whole dense layer (not measured here).
 
 ## When to Read references/
 
@@ -167,4 +180,9 @@ focusLayer.featureEffect = new FeatureEffect({ filter, includedEffect: "bloom(2,
 
 ## Changelog
 
+- **0.2.0** (2026-10-27): SDK 5.1. The code ran. Measured with pixels: an effect without a unit is ignored
+  with an `Invalid Effect` console warning (no throw); `opacity(0%)` features stay in hitTest. The extended pitfall
+  "featureEffect without a filter emphasizes nothing" was false: everything gets `includedEffect`. Added the
+  `layerView.filter` alternative (measured), scale-dependent effects, `excludedLabelsVisible`, and the
+  SceneView/heatmap limits. Run in `tests/runtime/casos/arcgis-feature-effects.ts`.
 - **0.1.0** (2026-05-31): Initial release.
