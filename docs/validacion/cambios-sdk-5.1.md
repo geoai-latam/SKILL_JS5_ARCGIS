@@ -50,3 +50,7 @@ Paquetes instalados para validar: `@arcgis/core`, `@arcgis/map-components`,
   module") y no registra nada (`tests/runtime/cdn.mjs`).
 - **Los editores SQL y de código de `@arcgis/coding-components` son `@internal`** en 5.1.27; el único
   público es `arcgis-arcade-editor`. El asistente de Arcade viene encendido por defecto.
+- **El script unificado no incluye `arcgis-embedded-map`**: los embeddable components se cargan desde
+  `https://js.arcgis.com/5.1/embeddable-components/`. Con `/5.1/` el tag queda vacío y sin error; la
+  ruta 4.x `embeddable-components/<ver>/arcgis-embeddable-components.esm.js` existe hasta 4.33 y da
+  404 para 5.0 y 5.1 (`tests/runtime/embebido.mjs`).
