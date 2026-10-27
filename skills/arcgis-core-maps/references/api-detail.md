@@ -84,5 +84,13 @@
 
 | Event | Detail | Description |
 |---|---|---|
-| `arcgisViewReadyChange` | `{ view }` | Fires when the underlying view becomes ready |
-| `arcgisViewChange` | — | Fires on viewpoint changes (pan/zoom) |
+| `arcgisViewReadyChange` | `null` | The view became ready: read `el.view` |
+| `arcgisViewReadyError` | `null` | The view could not be created |
+| `arcgisViewChange` | `null` | Viewpoint changed (pan/zoom) |
+| `arcgisViewClick` | click event | Same as `view.on("click")` |
+
+| Member | Description |
+|---|---|
+| `view` | The `MapView`; exists before it is ready |
+| `ready` | `true` once the view is ready |
+| `viewOnReady()` | Promise that resolves when the view is ready |

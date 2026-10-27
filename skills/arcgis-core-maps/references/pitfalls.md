@@ -20,7 +20,8 @@
 
 ### Impact
 
-The map collapses to 0px tall and appears blank.
+The map collapses to 0 px and appears blank. Measured with 5.1.27: the view never becomes ready
+(`view.height` is 0, `when()` still pending after 10 s), so code awaiting it hangs too.
 
 ### Diagnosis
 
@@ -48,7 +49,7 @@ The map centers in the wrong place (often the ocean).
 
 ### Diagnosis
 
-If your location lands off the coast of Africa, you swapped lon/lat or used `[0,0]`.
+Measured: `[4.6, -74.08]` centers at latitude -74 (Antarctica). Off the coast of Africa means `[0, 0]`.
 
 ---
 
@@ -119,7 +120,7 @@ import MapView from "@arcgis/core/views/MapView.js";
 
 ### Impact
 
-`require is not defined` or unresolved modules under the 5.0 CDN/bundler.
+`require is not defined` or unresolved modules under the 5.x CDN/bundler.
 
 ### Diagnosis
 

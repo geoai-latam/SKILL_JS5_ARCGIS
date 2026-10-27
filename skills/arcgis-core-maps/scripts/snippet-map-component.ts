@@ -6,9 +6,9 @@ import "@arcgis/map-components/components/arcgis-zoom";
 // <arcgis-map basemap="arcgis/topographic" center="-74.08,4.6" zoom="11"></arcgis-map>
 const mapEl = document.querySelector("arcgis-map");
 
-mapEl?.addEventListener("arcgisViewReadyChange", (event) => {
-  const { view } = (event as CustomEvent).detail;
-  console.log("Component view ready", view.zoom);
+// The ready event carries no detail (it is null): read the view from the element.
+mapEl?.addEventListener("arcgisViewReadyChange", () => {
+  console.log("Component view ready", mapEl.view.zoom);
 });
 
 export {};

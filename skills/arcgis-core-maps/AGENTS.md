@@ -13,14 +13,15 @@ Quick-reference for creating maps and scenes. Read before deciding API or genera
    - 3D → `SceneView` (or `<arcgis-scene>`), set `map.ground` for terrain.
 
 3. **Need view internals before render?**
-   - Yes → `view.when()` (Core) or `arcgisViewReadyChange` (Components).
+   - Yes → `view.when()` (Core) or `await el.viewOnReady()` then `el.view` (Components): the
+     `arcgisViewReadyChange` detail is `null`, never `event.detail.view`.
 
 ## Setup Checklist
 
 - [ ] `pnpm add @arcgis/core @arcgis/map-components`.
 - [ ] `esriConfig.apiKey = import.meta.env.VITE_ARCGIS_API_KEY` (required for basemap styles).
 - [ ] Give the container/element a non-zero height (`html,body,arcgis-map { height: 100% }`).
-- [ ] Read `view` only after ready.
+- [ ] Read `view` only after ready; without an API key or a height it never gets there.
 
 ## Anti-patterns (one-liner reminders)
 

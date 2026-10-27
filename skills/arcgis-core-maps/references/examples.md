@@ -13,7 +13,7 @@ esriConfig.apiKey = import.meta.env.VITE_ARCGIS_API_KEY as string;
 
 const map = new Map({ basemap: "arcgis/topographic" });
 const view = new MapView({ container: "viewDiv", map, center: [-74.08, 4.6], zoom: 11 });
-await view.when();
+await view.when(); // never resolves without an API key or with a 0-height container
 await view.goTo({ center: [-74.06, 4.65], zoom: 13 });
 ```
 
@@ -55,13 +55,11 @@ const view = new SceneView({
 import "@arcgis/map-components/components/arcgis-map";
 // <arcgis-map item-id="<webmap-item-id>"></arcgis-map>
 const el = document.querySelector("arcgis-map");
-el?.addEventListener("arcgisViewReadyChange", (e) => {
-  const { view } = (e as CustomEvent).detail;
-  console.log("layers:", view.map.layers.length);
-});
+await el!.viewOnReady();
+console.log("layers:", el!.view.map.layers.length);
 ```
 
 **Notes:**
 
 - `item-id` pulls basemap, layers, and popups from the saved webmap.
-- The view is only valid inside the `arcgisViewReadyChange` handler.
+- `viewOnReady()` resolves once the view is ready; the ready event's `detail` is `null`.

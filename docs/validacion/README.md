@@ -35,7 +35,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 6 | `arcgis-cim-symbols` | aporta con arreglos | orden de capas al revés y el pitfall de `enable` falso (medido); Quick Start vacío; overrides con la trampa de `"size"` |
 | 7 | `arcgis-coding-components` | aporta con arreglos | antes era relleno con API inventada (`arcgisChange`, `sqlEditor.layer`); ahora perfil + diagnósticos medidos; SQL/code editor son `@internal` |
 | 8 | `arcgis-coordinates-projection` | aporta con arreglos | datum medido (492 m reetiquetando Bogotá 1975, 27 transformaciones a 22 m), mezcla de SR da `false` en silencio, 9377 en vez de 3116 |
-| 9 | `arcgis-core-maps` | pendiente | |
+| 9 | `arcgis-core-maps` | aporta con arreglos | el Inicio Rápido lanzaba error (`detail` es `null` en `arcgisViewReadyChange`); sin key o sin alto la vista nunca queda lista |
 | 10 | `arcgis-core-utilities` | pendiente | |
 | 11 | `arcgis-custom-rendering` | pendiente | |
 | 12 | `arcgis-editing` | pendiente | |
@@ -329,3 +329,36 @@ error que da es `p is not a function`, que no menciona "load"; ahora la skill tr
 falla en silencio: `false` en vez de un error, 492 m de corrimiento por reetiquetar, `null` en
 `executeMany`, y que 3116 ya no es el sistema oficial de Colombia. Para un público de LATAM es de las
 skills que más rinden.
+
+### 9. `arcgis-core-maps` — aporta con arreglos
+
+**¿Corre en 5.1?** Compila (3 snippets, 31 bloques), pero **el Inicio Rápido se caía**. Nueve
+comprobaciones en Chromium (`tests/runtime/casos/arcgis-core-maps.ts`): `arcgis-map` y `MapView`
+reales.
+
+**Lo que estaba mal (y ya se arregló):**
+
+- **El patrón central lanzaba error.** El Inicio Rápido, el Pitfall 1 "correcto", el ejemplo 3, el
+  snippet y la referencia leían la vista de `(e as CustomEvent).detail.view`. En 5.1.27 el
+  `detail` de `arcgisViewReadyChange` es `null` (los tipos lo dicen: `TargetedEvent<this, void>`).
+  Ejecutado: "Cannot read properties of null (reading 'view')". El cast es lo que lo escondía de
+  TypeScript. Ahora se usa `await el.viewOnReady()` / `el.view`.
+- **"`el.view` es undefined antes de estar lista" era falso.** Existe desde antes de montar el
+  componente, con `ready === false`; preguntar si está definida no sirve.
+- **Faltaba lo grave de la API key.** No es solo "lienzo gris": el estilo responde 401, el basemap
+  se queda en `loading` y `view.when()` no se resuelve en 30 s, así que todo lo que espera a la
+  vista se cuelga. Con `osm` carga sin key.
+- **Contenedor de alto 0:** además de verse en blanco, la vista nunca queda lista (`when()` sigue
+  pendiente a los 10 s).
+- **Centro con ejes al revés:** el diagnóstico decía "frente a África". Medido: `[4.6, -74.08]`
+  cae en latitud -74, la Antártida; frente a África es `[0, 0]`.
+- **`camera` en un MapView:** los tipos no lo admiten (no compila tipado). Sin tipos se ignora, como
+  decía la skill.
+
+**El mismo error está en otra skill:** `arcgis-starter-app` usa `detail.view` en
+`scripts/snippet-main.ts`, `scripts/scaffold.sh` y `references/examples.md`. Se corrige cuando le toque
+(validación 28).
+
+**¿Aporta?** Sí, después del arreglo. El árbol (componentes frente a Core API), `[lon, lat]` y
+`view.destroy()` en una SPA eran correctos y útiles. Pero el patrón que un agente copia primero
+rompía el arranque de cualquier app con `<arcgis-map>`. Era la skill más leída enseñando un error.

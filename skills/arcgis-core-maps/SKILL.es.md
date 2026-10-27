@@ -1,17 +1,17 @@
 ---
 name: arcgis-core-maps
 description: >
-  Inicializa MapView 2D y SceneView 3D con el ArcGIS Maps SDK for JavaScript 5.0.
+  Inicializa MapView 2D y SceneView 3D con el ArcGIS Maps SDK for JavaScript 5.1.
   Cubre el objeto Map, la selección de basemap, la navegación de la vista (center,
   zoom, camera), los Map Components arcgis-map / arcgis-scene, y la decisión entre
   Map Components y la Core API. Usa esta skill cuando el usuario cree un mapa o
   escena, fije un basemap, o pregunte cómo mostrar datos geográficos en la web.
 lang: es
-version: 0.1.0
+version: 0.2.0
 status: stable
-sdk_version: ">=5.0 <6.0"
+sdk_version: ">=5.1 <6.0"
 created: 2026-05-31
-updated: 2026-05-31
+updated: 2026-10-27
 category: core
 tags:
   - map
@@ -22,8 +22,8 @@ tags:
 requires:
   - arcgis-starter-app
 packages:
-  - "@arcgis/core@^5.0"
-  - "@arcgis/map-components@^5.0"
+  - "@arcgis/core@^5.1"
+  - "@arcgis/map-components@^5.1"
 maintainer: "GeoAI LATAM"
 license: MIT
 ---
@@ -49,10 +49,9 @@ una **vista** que lo renderiza — `MapView` para 2D o `SceneView` para 3D.
 ```typescript
 import "@arcgis/map-components/components/arcgis-map";
 // <arcgis-map basemap="arcgis/topographic" center="-74.08,4.6" zoom="11"></arcgis-map>
-const mapEl = document.querySelector("arcgis-map");
-mapEl?.addEventListener("arcgisViewReadyChange", (e) => {
-  console.log("ready", (e as CustomEvent).detail.view.zoom);
-});
+const mapEl = document.querySelector("arcgis-map")!;
+await mapEl.viewOnReady(); // the event carries no detail: read the view from the element
+console.log("ready", mapEl.view.zoom);
 ```
 
 ## Árbol de Decisión
@@ -104,35 +103,41 @@ key en `esriConfig.apiKey`.
 
 ### Concepto 3: Disponibilidad de la vista
 
-Nunca toques propiedades de `view` antes de que la vista esté lista. Con la Core API usa
-`view.when()`; con Map Components escucha el evento `arcgisViewReadyChange` — la `view` está en
-`event.detail.view`.
+Nunca uses la vista antes de que esté lista. Con la Core API, `await view.when()`. Con Map
+Components, `await el.viewOnReady()` o escucha `arcgisViewReadyChange` y lee `el.view` (o
+`event.target.view`): en 5.1.27 el `detail` del evento es `null`, así que `event.detail.view` lanza
+error. `el.view` ya existe antes (un objeto con `ready === false`), así que "¿está definida?" no
+sirve para saber si está lista. Una vista cuyo contenedor no tiene alto, o cuyo basemap no carga,
+**nunca** queda lista (medido: `when()` sigue pendiente a los 10–30 s).
 
 ## Pitfalls Comunes (Top 3)
 
-### Pitfall 1: Leer la vista antes de que esté lista
+### Pitfall 1: Leer la vista del detail del evento
 
 ```typescript
 // ❌ Anti-patrón
-const el = document.querySelector("arcgis-map");
-console.log(el.view.zoom); // view es undefined aquí
-```
-
-```typescript
-// ✅ Correcto
-const el = document.querySelector("arcgis-map");
-el?.addEventListener("arcgisViewReadyChange", (e) => {
+el.addEventListener("arcgisViewReadyChange", (e) => {
   console.log((e as CustomEvent).detail.view.zoom);
 });
 ```
 
-**Impacto:** `Cannot read properties of undefined (reading 'zoom')` y un mapa en blanco.
+```typescript
+// ✅ Correcto
+el.addEventListener("arcgisViewReadyChange", () => {
+  console.log(el.view.zoom);
+});
+// o: await el.viewOnReady(); console.log(el.view.zoom);
+```
+
+**Impacto:** medido con 5.1.27: `detail` es `null`, el handler lanza "Cannot read properties of null
+(reading 'view')" y no corre nada de lo que sigue. El cast a `CustomEvent` es lo que se lo esconde a
+TypeScript.
 
 ### Pitfall 2: Olvidar el API key para los estilos de basemap
 
 ```typescript
 // ❌ Anti-patrón
-const map = new Map({ basemap: "arcgis/topographic" }); // 401, lienzo gris
+const map = new Map({ basemap: "arcgis/topographic" }); // sin esriConfig.apiKey
 ```
 
 ```typescript
@@ -142,9 +147,11 @@ esriConfig.apiKey = import.meta.env.VITE_ARCGIS_API_KEY as string;
 const map = new Map({ basemap: "arcgis/topographic" });
 ```
 
-**Impacto:** el basemap no carga (HTTP 401) y la vista muestra un lienzo gris.
+**Impacto:** medido: la petición del estilo responde 401, el basemap se queda en `loading` y
+`view.when()` no se resuelve: todo lo que espera a la vista espera para siempre. Para una demo sin
+key, `basemap: "osm"` sí carga.
 
-### Pitfall 3: Usar opciones de SceneView en un MapView (o viceversa)
+### Pitfall 3: Usar opciones de SceneView en un MapView
 
 ```typescript
 // ❌ Anti-patrón
@@ -156,7 +163,8 @@ const view = new MapView({ container: "viewDiv", map, camera: { tilt: 65 } });
 const view = new SceneView({ container: "viewDiv", map, camera: { tilt: 65 } });
 ```
 
-**Impacto:** `camera` es ignorado por `MapView`; el tilt/navegación 3D no hace nada.
+**Impacto:** `MapView` no tiene `camera` en sus tipos, así que el código tipado no compila; el código
+sin tipos corre y el tilt se ignora (medido: la vista queda lista, plana, en el zoom indicado).
 
 ## Cuándo leer references/
 
@@ -180,4 +188,8 @@ const view = new SceneView({ container: "viewDiv", map, camera: { tilt: 65 } });
 
 ## Changelog
 
+- **0.2.0** (2026-10-27): SDK 5.1. El Inicio Rápido lanzaba error: `arcgisViewReadyChange` trae `detail` en
+  `null`, así que `event.detail.view` falla (medido); ahora `viewOnReady()` / `el.view`. Sin API key → 401 y una
+  vista que nunca queda lista (no solo un lienzo gris); un contenedor de alto 0 tampoco queda listo; un `center`
+  al revés cae en la Antártida, no frente a África. En `tests/runtime/casos/arcgis-core-maps.ts`.
 - **0.1.0** (2026-05-31): Versión inicial.
