@@ -1,17 +1,19 @@
 ---
 name: arcgis-smart-mapping
 description: >
-  Auto-generate data-driven renderers with the ArcGIS Maps SDK for JavaScript 5.0
-  Smart Mapping modules: color, size, and type renderer creators that compute
-  statistics and pick sensible breaks and ramps. Covers createContinuousRenderer,
-  createClassBreaksRenderer, and createRenderer. Use this skill whenever the user
-  wants the SDK to choose symbology automatically from the data.
+  Auto-generate data-driven renderers with the ArcGIS Maps SDK for JavaScript 5.1
+  Smart Mapping modules: color, size, and type renderer creators. Covers
+  createContinuousRenderer, createClassBreaksRenderer (equal-interval by default,
+  which crowds skewed data into one class), createRenderer (top 10 categories plus
+  "Other" by default), where the statistics come from, and the silent results on
+  the wrong field type. Use this skill whenever the user wants the SDK to choose
+  symbology automatically from the data.
 lang: en
-version: 0.1.0
+version: 0.2.0
 status: stable
-sdk_version: ">=5.0 <6.0"
+sdk_version: ">=5.1 <6.0"
 created: 2026-05-31
-updated: 2026-05-31
+updated: 2026-10-27
 category: visualization
 tags:
   - smart-mapping
@@ -22,7 +24,7 @@ tags:
 requires:
   - arcgis-visualization
 packages:
-  - "@arcgis/core@^5.0"
+  - "@arcgis/core@^5.1"
 maintainer: "GeoAI LATAM"
 license: MIT
 ---
@@ -34,9 +36,9 @@ license: MIT
 
 ## Overview
 
-Smart Mapping creators inspect a layer's statistics and return a ready-to-use renderer.
+Smart Mapping creators compute a field's statistics and return a ready-to-use renderer.
 
-- **Problem it solves:** choosing good breaks, ramps, and sizes without manual tuning.
+- **Problem it solves:** choosing breaks, ramps, and sizes without manual tuning.
 - **Who it serves:** developers who want quick, statistically sound thematic maps.
 - **Pattern it teaches:** call a creator with `{ layer, field, view }`, then assign its `renderer`.
 - **What it does NOT cover:** hand-built renderers (see `arcgis-visualization`).
@@ -45,8 +47,13 @@ Smart Mapping creators inspect a layer's statistics and return a ready-to-use re
 
 ```typescript
 import * as colorRendererCreator from "@arcgis/core/smartMapping/renderers/color.js";
-const { renderer } = await colorRendererCreator.createContinuousRenderer({ layer, view, field: "POP" });
-layer.renderer = renderer;
+
+const { renderer } = await colorRendererCreator.createClassBreaksRenderer({
+  layer, view, field: "POP",
+  classificationMethod: "quantile", // the default, equal-interval, crowds skewed data into one class
+  numClasses: 5,
+});
+layer.renderer = renderer; // the creator never assigns it
 ```
 
 ## Decision Tree
@@ -54,11 +61,14 @@ layer.renderer = renderer;
 1. **What should encode the value?**
    - Color → `smartMapping/renderers/color.js`.
    - Size → `smartMapping/renderers/size.js`.
-   - Category/type → `smartMapping/renderers/type.js`.
+   - Category/type → `smartMapping/renderers/type.js` (string fields).
 
 2. **Continuous or classed?**
    - Continuous → `createContinuousRenderer`.
-   - Classed → `createClassBreaksRenderer`.
+   - Classed → `createClassBreaksRenderer` with an explicit `classificationMethod`.
+
+3. **Many categories?**
+   - Yes → decide `numTypes` (default 10; `-1` for all).
 
 **Default:** color `createContinuousRenderer` for numeric fields; `type.createRenderer` for categories.
 
@@ -79,61 +89,66 @@ const colorRendererCreator = await $arcgis.import("@arcgis/core/smartMapping/ren
 ### Map Components (recommended for new projects)
 
 ```typescript
-// Pass the component's view (from arcgisViewReadyChange) into the creator.
+// Pass the component's view (await el.viewOnReady(); el.view) into the creator.
 import "@arcgis/map-components/components/arcgis-map";
 ```
 
 ## Key Concepts
 
-### Concept 1: Creators need a view
+### Concept 1: Where the statistics come from
 
-Smart Mapping samples features in the current view to compute statistics, so most creators require
-both `layer` and `view`. Call them after the view is ready.
+Measured with 5.1.27: the statistics covered **the whole layer, not the view's extent**. A service layer gave
+`n=3557` with the view over New York, over the whole country and with no view at all; a client-side layer built
+from `source` also gave all 51 features with the view over New York. The layer's `definitionExpression` is respected
+(`st = 'NY'` gave `n=187`); a `filter` with `where` is ignored (only geometry `intersects` filters count).
 
-### Concept 2: The result object
+### Concept 2: What the view is for
 
-Creators return `{ renderer, statistics, ... }`. Assign `result.renderer` to `layer.renderer`;
-keep `statistics` if you want to drive a legend or slider.
+`view` lets the creator read the background to pick colors (`basemapTheme` came back `"light"` over OSM). It is
+optional: without it the creators still resolved. Measured: a creator called before `view.when()` resolved with the
+same statistics.
 
-### Concept 3: Color/size/type modules
+### Concept 3: The result object
 
-`color`, `size`, and `type` modules each expose `createContinuousRenderer` /
-`createClassBreaksRenderer` / `createRenderer` variants tuned to that visual channel.
+Creators return `{ renderer, statistics, basemapTheme, … }` (color continuous also `visualVariable`). They never
+touch the layer: measured, `layer.renderer` stayed `simple` until assigned.
 
 ## Common Pitfalls (Top 3)
 
-### Pitfall 1: Calling a creator before the view is ready
+### Pitfall 1: Default class breaks on skewed data
 
 ```typescript
 // ❌ Anti-pattern
-const { renderer } = await colorRendererCreator.createContinuousRenderer({ layer, view, field });
-// view not ready yet → statistics are wrong/empty
+const { renderer } = await colorRendererCreator.createClassBreaksRenderer({ layer, view, field: "POP" });
 ```
 
 ```typescript
 // ✅ Correct
-await view.when();
-const { renderer } = await colorRendererCreator.createContinuousRenderer({ layer, view, field });
+const { renderer } = await colorRendererCreator.createClassBreaksRenderer({
+  layer, view, field: "POP", classificationMethod: "quantile", // or "natural-breaks"
+});
 ```
 
-**Impact:** the renderer uses empty statistics and looks flat or wrong.
+**Impact:** measured on US city populations: the default produced 5 equal intervals of ~1.6 million, and **3553 of
+3557 cities fell in the first class**: one color for almost the whole map. With `"quantile"` the first class ended
+at 12938 and held 712.
 
-### Pitfall 2: Forgetting to assign the renderer
+### Pitfall 2: A category map that only shows ten categories
 
 ```typescript
 // ❌ Anti-pattern
-await colorRendererCreator.createContinuousRenderer({ layer, view, field }); // result discarded
+const { renderer } = await typeRendererCreator.createRenderer({ layer, view, field: "STATE" });
 ```
 
 ```typescript
 // ✅ Correct
-const { renderer } = await colorRendererCreator.createContinuousRenderer({ layer, view, field });
-layer.renderer = renderer;
+const { renderer } = await typeRendererCreator.createRenderer({ layer, view, field: "STATE", numTypes: -1 });
 ```
 
-**Impact:** nothing changes because the computed renderer was never applied.
+**Impact:** measured on a field with 51 values: 10 `uniqueValueInfos`, and everything else drawn with the default
+symbol labeled `Otro` ("Other"). With `numTypes: -1`, all 51.
 
-### Pitfall 3: Using a non-numeric field for a continuous renderer
+### Pitfall 3: A continuous renderer on a text field
 
 ```typescript
 // ❌ Anti-pattern
@@ -145,7 +160,8 @@ colorRendererCreator.createContinuousRenderer({ layer, view, field: "NAME" });
 typeRendererCreator.createRenderer({ layer, view, field: "NAME" }); // categories
 ```
 
-**Impact:** continuous creators expect numbers; categories need the `type` module.
+**Impact:** measured: **no error**. It returned a `class-breaks` renderer with `min`/`max` `undefined` and made-up
+stops `0, 25, 50, 75, 100`. Check the field type before choosing the module.
 
 ## When to Read references/
 
@@ -168,4 +184,10 @@ typeRendererCreator.createRenderer({ layer, view, field: "NAME" }); // categorie
 
 ## Changelog
 
+- **0.2.0** (2026-10-27): SDK 5.1. Measured in `tests/runtime/casos/arcgis-smart-mapping.ts`. Two of the three old
+  top pitfalls were false: calling before `view.when()` works, and a text field does not fail (it silently returns
+  made-up stops, which is now the third pitfall). The old Concept 1 ("samples features in the view") was false:
+  statistics cover the whole layer. New top pitfalls, measured: equal-interval breaks put 3553 of 3557 cities in one
+  class, and the type creator keeps only 10 categories. Added that `filter.where` is ignored; replaced the
+  deprecated `view.watch`.
 - **0.1.0** (2026-05-31): Initial release.

@@ -1,13 +1,16 @@
 # Extended Pitfalls: Smart Mapping
 
 > Extends the Top 3 in SKILL.md. Format: Anti-pattern / Correct / Impact / Diagnosis.
+> Measured with 5.1.27 in `tests/runtime/casos/arcgis-smart-mapping.ts`.
 
-## Pitfall 1: Reusing a renderer after the data changes
+## Pitfall 1: Reusing a renderer after the filter changes
 
 ### Anti-pattern
 
 ```typescript
-// Compute once, then change definitionExpression without recomputing
+const { renderer } = await colorRendererCreator.createContinuousRenderer({ layer, view, field });
+layer.renderer = renderer;
+layer.definitionExpression = "region = 'Andes'"; // breaks still describe the whole layer
 ```
 
 ### Correct
@@ -20,105 +23,115 @@ layer.renderer = renderer;
 
 ### Impact
 
-Breaks/ramp no longer match the filtered data.
+Measured: whole layer `min=8035 n=3557`; after `definitionExpression = "st = 'NY'"`, `min=10116 n=187`. A renderer
+computed before the filter keeps the old range.
 
 ### Diagnosis
 
-Symbology looks off after filtering; recompute the renderer.
+Symbology that looks flat after filtering; recompute.
 
 ---
 
-## Pitfall 2: Ignoring the returned statistics
+## Pitfall 2: Filtering the statistics with `filter.where`
 
 ### Anti-pattern
 
 ```typescript
-const { renderer } = await creator(...); // legend slider has no data
+colorRendererCreator.createContinuousRenderer({ layer, field, filter: new FeatureFilter({ where: "st = 'NY'" }) });
 ```
 
 ### Correct
 
 ```typescript
-const { renderer, statistics } = await creator(...);
-// feed statistics into a histogram/slider widget
+layer.definitionExpression = "st = 'NY'"; // or a geometry filter: new FeatureFilter({ geometry: extent })
+colorRendererCreator.createContinuousRenderer({ layer, field });
 ```
 
 ### Impact
 
-Custom legends/sliders lack the numbers they need.
+Measured: with `filter.where` the statistics were the whole layer's (`n=3557`). Only geometry filters with an
+`intersects` relationship are used.
 
 ### Diagnosis
 
-Slider shows wrong range; pass `statistics` through.
+The same range with and without the filter.
 
 ---
 
-## Pitfall 3: Running creators on every redraw
+## Pitfall 3: Expecting the view to scope the statistics
 
 ### Anti-pattern
 
 ```typescript
-view.watch("stationary", () => creator(...)); // recompute constantly
+await view.goTo(regionExtent);
+const { renderer } = await colorRendererCreator.createContinuousRenderer({ layer, view, field }); // "for this region"
 ```
 
 ### Correct
 
 ```typescript
-// Compute once on load, or when the field/filter actually changes.
+const { renderer } = await colorRendererCreator.createContinuousRenderer({
+  layer, view, field, filter: new FeatureFilter({ geometry: view.extent, spatialRelationship: "intersects" }),
+});
 ```
 
 ### Impact
 
-Repeated statistic queries hammer the service and stutter the UI.
+Measured: with the view over New York the statistics still covered all 3557 cities (service layer) and all 51
+states (client-side layer). The geometry filter in the correct version is the documented way to scope them
+(not measured here).
 
 ### Diagnosis
 
-Frequent stats requests in the network tab.
+A regional view whose ramp is driven by values elsewhere.
 
 ---
 
-## Pitfall 4: Wrong field type for the chosen module
+## Pitfall 4: Discarding the result
 
 ### Anti-pattern
 
 ```typescript
-sizeRendererCreator.createContinuousRenderer({ field: "CATEGORY" });
+await colorRendererCreator.createContinuousRenderer({ layer, view, field }); // result ignored
 ```
 
 ### Correct
 
 ```typescript
-typeRendererCreator.createRenderer({ field: "CATEGORY" });
+const { renderer } = await colorRendererCreator.createContinuousRenderer({ layer, view, field });
+layer.renderer = renderer;
 ```
 
 ### Impact
 
-Continuous size/color expect numbers; categories belong to `type`.
+Measured: `layer.renderer` stayed `simple`; the creator does not touch the layer.
 
 ### Diagnosis
 
-Flat output; match the module to the field type.
+No visible change after "applying" Smart Mapping.
 
 ---
 
-## Pitfall 5: Forgetting basemap contrast
+## Pitfall 5: Re-running creators on every navigation
 
 ### Anti-pattern
 
 ```typescript
-createContinuousRenderer({ layer, view, field }); // ramp clashes with dark basemap
+reactiveUtils.when(() => view.stationary, () => colorRendererCreator.createContinuousRenderer({ layer, view, field }));
 ```
 
 ### Correct
 
 ```typescript
-createContinuousRenderer({ layer, view, field, basemap: view.map.basemap });
+// Compute once, and again only when the field, the filter or the classification changes.
+const { renderer } = await colorRendererCreator.createContinuousRenderer({ layer, view, field });
+layer.renderer = renderer;
 ```
 
 ### Impact
 
-Low contrast against the basemap.
+A statistics query to the service per pan or zoom, and a ramp that jumps (not measured).
 
 ### Diagnosis
 
-Hard-to-read colors; pass the basemap so the ramp adapts.
+Repeated statistics requests in the network tab.

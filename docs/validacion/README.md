@@ -52,7 +52,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 23 | `arcgis-portal-content` | aporta con arreglos | su paginación duplicaba (start -1 reinicia); sortField sin sortOrder = lo más viejo |
 | 24 | `arcgis-rest-services` | aporta con arreglos | sin key no hay 401: diálogo y promesa colgada; raíz del servicio = 0 features |
 | 25 | `arcgis-scene-environment` | aporta con arreglos | cameraTrackingEnabled mueve la fecha al navegar; clima no disponible en local/altura |
-| 26 | `arcgis-smart-mapping` | pendiente | |
+| 26 | `arcgis-smart-mapping` | aporta con arreglos | intervalos iguales meten 3553/3557 en una clase; type solo 10 categorías; 2 pitfalls falsos |
 | 27 | `arcgis-spatial-analysis` | pendiente | |
 | 28 | `arcgis-starter-app` | pendiente | |
 | 29 | `arcgis-tables-forms` | pendiente | |
@@ -851,3 +851,28 @@ nunca, o destruir y perder el mapa compartido.
 - **Relleno quitado:** tres extendidos que eran solo comentario: sombras sin objetos, el clima que no cambia los datos y la atmósfera que tapa el horizonte. El pitfall de GPU queda en la lista extendida marcado «no medido».
 
 **Por qué aporta:** un estudio de sombras a una hora fija es el uso analítico principal de esta API. Sin la skill, un agente deja las sombras apagadas, no fija la fecha y deja el seguimiento de cámara encendido, y la hora cambia en cuanto el usuario navega. El clima en una escena local falla igual de callado.
+
+### 26. `arcgis-smart-mapping` — aporta con arreglos
+
+**Evidencia** (5.1.27, `tests/runtime/casos/arcgis-smart-mapping.ts`, 11/11 en verde, servicio público de ciudades y estados de EE. UU.):
+
+- **Dos de los tres pitfalls principales eran falsos:**
+  - *Llamar antes de `view.when()`*: resolvió con las mismas estadísticas.
+  - *Renderer continuo sobre un campo de texto*: no falla, y eso es peor. Devuelve un `class-breaks` con `min`/`max` en `undefined` y stops inventados `0,25,50,75,100`. Quedó reescrito como Pitfall 3.
+- **El Concepto 1 viejo era falso.** No muestrea la vista: las estadísticas cubren toda la capa.
+  - Capa de servicio: `n=3557` con la vista sobre NY, sobre EE. UU. y sin vista.
+  - Capa cliente armada con `source`: `n=51` con la vista sobre NY.
+  - `definitionExpression` sí se respeta (`st='NY'` da `n=187`); `filter.where` se ignora (`n=3557`).
+- **Pitfall nuevo 1: cortes por defecto.** Son de intervalos iguales: 5 clases de unos 1,6 M, con **3553 de 3557 ciudades en la primera**. Con `quantile`, la primera clase termina en 12938 y tiene 712.
+- **Pitfall nuevo 2: categorías.** `type.createRenderer` sobre un campo con 51 valores da 10 `uniqueValueInfos` y el resto queda como «Otro». Con `numTypes: -1` salen los 51.
+- **Confirmado:**
+  - el creador no asigna el renderer (sigue `simple`);
+  - `size` devuelve una variable visual `size`;
+  - `above-and-below` da 5 stops;
+  - `basemapTheme` sale `light` sobre OSM.
+- **Arreglos:**
+  - el extendido que usaba `view.watch` (deprecado) pasó a `reactiveUtils`;
+  - el del basemap no estaba medido y se quitó;
+  - el de «ignorar statistics» era solo un comentario y se cambió por «esperar que la vista acote las estadísticas».
+
+**Por qué aporta:** sin la skill, un agente usa los cortes por defecto y entrega un mapa de un solo color. También manda un campo de texto sin recibir ningún error, o pierde 41 de 51 categorías bajo «Otro». La versión anterior advertía de dos problemas que no existen y no decía nada de estos tres.

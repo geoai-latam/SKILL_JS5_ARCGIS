@@ -19,7 +19,7 @@ layer.renderer = renderer;
 
 **Notes:**
 
-- `await view.when()` ensures valid statistics.
+- Statistics cover the whole layer (respecting `definitionExpression`), not the view's extent.
 - `theme` flips/selects the ramp direction.
 
 ---
@@ -51,11 +51,11 @@ layer.renderer = renderer;
 import * as typeRendererCreator from "@arcgis/core/smartMapping/renderers/type.js";
 
 await view.when();
-const { renderer } = await typeRendererCreator.createRenderer({ layer, view, field: "TYPE" });
+const { renderer } = await typeRendererCreator.createRenderer({ layer, view, field: "TYPE", numTypes: -1 });
 layer.renderer = renderer;
 ```
 
 **Notes:**
 
 - Use the `type` module for string/category fields.
-- It picks a distinct color per unique value.
+- By default only the 10 most frequent values get a color; the rest are "Other". `numTypes: -1` keeps all.

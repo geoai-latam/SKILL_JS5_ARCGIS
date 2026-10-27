@@ -12,11 +12,13 @@
 
 | Module | Functions |
 |---|---|
-| `smartMapping/renderers/color.js` | `createContinuousRenderer`, `createClassBreaksRenderer` |
-| `smartMapping/renderers/size.js` | `createContinuousRenderer`, `createClassBreaksRenderer` |
+| `smartMapping/renderers/color.js` | `createContinuousRenderer`, `createClassBreaksRenderer`, `createVisualVariable` |
+| `smartMapping/renderers/size.js` | `createContinuousRenderer`, `createClassBreaksRenderer`, `createVisualVariables` |
 | `smartMapping/renderers/type.js` | `createRenderer` (category) |
 
-Import as a namespace: `import * as colorRendererCreator from "@arcgis/core/smartMapping/renderers/color.js"`.
+Other modules in the same folder: `heatmap`, `dotDensity`, `predominance`, `relationship`, `univariateColorSize`,
+`opacity`, `location`, `pieChart`. Import as a namespace:
+`import * as colorRendererCreator from "@arcgis/core/smartMapping/renderers/color.js"`.
 
 ---
 
@@ -24,20 +26,23 @@ Import as a namespace: `import * as colorRendererCreator from "@arcgis/core/smar
 
 | Param | Type | Description |
 |---|---|---|
-| `layer` | `FeatureLayer` | Layer to analyze |
-| `view` | `MapView \| SceneView` | View used to sample statistics |
+| `layer` | `FeatureLayer` (and others) | Layer to analyze; statistics cover the whole layer and respect `definitionExpression` |
+| `view` | `MapView \| SceneView` | Optional; read for the background to pick colors |
 | `field` | `string` | Numeric (color/size) or category (type) field |
 | `theme` | `string` | e.g. `"high-to-low"`, `"above-and-below"` |
-| `basemap` | `string` | Influences ramp choice for contrast |
+| `classificationMethod` | `string` | Class breaks: default equal-interval; `"quantile"`, `"natural-breaks"`, `"standard-deviation"` |
+| `numClasses` | `number` | Class breaks: default 5 |
+| `numTypes` | `number` | Type: default 10 (the rest go to "Other"); `-1` for all |
+| `filter` | `FeatureFilter` | Only geometry `intersects` filters are used; `where` is ignored |
+| `basemap` | `Basemap \| string` | Background hint when there is no view |
 
 ---
 
 ## Result object
 
-Creators resolve to:
-
 | Property | Description |
 |---|---|
-| `renderer` | The generated renderer — assign to `layer.renderer` |
-| `statistics` | Computed statistics (min/max/avg/stddev) |
-| `colorScheme` / `sizeScheme` | The chosen scheme (for legends/sliders) |
+| `renderer` | The generated renderer; assign it to `layer.renderer` |
+| `statistics` | `min`, `max`, `avg`, `stddev`, `count` of the whole (filtered) layer |
+| `visualVariable` | Color continuous: the color variable with its stops |
+| `basemapId` / `basemapTheme` | The background read (`"light"` / `"dark"`) |
