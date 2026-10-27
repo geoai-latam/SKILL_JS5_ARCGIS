@@ -103,14 +103,14 @@ Compass does nothing; confirm the view can rotate.
 ### Anti-pattern
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-print";
-import "@arcgis/map-components/dist/components/arcgis-daylight"; // unused in 2D app
+import "@arcgis/map-components/components/arcgis-print";
+import "@arcgis/map-components/components/arcgis-daylight"; // unused in 2D app
 ```
 
 ### Correct
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-print"; // only what the page uses
+import "@arcgis/map-components/components/arcgis-print"; // only what the page uses
 ```
 
 ### Impact

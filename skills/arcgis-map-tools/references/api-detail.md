@@ -10,7 +10,7 @@
 
 ## arcgis-sketch
 
-`@arcgis/map-components/dist/components/arcgis-sketch`
+`@arcgis/map-components/components/arcgis-sketch`
 
 | Member | Description |
 |---|---|
@@ -34,7 +34,7 @@
 
 ## arcgis-snapping-controls
 
-`@arcgis/map-components/dist/components/arcgis-snapping-controls`
+`@arcgis/map-components/components/arcgis-snapping-controls`
 
 | Option | Description |
 |---|---|

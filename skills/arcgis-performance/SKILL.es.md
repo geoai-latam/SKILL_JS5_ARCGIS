@@ -80,7 +80,7 @@ const FeatureLayer = await $arcgis.import("@arcgis/core/layers/FeatureLayer.js")
 
 ```typescript
 // Importa solo los componentes que renderizas para que el bundler haga tree-shaking del resto.
-import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-map";
 ```
 
 ## Conceptos Clave

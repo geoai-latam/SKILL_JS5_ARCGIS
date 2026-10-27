@@ -77,7 +77,7 @@ const esriConfig = await $arcgis.import("@arcgis/core/config.js");
 
 ```typescript
 // Define esriConfig.apiKey (o registra OAuth) antes de que cargue el componente de mapa.
-import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-map";
 ```
 
 ## Conceptos Clave

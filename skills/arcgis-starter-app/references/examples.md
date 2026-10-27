@@ -5,7 +5,7 @@
 **Use case:** the `src/main.ts` that `scaffold.sh` generates.
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-map";
 import "@esri/calcite-components/dist/components/calcite-shell";
 import esriConfig from "@arcgis/core/config.js";
 
@@ -24,7 +24,7 @@ esriConfig.apiKey = import.meta.env.VITE_ARCGIS_API_KEY as string;
 **Use case:** render a map in a React 19 component using the custom element directly.
 
 ```tsx
-import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-map";
 
 export function MapPane() {
   return (
@@ -51,7 +51,7 @@ export function MapPane() {
 
 ```typescript
 import { Component, CUSTOM_ELEMENTS_SCHEMA } from "@angular/core";
-import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-map";
 
 @Component({
   selector: "app-map",

@@ -45,7 +45,7 @@ These components give users turnkey sketching, measuring, and snapping without c
 ## Quick Start
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-sketch";
+import "@arcgis/map-components/components/arcgis-sketch";
 // <arcgis-map><arcgis-sketch position="top-right"></arcgis-sketch></arcgis-map>
 ```
 
@@ -67,7 +67,7 @@ import "@arcgis/map-components/dist/components/arcgis-sketch";
 ### Direct ESM (recommended for npm/Vite/Webpack)
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-measurement";
+import "@arcgis/map-components/components/arcgis-measurement";
 ```
 
 ### Dynamic Imports (CDN)
@@ -79,7 +79,7 @@ const SketchVM = await $arcgis.import("@arcgis/core/widgets/Sketch/SketchViewMod
 ### Map Components (recommended for new projects)
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-snapping-controls";
+import "@arcgis/map-components/components/arcgis-snapping-controls";
 ```
 
 ## Key Concepts

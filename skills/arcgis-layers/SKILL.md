@@ -81,7 +81,7 @@ const FeatureLayer = await $arcgis.import("@arcgis/core/layers/FeatureLayer.js")
 
 ```typescript
 // Layers are still created with the Core API, then added to the component's map.
-import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-map";
 ```
 
 ## Key Concepts

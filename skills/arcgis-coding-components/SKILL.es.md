@@ -45,7 +45,7 @@ Los coding components proveen UIs de editor (Arcade, SQL, código genérico) con
 ## Inicio Rápido
 
 ```typescript
-import "@arcgis/coding-components/dist/components/arcgis-arcade-editor";
+import "@arcgis/coding-components/components/arcgis-arcade-editor";
 // <arcgis-arcade-editor></arcgis-arcade-editor> — define .script y un profile
 ```
 
@@ -67,7 +67,7 @@ import "@arcgis/coding-components/dist/components/arcgis-arcade-editor";
 ### ESM Directo (recomendado para npm/Vite/Webpack)
 
 ```typescript
-import "@arcgis/coding-components/dist/components/arcgis-arcade-editor";
+import "@arcgis/coding-components/components/arcgis-arcade-editor";
 ```
 
 ### Imports Dinámicos (CDN)
@@ -80,7 +80,7 @@ const script = "https://js.arcgis.com/5.0/";
 ### Map Components (recomendado para proyectos nuevos)
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-map";
 ```
 
 ## Conceptos Clave

@@ -1,6 +1,6 @@
 // snippet-time.ts — drive a time-aware layer with a TimeExtent + slider component.
 // Smoke-tested.
-import "@arcgis/map-components/dist/components/arcgis-time-slider";
+import "@arcgis/map-components/components/arcgis-time-slider";
 import TimeExtent from "@arcgis/core/time/TimeExtent.js";
 
 const extent = new TimeExtent({

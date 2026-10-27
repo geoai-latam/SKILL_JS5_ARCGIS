@@ -27,7 +27,7 @@ Check `layer.capabilities.operations.supportsAdd/Update/Delete` first.
 
 ## arcgis-editor
 
-`@arcgis/map-components/dist/components/arcgis-editor` (replaces the deprecated `Editor` widget)
+`@arcgis/map-components/components/arcgis-editor` (replaces the deprecated `Editor` widget)
 
 | Property | Type | Description |
 |---|---|---|

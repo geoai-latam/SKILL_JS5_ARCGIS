@@ -79,7 +79,7 @@ const FeatureLayer = await $arcgis.import("@arcgis/core/layers/FeatureLayer.js")
 ### Map Components (recomendado para proyectos nuevos)
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-editor";
+import "@arcgis/map-components/components/arcgis-editor";
 ```
 
 ## Conceptos Clave

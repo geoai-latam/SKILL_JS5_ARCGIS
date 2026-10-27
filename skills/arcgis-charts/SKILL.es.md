@@ -45,7 +45,7 @@ Los charts components renderizan los atributos de una capa como charts interacti
 ## Inicio Rápido
 
 ```typescript
-import "@arcgis/charts-components/dist/components/arcgis-chart";
+import "@arcgis/charts-components/components/arcgis-chart";
 // <arcgis-chart></arcgis-chart> — define .layer y .config en código
 ```
 
@@ -67,7 +67,7 @@ import "@arcgis/charts-components/dist/components/arcgis-chart";
 ### ESM Directo (recomendado para npm/Vite/Webpack)
 
 ```typescript
-import "@arcgis/charts-components/dist/components/arcgis-chart";
+import "@arcgis/charts-components/components/arcgis-chart";
 ```
 
 ### Imports Dinámicos (CDN)
@@ -80,7 +80,7 @@ const script = "https://js.arcgis.com/5.0/";
 ### Map Components (recomendado para proyectos nuevos)
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-map";
 ```
 
 ## Conceptos Clave

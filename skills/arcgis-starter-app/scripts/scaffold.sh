@@ -25,8 +25,8 @@ echo "📦 Installing ArcGIS dependencies..."
 # In 5.0, Calcite's asset path defaults to the SDK CDN, so setAssetPath is usually
 # unnecessary. Only configure it when hosting assets locally (use a 5.0.x path then).
 cat > src/main.ts <<'EOF'
-import "@arcgis/map-components/dist/components/arcgis-map";
-import "@arcgis/map-components/dist/components/arcgis-zoom";
+import "@arcgis/map-components/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-zoom";
 import "@esri/calcite-components/dist/components/calcite-shell";
 import esriConfig from "@arcgis/core/config.js";
 

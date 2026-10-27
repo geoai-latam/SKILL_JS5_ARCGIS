@@ -79,7 +79,7 @@ const RasterFunction = await $arcgis.import("@arcgis/core/layers/support/RasterF
 
 ```typescript
 // Add the imagery layer to the component's map.
-import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-map";
 ```
 
 ## Key Concepts

@@ -5,7 +5,7 @@
 **Use case:** let users author a popup expression.
 
 ```typescript
-import "@arcgis/coding-components/dist/components/arcgis-arcade-editor";
+import "@arcgis/coding-components/components/arcgis-arcade-editor";
 
 const editor = document.querySelector("arcgis-arcade-editor") as { script?: string; profile?: unknown };
 editor.script = "Round($feature.POP / 1000)";
@@ -24,7 +24,7 @@ editor.profile = { variables: [{ name: "$feature", type: "feature" }] };
 **Use case:** build a definition expression interactively.
 
 ```typescript
-import "@arcgis/coding-components/dist/components/arcgis-sql-expression-editor";
+import "@arcgis/coding-components/components/arcgis-sql-expression-editor";
 
 const sqlEditor = document.querySelector("arcgis-sql-expression-editor") as { layer?: unknown };
 sqlEditor.layer = featureLayer; // fields power autocomplete

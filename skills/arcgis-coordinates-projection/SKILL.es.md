@@ -79,7 +79,7 @@ const SpatialReference = await $arcgis.import("@arcgis/core/geometry/SpatialRefe
 
 ```typescript
 // Reproyecta geometrías que lees de la view del componente antes de mezclar sistemas.
-import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-map";
 ```
 
 ## Conceptos Clave

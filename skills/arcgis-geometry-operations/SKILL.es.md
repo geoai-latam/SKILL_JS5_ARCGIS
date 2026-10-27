@@ -79,7 +79,7 @@ const geometryEngine = await $arcgis.import("@arcgis/core/geometry/geometryEngin
 
 ```typescript
 // Opera sobre geometrías que lees de la view del componente (hitTest, sketch, query).
-import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-map";
 ```
 
 ## Conceptos Clave

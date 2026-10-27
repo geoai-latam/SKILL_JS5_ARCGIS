@@ -80,7 +80,7 @@ const locator = await $arcgis.import("@arcgis/core/rest/locator.js");
 
 ```typescript
 // El componente arcgis-search envuelve locator/places para una UI lista.
-import "@arcgis/map-components/dist/components/arcgis-search";
+import "@arcgis/map-components/components/arcgis-search";
 ```
 
 ## Conceptos Clave

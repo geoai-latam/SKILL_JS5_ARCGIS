@@ -79,7 +79,7 @@ const kg = await $arcgis.import("@arcgis/core/rest/knowledgeGraphService.js");
 
 ```typescript
 // Plot entities with geometry on the map; pair with a link chart for relationships.
-import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-map";
 ```
 
 ## Key Concepts

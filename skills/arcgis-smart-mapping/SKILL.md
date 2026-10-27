@@ -80,7 +80,7 @@ const colorRendererCreator = await $arcgis.import("@arcgis/core/smartMapping/ren
 
 ```typescript
 // Pass the component's view (from arcgisViewReadyChange) into the creator.
-import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-map";
 ```
 
 ## Key Concepts

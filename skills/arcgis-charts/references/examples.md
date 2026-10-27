@@ -5,7 +5,7 @@
 **Use case:** count features by category.
 
 ```typescript
-import "@arcgis/charts-components/dist/components/arcgis-chart";
+import "@arcgis/charts-components/components/arcgis-chart";
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer.js";
 
 const layer = new FeatureLayer({ url: "https://.../FeatureServer/0" });

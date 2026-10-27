@@ -80,7 +80,7 @@ const PortalItem = await $arcgis.import("@arcgis/core/portal/PortalItem.js");
 
 ```typescript
 // Pasa un item id directo al componente de mapa para renderizar un webmap guardado.
-import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-map";
 ```
 
 ## Conceptos Clave

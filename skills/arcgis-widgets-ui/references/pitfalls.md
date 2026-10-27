@@ -13,7 +13,7 @@
 ### Correct
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-legend";
+import "@arcgis/map-components/components/arcgis-legend";
 ```
 
 ### Impact
@@ -85,7 +85,7 @@ Method undefined on the element; check the component docs.
 ### Correct
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-legend"; // pulls needed styles via npm
+import "@arcgis/map-components/components/arcgis-legend"; // pulls needed styles via npm
 ```
 
 ### Impact

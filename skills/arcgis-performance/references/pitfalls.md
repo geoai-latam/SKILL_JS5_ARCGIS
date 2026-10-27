@@ -56,15 +56,15 @@ Profiler shows the callback firing dozens of times per pan.
 ### Anti-pattern
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-map";
-import "@arcgis/map-components/dist/components/arcgis-print";
-import "@arcgis/map-components/dist/components/arcgis-sketch"; // unused on this page
+import "@arcgis/map-components/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-print";
+import "@arcgis/map-components/components/arcgis-sketch"; // unused on this page
 ```
 
 ### Correct
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-map"; // only what this page renders
+import "@arcgis/map-components/components/arcgis-map"; // only what this page renders
 ```
 
 ### Impact

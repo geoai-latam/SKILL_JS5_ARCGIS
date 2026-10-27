@@ -13,7 +13,7 @@ chartEl.config = cfg; // element not yet upgraded
 ### Correct
 
 ```typescript
-import "@arcgis/charts-components/dist/components/arcgis-chart";
+import "@arcgis/charts-components/components/arcgis-chart";
 customElements.whenDefined("arcgis-chart").then(() => { chartEl.config = cfg; });
 ```
 

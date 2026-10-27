@@ -45,7 +45,7 @@ Estos componentes presentan los atributos de una capa como tabla o formulario ed
 ## Inicio Rápido
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-feature-table";
+import "@arcgis/map-components/components/arcgis-feature-table";
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer.js";
 const layer = new FeatureLayer({ url: "https://.../FeatureServer/0" });
 // <arcgis-feature-table reference-element="arcgis-map"></arcgis-feature-table>
@@ -82,7 +82,7 @@ const FeatureLayer = await $arcgis.import("@arcgis/core/layers/FeatureLayer.js")
 ### Map Components (recomendado para proyectos nuevos)
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-feature-form";
+import "@arcgis/map-components/components/arcgis-feature-form";
 ```
 
 ## Conceptos Clave
@@ -129,7 +129,7 @@ import FeatureTable from "@arcgis/core/widgets/FeatureTable.js"; // deprecado en
 
 ```typescript
 // ✅ Correcto
-import "@arcgis/map-components/dist/components/arcgis-feature-table";
+import "@arcgis/map-components/components/arcgis-feature-table";
 ```
 
 **Impacto:** construir sobre un widget destinado a removerse en 6.0.

@@ -86,7 +86,7 @@ const reactiveUtils = await $arcgis.import("@arcgis/core/core/reactiveUtils.js")
 ```typescript
 // Los componentes exponen los mismos objetos view; léelos en arcgisViewReadyChange,
 // luego aplica reactiveUtils sobre las propiedades de la view.
-import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-map";
 ```
 
 ## Conceptos Clave

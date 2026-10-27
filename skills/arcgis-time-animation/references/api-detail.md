@@ -33,7 +33,7 @@ Build in UTC (`Date.UTC(...)`) to avoid time-zone drift.
 
 ## arcgis-time-slider
 
-`@arcgis/map-components/dist/components/arcgis-time-slider`
+`@arcgis/map-components/components/arcgis-time-slider`
 
 | Property | Description |
 |---|---|

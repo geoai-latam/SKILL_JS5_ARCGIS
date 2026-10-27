@@ -80,7 +80,7 @@ const arcade = await $arcgis.import("@arcgis/core/arcade.js");
 
 ```typescript
 // Expressions live in popupTemplate/labelingInfo/renderer on layers in the component map.
-import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-map";
 ```
 
 ## Key Concepts

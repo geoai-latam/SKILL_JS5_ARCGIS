@@ -47,7 +47,7 @@ A map in the SDK has two parts: a **`Map`** (the data model — basemap, layers,
 ## Quick Start
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-map";
 // <arcgis-map basemap="arcgis/topographic" center="-74.08,4.6" zoom="11"></arcgis-map>
 const mapEl = document.querySelector("arcgis-map");
 mapEl?.addEventListener("arcgisViewReadyChange", (e) => {
@@ -85,7 +85,7 @@ const Map = await $arcgis.import("@arcgis/core/Map.js");
 ### Map Components (recommended for new projects)
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-map";
 ```
 
 ## Key Concepts

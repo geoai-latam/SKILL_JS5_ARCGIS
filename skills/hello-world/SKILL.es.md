@@ -84,7 +84,7 @@ const Map = await $arcgis.import("@arcgis/core/Map.js");
 ### Map Components (recomendado para proyectos nuevos)
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-map";
 ```
 
 ## Conceptos Clave

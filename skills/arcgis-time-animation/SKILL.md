@@ -45,7 +45,7 @@ Time-aware layers filter by a `timeExtent`; the time-slider drives it for playba
 ## Quick Start
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-time-slider";
+import "@arcgis/map-components/components/arcgis-time-slider";
 // <arcgis-map><arcgis-time-slider position="bottom"></arcgis-time-slider></arcgis-map>
 ```
 
@@ -80,7 +80,7 @@ const TimeExtent = await $arcgis.import("@arcgis/core/time/TimeExtent.js");
 ### Map Components (recommended for new projects)
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-time-slider";
+import "@arcgis/map-components/components/arcgis-time-slider";
 ```
 
 ## Key Concepts

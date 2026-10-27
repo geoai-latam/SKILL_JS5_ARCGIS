@@ -82,7 +82,7 @@ const PopupTemplate = await $arcgis.import("@arcgis/core/PopupTemplate.js");
 
 ```typescript
 // Define layer.popupTemplate; el componente arcgis-map renderiza el popup.
-import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-map";
 ```
 
 ## Conceptos Clave

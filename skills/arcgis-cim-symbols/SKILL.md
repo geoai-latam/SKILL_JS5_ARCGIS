@@ -82,7 +82,7 @@ const CIMSymbol = await $arcgis.import("@arcgis/core/symbols/CIMSymbol.js");
 
 ```typescript
 // Use the CIMSymbol in a renderer assigned to a layer on the component map.
-import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-map";
 ```
 
 ## Key Concepts

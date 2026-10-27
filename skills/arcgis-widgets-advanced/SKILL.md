@@ -48,7 +48,7 @@ Advanced UI rounds out a map app: exporting, saved views, orientation, 3D lighti
 ## Quick Start
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-bookmarks";
+import "@arcgis/map-components/components/arcgis-bookmarks";
 // <arcgis-map ...><arcgis-bookmarks position="top-right"></arcgis-bookmarks></arcgis-map>
 ```
 
@@ -71,7 +71,7 @@ import "@arcgis/map-components/dist/components/arcgis-bookmarks";
 ### Direct ESM (recommended for npm/Vite/Webpack)
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-print";
+import "@arcgis/map-components/components/arcgis-print";
 ```
 
 ### Dynamic Imports (CDN)
@@ -83,7 +83,7 @@ const Print = await $arcgis.import("@arcgis/core/widgets/Print.js"); // deprecat
 ### Map Components (recommended for new projects)
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-daylight";
+import "@arcgis/map-components/components/arcgis-daylight";
 ```
 
 ## Key Concepts
@@ -142,7 +142,7 @@ import Bookmarks from "@arcgis/core/widgets/Bookmarks.js"; // deprecated in 5.0
 
 ```typescript
 // ✅ Correct
-import "@arcgis/map-components/dist/components/arcgis-bookmarks";
+import "@arcgis/map-components/components/arcgis-bookmarks";
 ```
 
 **Impact:** building on an API slated for removal in 6.0.

@@ -52,7 +52,7 @@ const view = new SceneView({
 **Use case:** render an existing ArcGIS Online webmap with one element.
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-map";
 // <arcgis-map item-id="<webmap-item-id>"></arcgis-map>
 const el = document.querySelector("arcgis-map");
 el?.addEventListener("arcgisViewReadyChange", (e) => {

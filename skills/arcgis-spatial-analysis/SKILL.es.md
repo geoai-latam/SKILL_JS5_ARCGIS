@@ -79,7 +79,7 @@ const geoprocessor = await $arcgis.import("@arcgis/core/rest/geoprocessor.js");
 
 ```typescript
 // Alimenta inputs desde la view del componente (sketch/query); renderiza outputs como capas.
-import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-map";
 ```
 
 ## Conceptos Clave

@@ -5,7 +5,7 @@
 **Use case:** a spreadsheet view synced with map selection.
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-feature-table";
+import "@arcgis/map-components/components/arcgis-feature-table";
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer.js";
 
 const layer = new FeatureLayer({ url: "https://.../Inspections/FeatureServer/0" });
@@ -26,7 +26,7 @@ await layer.load();
 **Use case:** edit one feature with grouped fields.
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-feature-form";
+import "@arcgis/map-components/components/arcgis-feature-form";
 import FormTemplate from "@arcgis/core/form/FormTemplate.js";
 import FieldElement from "@arcgis/core/form/elements/FieldElement.js";
 

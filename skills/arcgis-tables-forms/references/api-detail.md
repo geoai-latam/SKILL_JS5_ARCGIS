@@ -10,7 +10,7 @@
 
 ## arcgis-feature-table
 
-`@arcgis/map-components/dist/components/arcgis-feature-table`
+`@arcgis/map-components/components/arcgis-feature-table`
 
 | Property | Type | Description |
 |---|---|---|
@@ -26,7 +26,7 @@
 
 ## arcgis-feature-form
 
-`@arcgis/map-components/dist/components/arcgis-feature-form`
+`@arcgis/map-components/components/arcgis-feature-form`
 
 | Property | Type | Description |
 |---|---|---|

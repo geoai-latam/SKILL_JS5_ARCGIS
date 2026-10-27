@@ -10,7 +10,7 @@
 
 ## arcgis-chart
 
-`@arcgis/charts-components/dist/components/arcgis-chart`
+`@arcgis/charts-components/components/arcgis-chart`
 
 | Property | Type | Description |
 |---|---|---|

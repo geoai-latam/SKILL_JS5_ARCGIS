@@ -78,7 +78,7 @@ const SceneView = await $arcgis.import("@arcgis/core/views/SceneView.js");
 
 ```typescript
 // Define environment en <arcgis-scene>, o agrega arcgis-daylight para un control de UI.
-import "@arcgis/map-components/dist/components/arcgis-scene";
+import "@arcgis/map-components/components/arcgis-scene";
 ```
 
 ## Conceptos Clave

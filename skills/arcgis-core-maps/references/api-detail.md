@@ -69,7 +69,7 @@
 
 ## arcgis-map / arcgis-scene (components)
 
-`@arcgis/map-components/dist/components/arcgis-map` (and `arcgis-scene`).
+`@arcgis/map-components/components/arcgis-map` (and `arcgis-scene`).
 
 ### Attributes / Properties
 

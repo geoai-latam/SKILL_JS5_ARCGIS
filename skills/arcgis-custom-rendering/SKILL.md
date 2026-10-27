@@ -80,7 +80,7 @@ const RenderNode = await $arcgis.import("@arcgis/core/views/3d/webgl/RenderNode.
 
 ```typescript
 // Get the SceneView from arcgisViewReadyChange, then attach your RenderNode.
-import "@arcgis/map-components/dist/components/arcgis-scene";
+import "@arcgis/map-components/components/arcgis-scene";
 ```
 
 ## Key Concepts

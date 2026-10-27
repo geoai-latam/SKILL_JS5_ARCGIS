@@ -13,7 +13,7 @@ editor.script = "..."; // element not defined yet
 ### Correct
 
 ```typescript
-import "@arcgis/coding-components/dist/components/arcgis-arcade-editor";
+import "@arcgis/coding-components/components/arcgis-arcade-editor";
 customElements.whenDefined("arcgis-arcade-editor").then(() => { editor.script = "..."; });
 ```
 

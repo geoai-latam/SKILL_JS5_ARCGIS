@@ -82,7 +82,7 @@ const SketchViewModel = await $arcgis.import("@arcgis/core/widgets/Sketch/Sketch
 ### Map Components (recommended for new projects)
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-sketch";
+import "@arcgis/map-components/components/arcgis-sketch";
 ```
 
 ## Key Concepts

@@ -84,7 +84,7 @@ const HeatmapRenderer = await $arcgis.import("@arcgis/core/renderers/HeatmapRend
 
 ```typescript
 // Build the renderer with the Core API, then assign it to a layer added to the component map.
-import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-map";
 ```
 
 ## Key Concepts

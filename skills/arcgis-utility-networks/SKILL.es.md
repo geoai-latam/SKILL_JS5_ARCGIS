@@ -81,7 +81,7 @@ const trace = await $arcgis.import("@arcgis/core/rest/networks/trace.js");
 
 ```typescript
 // El componente de trace analysis provee una UI lista enlazada al mapa.
-import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-map";
 ```
 
 ## Conceptos Clave

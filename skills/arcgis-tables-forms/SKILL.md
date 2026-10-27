@@ -45,7 +45,7 @@ These components present a layer's attributes as a table or an editable form, wi
 ## Quick Start
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-feature-table";
+import "@arcgis/map-components/components/arcgis-feature-table";
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer.js";
 const layer = new FeatureLayer({ url: "https://.../FeatureServer/0" });
 // <arcgis-feature-table reference-element="arcgis-map"></arcgis-feature-table>
@@ -82,7 +82,7 @@ const FeatureLayer = await $arcgis.import("@arcgis/core/layers/FeatureLayer.js")
 ### Map Components (recommended for new projects)
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-feature-form";
+import "@arcgis/map-components/components/arcgis-feature-form";
 ```
 
 ## Key Concepts
@@ -129,7 +129,7 @@ import FeatureTable from "@arcgis/core/widgets/FeatureTable.js"; // deprecated i
 
 ```typescript
 // ✅ Correct
-import "@arcgis/map-components/dist/components/arcgis-feature-table";
+import "@arcgis/map-components/components/arcgis-feature-table";
 ```
 
 **Impact:** building on a widget slated for removal in 6.0.

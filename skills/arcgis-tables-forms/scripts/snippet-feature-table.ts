@@ -1,6 +1,6 @@
 // snippet-feature-table.ts — arcgis-feature-table component bound to a FeatureLayer.
 // Smoke-tested. The element is placed in HTML; here we register it and the layer.
-import "@arcgis/map-components/dist/components/arcgis-feature-table";
+import "@arcgis/map-components/components/arcgis-feature-table";
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer.js";
 
 // <arcgis-feature-table reference-element="arcgis-map"></arcgis-feature-table>

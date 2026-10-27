@@ -48,7 +48,7 @@ UI elements like legends and search are now Map Components placed in the map's s
 ## Quick Start
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-legend";
+import "@arcgis/map-components/components/arcgis-legend";
 // <arcgis-map ...><arcgis-legend position="bottom-left"></arcgis-legend></arcgis-map>
 ```
 
@@ -71,7 +71,7 @@ import "@arcgis/map-components/dist/components/arcgis-legend";
 ### Direct ESM (recommended for npm/Vite/Webpack)
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-layer-list";
+import "@arcgis/map-components/components/arcgis-layer-list";
 ```
 
 ### Dynamic Imports (CDN)
@@ -83,7 +83,7 @@ const Legend = await $arcgis.import("@arcgis/core/widgets/Legend.js"); // deprec
 ### Map Components (recommended for new projects)
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-search";
+import "@arcgis/map-components/components/arcgis-search";
 ```
 
 ## Key Concepts
@@ -114,7 +114,7 @@ import Legend from "@arcgis/core/widgets/Legend.js"; // deprecated in 5.0
 
 ```typescript
 // ✅ Correct
-import "@arcgis/map-components/dist/components/arcgis-legend";
+import "@arcgis/map-components/components/arcgis-legend";
 ```
 
 **Impact:** building on an API slated for removal in 6.0.
@@ -137,13 +137,13 @@ import "@arcgis/map-components/dist/components/arcgis-legend";
 
 ```typescript
 // ❌ Anti-pattern
-import "@arcgis/map-components/dist/components/arcgis-search";
-import "@arcgis/map-components/dist/components/arcgis-print"; // unused here
+import "@arcgis/map-components/components/arcgis-search";
+import "@arcgis/map-components/components/arcgis-print"; // unused here
 ```
 
 ```typescript
 // ✅ Correct
-import "@arcgis/map-components/dist/components/arcgis-search"; // only what's used
+import "@arcgis/map-components/components/arcgis-search"; // only what's used
 ```
 
 **Impact:** larger bundle from unused components.

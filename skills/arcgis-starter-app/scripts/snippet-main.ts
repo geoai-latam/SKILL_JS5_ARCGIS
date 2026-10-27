@@ -1,6 +1,6 @@
 // snippet-main.ts — the entry point scaffold.sh generates. Smoke-tested with tsc --noEmit.
-import "@arcgis/map-components/dist/components/arcgis-map";
-import "@arcgis/map-components/dist/components/arcgis-zoom";
+import "@arcgis/map-components/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-zoom";
 import "@esri/calcite-components/dist/components/calcite-shell";
 import esriConfig from "@arcgis/core/config.js";
 

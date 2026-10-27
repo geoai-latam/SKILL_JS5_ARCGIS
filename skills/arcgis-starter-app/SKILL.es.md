@@ -80,7 +80,7 @@ const esriConfig = await $arcgis.import("@arcgis/core/config.js");
 ### Map Components (recomendado para proyectos nuevos)
 
 ```typescript
-import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-map";
 ```
 
 ## Conceptos Clave
@@ -139,7 +139,7 @@ import { ArcgisMap } from "@arcgis/map-components-react";
 
 ```typescript
 // ✅ Correcto
-import "@arcgis/map-components/dist/components/arcgis-map"; // usa el custom element + eventos onArcgis*
+import "@arcgis/map-components/components/arcgis-map"; // usa el custom element + eventos onArcgis*
 ```
 
 **Impacto:** capa wrapper innecesaria; React 19 soporta custom elements de forma nativa.

@@ -81,7 +81,7 @@ const FeatureEffect = await $arcgis.import("@arcgis/core/layers/support/FeatureE
 
 ```typescript
 // Define effect/featureEffect en una capa agregada al map del componente.
-import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-map";
 ```
 
 ## Conceptos Clave

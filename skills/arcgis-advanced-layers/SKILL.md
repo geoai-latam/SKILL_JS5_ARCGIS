@@ -78,7 +78,7 @@ const MapImageLayer = await $arcgis.import("@arcgis/core/layers/MapImageLayer.js
 
 ```typescript
 // Create the layer with the Core API, then add it to the component's map.
-import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-map";
 ```
 
 ## Key Concepts
