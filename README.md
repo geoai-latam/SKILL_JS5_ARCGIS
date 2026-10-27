@@ -3,7 +3,7 @@
 [Español](./README.es.md) · English
 
 A bilingual (ES/EN) library of **Agent Skills** for the
-[ArcGIS Maps SDK for JavaScript 5.0+](https://developers.arcgis.com/javascript/). Each skill
+[ArcGIS Maps SDK for JavaScript 5.1](https://developers.arcgis.com/javascript/). Each skill
 gives an AI coding agent (Claude Code, Cursor, GitHub Copilot, Codex, OpenCode) accurate,
 up-to-date guidance for building web mapping applications with the SDK.
 
@@ -27,11 +27,22 @@ the English `SKILL.md`.**
 
 ## Status
 
-**v1.0.0 — all 35 skills complete.** Every skill is bilingual (EN/ES) and green across the full
-gate: validate-skills, lint-frontmatter, bilingual-sync, markdownlint, smoke (snippets type-checked
-against the real SDK 5.0.19), eval structure, and validator unit tests. See
-[`docs/planning/v2.md`](./docs/planning/v2.md) for the roadmap and [`skills/README.md`](./skills/README.md)
-for the catalog.
+**v1.1.0 — all 35 skills validated against SDK 5.1.27.** Each skill was checked one by one:
+
+- **It compiles.** Every code block in the skills (1059) is type-checked against the real 5.1.27
+  types, and every `@arcgis/*` import is checked against the package `exports` (a path tsc accepts
+  can still fail in Vite and Node).
+- **It runs.** Each skill has a runtime case in `tests/runtime/casos/` that executes what the skill
+  claims in Chromium, against public Esri services, and reads the result (pixels, for the
+  visualization skills).
+- **It is not filler.** Pitfalls that turned out false were removed; the silent failures that
+  were found (no error, wrong result) were added with their measurement.
+
+What could not be measured is listed too: anything that needs a signed-in user (assistant LLM
+answers, utility network traces, knowledge graph queries, print export). The full report, in
+Spanish, is [`docs/validacion/INFORME.md`](./docs/validacion/INFORME.md), and the per-skill record
+is [`docs/validacion/README.md`](./docs/validacion/README.md). The catalog is
+[`skills/README.md`](./skills/README.md).
 
 ## Install
 

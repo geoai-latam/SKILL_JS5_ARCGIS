@@ -1,7 +1,7 @@
 # Informe final: las 35 skills contra el SDK 5.1
 
-Rama `actualizacion-5.1`, 2026-10-27. Son 40 commits sobre `main`. Nada se publicó ni se
-empujó: abrir el repo lo decide Sebastián. El detalle de cada skill está en
+Rama `actualizacion-5.1`, 2026-10-27. Mezclada a `main`; el repo se abrió público el
+2026-10-27. El detalle de cada skill está en
 [`README.md`](./README.md) y los cambios del SDK en [`cambios-sdk-5.1.md`](./cambios-sdk-5.1.md).
 
 ## El resultado en una línea

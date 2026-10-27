@@ -3,7 +3,7 @@
 Español · [English](./README.md)
 
 Una librería bilingüe (ES/EN) de **Agent Skills** para el
-[ArcGIS Maps SDK for JavaScript 5.0+](https://developers.arcgis.com/javascript/). Cada skill
+[ArcGIS Maps SDK for JavaScript 5.1](https://developers.arcgis.com/javascript/). Cada skill
 le da a un agente de código (Claude Code, Cursor, GitHub Copilot, Codex, OpenCode) guía
 precisa y actualizada para construir aplicaciones web de mapas con el SDK.
 
@@ -28,11 +28,22 @@ docs son bilingües; la activación la maneja el `SKILL.md` en inglés.**
 
 ## Estado
 
-**v1.0.0 — las 35 skills completas.** Cada skill es bilingüe (EN/ES) y está en verde en todo el
-gate: validate-skills, lint-frontmatter, bilingual-sync, markdownlint, smoke (snippets type-checked
-contra el SDK real 5.0.19), estructura de evals, y tests unitarios. Ver
-[`docs/planning/v2.md`](./docs/planning/v2.md) para el roadmap y [`skills/README.md`](./skills/README.md)
-para el catálogo.
+**v1.1.0 — las 35 skills validadas contra el SDK 5.1.27.** Se revisaron una por una:
+
+- **Que compile.** Cada bloque de código de las skills (1059) se compila contra los tipos reales
+  de 5.1.27, y cada import `@arcgis/*` se coteja con el `exports` del paquete (una ruta que tsc
+  acepta puede fallar en Vite y en Node).
+- **Que corra.** Cada skill tiene un caso de runtime en `tests/runtime/casos/` que ejecuta lo que
+  la skill afirma en Chromium, contra servicios públicos de Esri, y lee el resultado (los píxeles,
+  en las de visualización).
+- **Que no sea relleno.** Los pitfalls que resultaron falsos se quitaron; los fallos silenciosos
+  que aparecieron (sin error y con resultado equivocado) se agregaron con su medida.
+
+También queda escrito lo que no se pudo medir: todo lo que pide un usuario con sesión (respuestas
+del LLM del assistant, trazados de utility network, consultas a knowledge graphs, exportar un
+print). El informe completo está en [`docs/validacion/INFORME.md`](./docs/validacion/INFORME.md) y
+el registro por skill en [`docs/validacion/README.md`](./docs/validacion/README.md). El catálogo
+está en [`skills/README.md`](./skills/README.md).
 
 ## Instalación
 

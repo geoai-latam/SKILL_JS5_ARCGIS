@@ -3,6 +3,23 @@
 All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/) and the project follows semantic versioning.
 
+## [1.1.0] - 2026-10-27
+
+### Changed
+
+- All 35 skills updated to ArcGIS Maps SDK for JavaScript 5.1.27 and validated one by one: code
+  blocks type-checked (1059), a runtime case per skill in Chromium, false pitfalls removed and
+  measured silent failures added. Report: `docs/validacion/INFORME.md`.
+- Component imports use `<package>/components/<tag>` (the 5.x path).
+- `arcgis-ai-components` 0.3.0: web-map requirement, `agent-utils` (`FunctionAgent`), pnpm pairing
+  of `@langchain/core`.
+
+### Added
+
+- `scripts/check-code-blocks.mjs`: compiles every fenced block and checks `@arcgis/*` / `@esri/*`
+  imports against the package `exports`.
+- `tests/runtime/`: the runtime harness and its 35 cases.
+
 ## [1.0.0] - 2026-05-31
 
 All 35 catalog skills (plus the `hello-world` reference) are complete, bilingual (EN/ES), and
