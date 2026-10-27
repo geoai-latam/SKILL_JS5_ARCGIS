@@ -44,7 +44,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 15 | `arcgis-geometry-operations` | aporta con arreglos | el Inicio Rápido lanzaba con lon/lat; recomendaba geometryEngine (deprecado) |
 | 16 | `arcgis-imagery` | aporta con arreglos | la función NDVI que enseñaba devuelve 0–200 (101), no −1..1; pitfall falso del tile layer |
 | 17 | `arcgis-interaction` | aporta con arreglos | hitTest tipado; en capas de servicio el hit trae solo objectid sin outFields; 2 pitfalls falsos (suelo 3D, create apilado) |
-| 18 | `arcgis-knowledge-graphs` | pendiente | |
+| 18 | `arcgis-knowledge-graphs` | aporta con arreglos (parcial) | sin grafo accesible (token): geometría en properties, no e.geometry; fetch sin sesión queda pendiente, no 403; ejemplos que no compilaban; streaming + bindParameters |
 | 19 | `arcgis-layers` | pendiente | |
 | 20 | `arcgis-map-tools` | pendiente | |
 | 21 | `arcgis-performance` | pendiente | |
@@ -640,3 +640,35 @@ cliente y el servicio público de estados de EE. UU.
 **¿Aporta?** Sí. Un agente sin ella escribe `results[0].graphic` (4.x, no compila) o, peor, lee
 `graphic.attributes.nombre` de una capa de servicio y recibe `undefined` sin ningún error. Las dos cosas las
 corrige ahora la skill, con la medida al lado.
+
+### 18. `arcgis-knowledge-graphs` — aporta con arreglos (parcial)
+
+**¿Corre en 5.1?** Dos de los tres ejemplos no compilaban: `graph.id` no existe en `KnowledgeGraph`, y
+`executeQuery(graph, { openCypherQuery })` falla el tipo porque en 5.1 el parámetro es la clase `GraphQuery`.
+Paradójicamente, el ejemplo de la documentación de Esri usa el mismo objeto plano.
+
+**Validación parcial, y por qué.** Todos los grafos públicos de ejemplo (sampleserver7) responden 499 "Token
+Required", y la validación no inicia sesión. Así que **no corrí ninguna consulta contra un grafo vivo**. Medí lo que se
+puede medir sin servidor (`tests/runtime/casos/arcgis-knowledge-graphs.ts`) y el resto lo comprobé contra los tipos
+y la documentación de 5.1. En la skill quedó marcado qué es cada cosa.
+
+**Lo que estaba mal (y ya se arregló):**
+
+- **El pitfall 2 enseñaba `e.geometry`, que no existe.** Medido: en un `Entity`, `"geometry" in e` es `false`;
+  la geometría es una propiedad más (`e.properties.shape`) y su nombre sale del modelo de datos (la propiedad con
+  `fieldType` `"esriFieldTypeGeometry"`). Con el código viejo, cada graphic sale vacío y sin error.
+- **Falso: "sin auth, 403".** Medido sobre el grafo protegido: `fetchKnowledgeGraph` no rechaza. A los 15 s sigue
+  pendiente, con el diálogo de inicio de sesión del SDK en el DOM, y no acepta `signal`.
+  `KnowledgeGraphLayer.load({ signal })` sí aborta (`AbortError`).
+- **Relleno:** tres pitfalls eran solo comentarios sin código ("usa streaming/paginación", "no mezcles ids entre
+  servicios", "autentícate"), y el inicio rápido se quedaba en el `fetch`.
+- **Lo que faltaba y ahora enseña:** `executeQueryStreaming` como camino por defecto (según la doc, trae todas
+  las coincidencias aunque pasen de `maxRecordCount`; `executeQuery` se corta ahí), cómo leer `resultRowsStream`,
+  que las filas son arrays en el orden del `RETURN`, y `bindParameters` en vez de concatenar texto. Medido: un
+  `Polygon` se conserva como geometría para `ST_Intersects`. También `KnowledgeGraphLayer`, `LinkChartLayer`,
+  `WebLinkChart` y `arcgis-link-chart` (medido: registrado en 5.1).
+
+**¿Aporta?** Sí, con la salvedad de que la parte del servidor no está medida. La versión anterior era casi toda
+relleno y su único código de manejo de resultados (`e.geometry`) fallaba en silencio. La nueva le ahorra a un
+agente los errores que comete sin ella: el objeto plano que no compila, la geometría en el lugar equivocado y la
+concatenación inyectable. Lo pendiente: correr la consulta contra un grafo con credenciales propias de Sebastián.

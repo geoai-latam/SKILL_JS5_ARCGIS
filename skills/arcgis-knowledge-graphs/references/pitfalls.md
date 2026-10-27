@@ -1,121 +1,128 @@
 # Extended Pitfalls: Knowledge Graphs
 
 > Extends the Top 3 in SKILL.md. Format: Anti-pattern / Correct / Impact / Diagnosis.
+> Measured items come from `tests/runtime/casos/arcgis-knowledge-graphs.ts` without a live graph (token required).
 
-## Pitfall 1: Property/type name mismatches
-
-### Anti-pattern
-
-```text
-MATCH (p:person) ... // type is "Person"
-```
-
-### Correct
-
-```text
-MATCH (p:Person) ...
-```
-
-### Impact
-
-Empty results from wrong-cased types.
-
-### Diagnosis
-
-No matches; check the data model's exact type names.
-
----
-
-## Pitfall 2: Returning entire entities when you need fields
+## Pitfall 1: Type and property names that do not match the data model
 
 ### Anti-pattern
 
 ```text
-RETURN p  // heavy full entities
+MATCH (p:supplier) RETURN p   // the type is "Supplier"
 ```
 
 ### Correct
 
-```text
-RETURN p.name, p.id  // only needed fields
+```typescript
+const names = graph.dataModel.entityTypes.map((t) => t.name); // use these exact strings
 ```
 
 ### Impact
 
-Large payloads.
+No matches and no error (documented behavior of openCypher labels; not measured).
 
 ### Diagnosis
 
-Slow queries; project specific fields.
+Empty `resultRowsStream`; compare the labels against `dataModel.entityTypes`.
 
 ---
 
-## Pitfall 3: Ignoring pagination/streaming
+## Pitfall 2: Passing a plain object as the query
 
 ### Anti-pattern
 
 ```typescript
-// Expecting all results in one synchronous batch
+await knowledgeGraphService.executeQuery(graph, { openCypherQuery: "MATCH (n) RETURN n LIMIT 10" });
 ```
 
 ### Correct
 
 ```typescript
-// Use streaming/paged execution for large result sets.
+await knowledgeGraphService.executeQuery(graph, new GraphQuery({ openCypherQuery: "MATCH (n) RETURN n LIMIT 10" }));
 ```
 
 ### Impact
 
-Memory spikes on big graphs.
+TS2345 in 5.1: the parameter is the `GraphQuery` class. Esri's own doc example uses the plain object.
 
 ### Diagnosis
 
-Browser memory grows; page/stream results.
+"missing the following properties from type 'GraphQuery': declaredClass, ...".
 
 ---
 
-## Pitfall 4: No auth for a secured graph
+## Pitfall 3: Never reading the stream
 
 ### Anti-pattern
 
 ```typescript
-knowledgeGraphService.fetchKnowledgeGraph(securedUrl); // no sign-in
+const result = await knowledgeGraphService.executeQueryStreaming(graph, query);
+console.log(result.resultRows); // undefined: streaming results have no resultRows
 ```
 
 ### Correct
 
 ```typescript
-// Authenticate first (see arcgis-authentication).
+const reader = result.resultRowsStream.getReader();
+for (let c = await reader.read(); !c.done; c = await reader.read()) handle(c.value);
 ```
 
 ### Impact
 
-403 on fetch/query.
+Nothing is read; the rows only exist in `resultRowsStream`.
 
 ### Diagnosis
 
-Auth errors; sign in.
+`resultRows` is undefined on a `GraphQueryStreamingResult`.
 
 ---
 
-## Pitfall 5: Mixing graph ids across services
+## Pitfall 4: Waiting forever on a secured graph
 
 ### Anti-pattern
 
 ```typescript
-// Using ids from one graph against another service
+const graph = await knowledgeGraphService.fetchKnowledgeGraph(securedUrl); // no auth, no timeout
 ```
 
 ### Correct
 
 ```typescript
-// Keep ids scoped to the graph they came from.
+const layer = new KnowledgeGraphLayer({ url: securedUrl });
+const controller = new AbortController();
+setTimeout(() => controller.abort(), 15000);
+await layer.load({ signal: controller.signal }); // or configure auth before fetching
 ```
 
 ### Impact
 
-Not-found errors on cross-service ids.
+Measured: `fetchKnowledgeGraph` stayed pending for 15 s with the sign-in dialog in the DOM; it accepts no `signal`.
+`KnowledgeGraphLayer.load({ signal })` rejected with `AbortError`.
 
 ### Diagnosis
 
-Missing entities; verify the id's source graph.
+A spinner that never ends and a sign-in dialog the user may not expect.
+
+---
+
+## Pitfall 5: Treating a row as an object
+
+### Anti-pattern
+
+```typescript
+for (const row of chunk.value) console.log(row.s.properties.Name); // rows are arrays
+```
+
+### Correct
+
+```typescript
+for (const [s, p] of chunk.value) console.log(s.properties.Name, p?.properties?.Name); // RETURN s, p
+```
+
+### Impact
+
+`undefined` reads: each row is an array in the order of the `RETURN` clause.
+
+### Diagnosis
+
+Values appear only when indexed by position.

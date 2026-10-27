@@ -1,17 +1,19 @@
 ---
 name: arcgis-knowledge-graphs
 description: >
-  Query ArcGIS Knowledge graphs with the ArcGIS Maps SDK for JavaScript 5.0:
-  connect via knowledgeGraphService.fetchKnowledgeGraph, run openCypher-style
-  queries for entities and relationships, and visualize with a link chart. Use
-  this skill whenever the user connects to a knowledge graph, runs a graph query,
-  or explores entities and their relationships.
+  Query ArcGIS Knowledge graphs with the ArcGIS Maps SDK for JavaScript 5.1:
+  fetchKnowledgeGraph for the data model, executeQueryStreaming with GraphQuery
+  instances and bindParameters (openCypher), reading rows from the stream,
+  geometry inside entity properties, and showing results with KnowledgeGraphLayer,
+  LinkChartLayer and arcgis-link-chart. Use this skill whenever the user connects
+  to a knowledge graph, runs a graph query, or explores entities and their
+  relationships.
 lang: en
-version: 0.1.0
+version: 0.2.0
 status: stable
-sdk_version: ">=5.0 <6.0"
+sdk_version: ">=5.1 <6.0"
 created: 2026-05-31
-updated: 2026-05-31
+updated: 2026-10-27
 category: specialized
 tags:
   - knowledge-graph
@@ -22,7 +24,7 @@ tags:
 requires:
   - arcgis-authentication
 packages:
-  - "@arcgis/core@^5.0"
+  - "@arcgis/core@^5.1"
 maintainer: "GeoAI LATAM"
 license: MIT
 ---
@@ -34,32 +36,49 @@ license: MIT
 
 ## Overview
 
-A knowledge graph stores entities and relationships; you query it with an openCypher-style language.
+A knowledge graph stores entities and relationships; you query it with Esri's openCypher.
 
-- **Problem it solves:** modeling and querying connected, non-tabular data.
-- **Who it serves:** developers building investigative/link-analysis apps.
-- **Pattern it teaches:** fetch the graph, run a query, render results (map + link chart).
+- **Problem it solves:** querying connected, non-tabular data and putting it on a map or a link chart.
+- **Who it serves:** developers building investigative and link-analysis apps on ArcGIS Enterprise or Online.
+- **Pattern it teaches:** sign in, fetch the graph, stream a bound query, read rows, render.
 - **What it does NOT cover:** feature layers (see `arcgis-layers`) or auth setup (see `arcgis-authentication`).
+
+> Validation note: every public sample graph asks for a token, and the validation never signs in, so queries were
+> **not** run against a live graph. What is measured is marked as measured; the rest comes from the 5.1 typings and
+> docs.
 
 ## Quick Start
 
 ```typescript
 import * as knowledgeGraphService from "@arcgis/core/rest/knowledgeGraphService.js";
-const graph = await knowledgeGraphService.fetchKnowledgeGraph("https://.../KnowledgeGraphServer");
+import GraphQueryStreaming from "@arcgis/core/rest/knowledgeGraph/GraphQueryStreaming.js";
+
+const graph = await knowledgeGraphService.fetchKnowledgeGraph(url); // sign in first if it is secured
+const result = await knowledgeGraphService.executeQueryStreaming(graph, new GraphQueryStreaming({
+  openCypherQuery: "MATCH (s:Supplier) WHERE s.Name = $name RETURN s LIMIT 100",
+  bindParameters: { name: "Supplier 5" },
+}));
+const reader = result.resultRowsStream.getReader();
+for (let chunk = await reader.read(); !chunk.done; chunk = await reader.read()) {
+  for (const row of chunk.value) console.log(row[0]); // a row is an array, one item per RETURN value
+}
 ```
 
 ## Decision Tree
 
-1. **Connecting to a graph service?**
-   - Yes → `fetchKnowledgeGraph(url)` to get the graph object.
+1. **Connecting?**
+   - Secured graph (almost always) → set up auth first (`arcgis-authentication`), then `fetchKnowledgeGraph(url)`.
 
-2. **Running a query?**
-   - Yes → execute an openCypher query for entities/relationships.
+2. **Querying?**
+   - Default → `executeQueryStreaming` with `new GraphQueryStreaming({ openCypherQuery, bindParameters })`.
+   - Full-text search → `executeSearchStreaming`.
+   - Small fixed query and you accept the `maxRecordCount` cap → `executeQuery` with `new GraphQuery(...)`.
 
-3. **Visualizing relationships?**
-   - Yes → use a link-chart view alongside the map.
+3. **Showing results?**
+   - Entities with geometry on a map → `KnowledgeGraphLayer` (scope it with `inclusionModeDefinition`).
+   - Relationships → `LinkChartLayer` in a `WebLinkChart`, rendered by `arcgis-link-chart`.
 
-**Default:** fetch then query; render entities with geometry on the map.
+**Default:** fetch, then streaming query with bind parameters.
 
 ## Import Patterns
 
@@ -67,6 +86,8 @@ const graph = await knowledgeGraphService.fetchKnowledgeGraph("https://.../Knowl
 
 ```typescript
 import * as knowledgeGraphService from "@arcgis/core/rest/knowledgeGraphService.js";
+import GraphQueryStreaming from "@arcgis/core/rest/knowledgeGraph/GraphQueryStreaming.js";
+import KnowledgeGraphLayer from "@arcgis/core/layers/KnowledgeGraphLayer.js";
 ```
 
 ### Dynamic Imports (CDN)
@@ -78,71 +99,89 @@ const kg = await $arcgis.import("@arcgis/core/rest/knowledgeGraphService.js");
 ### Map Components (recommended for new projects)
 
 ```typescript
-// Plot entities with geometry on the map; pair with a link chart for relationships.
 import "@arcgis/map-components/components/arcgis-map";
+import "@arcgis/map-components/components/arcgis-link-chart"; // registered in 5.1 (measured)
 ```
 
 ## Key Concepts
 
-### Concept 1: Fetch the graph
+### Concept 1: Fetch the graph (and its data model)
 
-`fetchKnowledgeGraph(url)` returns a `KnowledgeGraph` object carrying the data model (entity/
-relationship types) needed to build and interpret queries.
+`fetchKnowledgeGraph(url)` returns a `KnowledgeGraph` with `url`, `dataModel` (entity and relationship types, their
+properties, the spatial reference) and `serviceDefinition` (including `maxRecordCount`). Type and property names in
+your openCypher must match the data model exactly. It has no `id`; the old example that logged `graph.id` does not
+compile in 5.1.
 
-### Concept 2: openCypher queries
+### Concept 2: Streaming queries with bind parameters
 
-Queries use an openCypher-style syntax to match entities and relationships, returning records you
-map to UI — graph nodes/edges and/or map graphics.
+`executeQueryStreaming` returns `resultRowsStream`, a `ReadableStream` whose chunks are arrays of rows. Per the 5.1
+docs it returns **all** matches, past `maxRecordCount`, while `executeQuery` stops at that cap. Values go in
+`bindParameters` (`$name` in the query): strings, lists of ids, and geometries (measured: a `Polygon` is kept as a
+geometry for `esri.graph.ST_Intersects($zona, s.shape)`), never concatenated into the query string. Pass a class
+instance: the 5.1 typings reject a plain `{ openCypherQuery }` object for `executeQuery`.
 
 ### Concept 3: Entities, relationships, geometry
 
-Entities may have geometry (plot them on the map); relationships connect entities (show them in a
-link chart). The data model defines which types exist.
+Each row item is an `Entity`, `Relationship`, `Path` or a plain value. An entity has `typeName`, `id` and
+`properties`; **the geometry is one of the properties** (measured: `"geometry" in entity === false`; the point was in
+`entity.properties.shape`). The property name comes from the data model: the one whose `fieldType` is
+`"esriFieldTypeGeometry"`.
 
 ## Common Pitfalls (Top 3)
 
-### Pitfall 1: Querying before fetching the graph
+### Pitfall 1: Reading `entity.geometry`
 
 ```typescript
 // ❌ Anti-pattern
-runQuery(url, cypher); // no graph object / data model
+entities.forEach((e) => graphicsLayer.add(new Graphic({ geometry: e.geometry }))); // Entity has no geometry field
 ```
 
 ```typescript
 // ✅ Correct
-const graph = await knowledgeGraphService.fetchKnowledgeGraph(url);
-// then query against `graph`
+const type = graph.dataModel.entityTypes.find((t) => t.name === "Supplier");
+const shape = type?.properties.find((p) => p.fieldType === "esriFieldTypeGeometry")?.name;
+entities.forEach((e) => { if (shape && e.properties[shape]) graphicsLayer.add(new Graphic({ geometry: e.properties[shape] })); });
 ```
 
-**Impact:** queries can't be built/interpreted without the data model.
+**Impact:** measured on an `Entity` built like the service returns it: `geometry` is not a member and every
+graphic comes out empty, without an error.
 
-### Pitfall 2: Assuming all entities have geometry
+### Pitfall 2: Fetching a secured graph without signing in
 
 ```typescript
 // ❌ Anti-pattern
-entities.forEach((e) => map.add(graphicFrom(e.geometry))); // some have none
+const graph = await knowledgeGraphService.fetchKnowledgeGraph(securedUrl); // no auth configured
 ```
 
 ```typescript
 // ✅ Correct
-entities.filter((e) => e.geometry).forEach((e) => map.add(graphicFrom(e.geometry)));
+// Register OAuthInfo or a token with IdentityManager first (see arcgis-authentication),
+// or load through a KnowledgeGraphLayer and pass an AbortSignal so the UI can give up.
 ```
 
-**Impact:** errors plotting entities without geometry.
+**Impact:** measured on Esri's public sample graph (499 "Token Required"): the promise did **not** reject. After
+15 s it was still pending with the SDK's sign-in dialog in the DOM. `fetchKnowledgeGraph(url)` takes no
+`signal`; `KnowledgeGraphLayer.load({ signal })` did abort cleanly (`AbortError`).
 
-### Pitfall 3: Unbounded graph queries
+### Pitfall 3: Building queries by string concatenation, or using `executeQuery` for big sets
 
 ```typescript
 // ❌ Anti-pattern
-// MATCH everything with no limit
+await knowledgeGraphService.executeQuery(graph, new GraphQuery({
+  openCypherQuery: `MATCH (s:Supplier) WHERE s.Name = '${userInput}' RETURN s`,
+})); // injectable, and capped at maxRecordCount
 ```
 
 ```typescript
 // ✅ Correct
-// Constrain with filters and a LIMIT to avoid huge result sets.
+await knowledgeGraphService.executeQueryStreaming(graph, new GraphQueryStreaming({
+  openCypherQuery: "MATCH (s:Supplier) WHERE s.Name = $name RETURN s",
+  bindParameters: { name: userInput },
+}));
 ```
 
-**Impact:** slow queries and heavy payloads.
+**Impact:** user text can rewrite the query; per the docs, `executeQuery` silently returns at most
+`serviceDefinition.maxRecordCount` rows (not measured: no reachable graph).
 
 ## When to Read references/
 
@@ -160,9 +199,15 @@ entities.filter((e) => e.geometry).forEach((e) => map.add(graphicFrom(e.geometry
 
 ## Reference Samples
 
-- [Knowledge graph](https://developers.arcgis.com/javascript/latest/api-reference/esri-rest-knowledgeGraphService.html)
+- [Query a knowledge graph](https://developers.arcgis.com/javascript/latest/sample-code/knowledgegraph-query/)
 - [knowledgeGraphService](https://developers.arcgis.com/javascript/latest/api-reference/esri-rest-knowledgeGraphService.html)
 
 ## Changelog
 
+- **0.2.0** (2026-10-27): SDK 5.1, partial validation: public graphs need a token and the validation never signs
+  in. Measured in `tests/runtime/casos/arcgis-knowledge-graphs.ts`: entity geometry lives in `properties`, not
+  `entity.geometry` (the old pitfall 2 code returned nothing); a secured graph leaves `fetchKnowledgeGraph` pending
+  behind the sign-in dialog instead of a 403. Fixed the examples that did not compile (`graph.id`, plain
+  `{ openCypherQuery }`), made streaming with `bindParameters` the default, and replaced three empty pitfalls
+  (comment-only "do streaming", "keep ids scoped") with KnowledgeGraphLayer, LinkChartLayer and `arcgis-link-chart`.
 - **0.1.0** (2026-05-31): Initial release.
