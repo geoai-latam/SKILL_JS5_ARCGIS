@@ -16,8 +16,10 @@
 |---|---|---|
 | `solve(url, RouteParameters)` | `Promise<RouteSolveResult>` | Directions & route geometry |
 
-`RouteParameters` (`rest/support/RouteParameters.js`): `stops` (FeatureSet), `returnRoutes`,
-`returnDirections`, `directionsLanguage`.
+`RouteParameters` (`rest/support/RouteParameters.js`): `stops` (`FeatureSet` or `Collection<Stop>`; a raw array
+fails), `returnRoutes`, `returnDirections` (off by default), `directionsLanguage`.
+
+Result: `routeResults[0].route` (polyline graphic with `Total_*` attributes) and `routeResults[0].directions`.
 
 ---
 
@@ -37,8 +39,9 @@
 
 | Module | Function | Use |
 |---|---|---|
-| `rest/places.js` | `queryPlacesNearPoint` / `queryPlacesWithinExtent` | POI search |
-| `rest/query.js` | `executeQueryJSON(url, query)` | Standalone feature query |
+| `rest/places.js` | `queryPlacesNearPoint(params)` / `queryPlacesWithinExtent(params)` | POI search; no URL argument |
+| `rest/query.js` | `executeQueryJSON(layerUrl, query)` | Standalone query; a service root gives 0 features |
 | `rest/query.js` | `executeForCount(url, query)` | Count only |
 
-World route/geocode/places services require `esriConfig.apiKey`.
+World route/geocode/places services require `esriConfig.apiKey`; without it the SDK opens a sign-in dialog and the
+promise stays pending (measured).

@@ -16,8 +16,8 @@ const candidates = await locator.addressToLocations(GEOCODE_URL, {
 
 **Notes:**
 
-- Requires `esriConfig.apiKey`.
-- Results include `address`, `location`, and `score`.
+- Requires `esriConfig.apiKey`; without it a sign-in dialog opens and the call waits.
+- Results include `address`, `location` (WGS84) and `score`; `attributes` needs `outFields`.
 
 ---
 
@@ -36,7 +36,7 @@ const solve = await route.solve(ROUTE_URL, params);
 
 **Notes:**
 
-- `stops` is a FeatureSet of point graphics.
+- `stops` is a FeatureSet of point graphics (or a `Collection<Stop>`).
 - Set `returnDirections` for turn-by-turn text.
 
 ---
@@ -57,5 +57,5 @@ const fs = await query.executeQueryJSON(`${SERVICE_URL}/0`, {
 
 **Notes:**
 
-- `executeQueryJSON` returns a FeatureSet directly.
+- `executeQueryJSON` returns a FeatureSet directly; the URL needs the layer index (`/0`).
 - Use `executeForCount` when you only need a number.

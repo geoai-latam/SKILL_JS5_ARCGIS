@@ -1,4 +1,5 @@
-// snippet-route.ts — solve a route between stops. Smoke-tested.
+// snippet-route.ts — solve a route between stops. Smoke-tested (SDK 5.1).
+// Needs esriConfig.apiKey: without it the SDK opens a sign-in dialog and this promise waits.
 import * as route from "@arcgis/core/rest/route.js";
 import RouteParameters from "@arcgis/core/rest/support/RouteParameters.js";
 import FeatureSet from "@arcgis/core/rest/support/FeatureSet.js";
@@ -15,6 +16,7 @@ export async function solveRoute() {
       new Graphic({ geometry: new Point({ longitude: -74.05, latitude: 4.65 }) }),
     ],
   });
-  const params = new RouteParameters({ stops, returnRoutes: true });
+  // A RouteParameters instance: raw arrays or a plain object fail with "t.toJSON is not a function".
+  const params = new RouteParameters({ stops, returnRoutes: true, returnDirections: true, directionsLanguage: "es" });
   return route.solve(ROUTE_URL, params);
 }

@@ -50,7 +50,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 21 | `arcgis-performance` | aporta con arreglos | import() solo ahorra 24 KB de 1494 (el SDK ya se divide); el import raíz no resuelve; 20 vistas sin destroy pierden contexto; destroy() se lleva el mapa compartido |
 | 22 | `arcgis-popup-templates` | aporta con arreglos | 3 pitfalls falsos; los reales: outFields en funciones, zona horaria, separadores |
 | 23 | `arcgis-portal-content` | aporta con arreglos | su paginación duplicaba (start -1 reinicia); sortField sin sortOrder = lo más viejo |
-| 24 | `arcgis-rest-services` | pendiente | |
+| 24 | `arcgis-rest-services` | aporta con arreglos | sin key no hay 401: diálogo y promesa colgada; raíz del servicio = 0 features |
 | 25 | `arcgis-scene-environment` | pendiente | |
 | 26 | `arcgis-smart-mapping` | pendiente | |
 | 27 | `arcgis-spatial-analysis` | pendiente | |
@@ -803,3 +803,28 @@ nunca, o destruir y perder el mapa compartido.
 - **Relleno quitado:** dos pitfalls extendidos que eran solo un comentario (expiración del token y membresía de grupos), cambiados por otros medidos. El pitfall de contenido privado sin sesión se dejó como concepto: es cierto por diseño y no se puede medir sin una cuenta.
 
 **Por qué aporta:** las tres trampas principales (el bucle infinito, el orden ascendente y el cargador equivocado) son errores que un agente comete casi seguro y que no se notan a simple vista. La versión anterior enseñaba la primera y la segunda en su propio código.
+
+### 24. `arcgis-rest-services` — aporta con arreglos
+
+**Evidencia** (5.1.27, `tests/runtime/casos/arcgis-rest-services.ts`, 14/14 en verde, servicios públicos y sin API key):
+
+- **El Pitfall 1 viejo («401 sin key») era falso**, y en la práctica es peor. Se midió en `geocode-api`, `route-api` y `places`:
+  - el IdentityManager dispara `dialog-create` y se abre un `calcite-dialog` de inicio de sesión;
+  - no hay respuesta HTTP y la promesa queda pendiente, así que el `catch` nunca corre.
+
+  Un agente que espera un 401 no lo va a ver nunca.
+- **Una query a la raíz del MapServer** devuelve **0 features sin error**, cuando la skill decía que fallaba. Con `/0` devolvió 9. En la capa:
+  - `where 1=1` trae 1000 de 3557 filas (`exceededTransferLimit: true`);
+  - sin `returnGeometry` la geometría llega en `null`.
+- **Paradas crudas o un objeto plano en vez de `RouteParameters`**: fallan con `TypeError: t.toJSON is not a function`, un error que no dice qué está mal. Con un `FeatureSet` o una `Collection<Stop>` resuelve (servicio de muestra de San Diego: polilínea, 14.79 min).
+- **Direcciones de ruta**: no llegan por defecto. Con `returnDirections` y `directionsLanguage: "es"` llegan 12 maniobras («Salga desde Location 1»).
+- **Geocodificación**:
+  - `attributes` llega con 0 claves sin `outFields`; con `outFields` trae `{"Addr_type":"POI","City":"Bogotá","Country":"COL"}`;
+  - una dirección sin sentido devuelve un array vacío, no un error;
+  - `locationToAddress` responde «Plaza de Bolivar»;
+  - el geocoder clásico `geocode.arcgis.com` respondió sin key.
+- **Pitfall extendido 2 falso, quitado** («sin `outSpatialReference` el punto cae corrido»): el punto WGS84 cae en el centro (200, 157) de una vista 102100 de 400×300.
+- **Relleno quitado**: tres extendidos que eran solo comentario (cuotas, CORS, esriRequest). El de esriRequest queda como consejo de estilo marcado «no medido».
+- **`places` no recibe URL**: se corrigió en `api-detail`.
+
+**Por qué aporta**: los tres errores principales fallan en silencio o de forma opaca, y la versión anterior describía mal dos de ellos.
