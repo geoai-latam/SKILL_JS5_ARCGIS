@@ -1,17 +1,19 @@
 ---
 name: arcgis-spatial-analysis
 description: >
-  Ejecuta análisis espacial del lado servidor con el ArcGIS Maps SDK for
-  JavaScript 5.0: servicios de geoprocessing vía el módulo geoprocessor (execute y
-  submitJob para jobs asíncronos), más estadísticas de resumen desde queries de
-  FeatureLayer. Usa esta skill cuando el usuario corra una herramienta GP, un
-  viewshed/hotspot/enrichment, o calcule estadísticas agregadas sobre features.
+  Ejecuta análisis espacial en el servidor con el ArcGIS Maps SDK for JavaScript
+  5.1: servicios de geoprocesamiento con el módulo geoprocessor (execute para
+  tareas síncronas, submitJob para las asíncronas), entradas GP con su tipo
+  (FeatureSet, LinearUnit), trabajos que fallan (waitForJobCompletion rechaza con
+  el JobInfo) y estadísticas con outStatistics en vez de bajar features con tope.
+  Usa esta skill cuando el usuario corra una herramienta GP, un viewshed, un
+  hotspot o un enrichment, o calcule estadísticas agregadas sobre features.
 lang: es
-version: 0.1.0
+version: 0.2.0
 status: stable
-sdk_version: ">=5.0 <6.0"
+sdk_version: ">=5.1 <6.0"
 created: 2026-05-31
-updated: 2026-05-31
+updated: 2026-10-27
 category: spatial
 tags:
   - geoprocessing
@@ -22,7 +24,7 @@ tags:
 requires:
   - arcgis-rest-services
 packages:
-  - "@arcgis/core@^5.0"
+  - "@arcgis/core@^5.1"
 maintainer: "GeoAI LATAM"
 license: MIT
 ---
@@ -34,42 +36,57 @@ license: MIT
 
 ## Resumen
 
-El análisis pesado corre en servidor vía geoprocessing; la agregación ligera corre como queries de estadística.
+El análisis pesado corre en un servidor con geoprocesamiento; la agregación corre como queries de estadísticas.
 
-- **Problema que resuelve:** análisis muy pesado o propietario para geometría del lado cliente.
+- **Problema que resuelve:** análisis demasiado pesado o propietario para la geometría del cliente.
 - **A quién sirve:** desarrolladores que corren modelos GP, enrichment y estadísticas.
-- **Patrón que enseña:** `execute` para herramientas rápidas, `submitJob` para jobs largos asíncronos.
-- **Qué NO cubre:** geometría cliente (ver `arcgis-geometry-operations`) ni routing (ver `arcgis-rest-services`).
+- **Patrón que enseña:** `execute` para tareas síncronas, `submitJob` para las asíncronas, entradas con su tipo.
+- **Qué NO cubre:** geometría en el cliente (ver `arcgis-geometry-operations`) ni rutas (ver `arcgis-rest-services`).
 
 ## Inicio Rápido
 
 ```typescript
 import * as geoprocessor from "@arcgis/core/rest/geoprocessor.js";
-const result = await geoprocessor.execute(gpUrl, { Input: value });
+import FeatureSet from "@arcgis/core/rest/support/FeatureSet.js";
+import LinearUnit from "@arcgis/core/rest/support/LinearUnit.js";
+import Graphic from "@arcgis/core/Graphic.js";
+import Point from "@arcgis/core/geometry/Point.js";
+
+const VIEWSHED = "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Elevation/ESRI_Elevation_World/GPServer/Viewshed";
+const observer = new FeatureSet({ features: [new Graphic({ geometry: new Point({ longitude: -122.42, latitude: 37.77 }) })] });
+const { results } = (await geoprocessor.execute(VIEWSHED, {
+  Input_Observation_Point: observer,                                   // GPFeatureRecordSetLayer → FeatureSet
+  Viewshed_Distance: new LinearUnit({ distance: 5, units: "kilometers" }), // GPLinearUnit → LinearUnit
+})) as { results: Array<{ paramName: string; value: FeatureSet }> };
+const viewshed = results.find((p) => p.paramName === "Viewshed_Result")?.value; // 73 polígonos, medido
 ```
 
 ## Árbol de Decisión
 
-1. **¿La herramienta GP es síncrona (rápida)?**
-   - Sí → `geoprocessor.execute(url, params)`.
+1. **¿Qué dice la página de la tarea en "Execution Type"?**
+   - `esriExecutionTypeSynchronous` → `geoprocessor.execute(url, params)`.
+   - `esriExecutionTypeAsynchronous` → `geoprocessor.submitJob(url, params)` + `waitForJobCompletion()` +
+     `fetchResultData(name)`.
 
-2. **¿Es una tarea de larga duración?**
-   - Sí → `geoprocessor.submitJob(url, params)` y luego poll/`waitForJobCompletion`.
+2. **¿El `dataType` de cada entrada en esa misma página?**
+   - `GPFeatureRecordSetLayer` → `FeatureSet`; `GPLinearUnit` → `LinearUnit`; `GPString`/`GPDouble` → valores
+     planos.
 
 3. **¿Solo agregados sobre features?**
-   - Sí → una query de estadísticas (`outStatistics`) en el FeatureLayer.
+   - Sí → una query de estadísticas (`outStatistics`), ni una tarea GP ni un bucle en el cliente.
 
-**Default:** `execute` para herramientas rápidas; `submitJob` para lo que tome segundos o más.
+**Por defecto:** lee primero la página REST de la tarea (`<url de la tarea>?f=json`): tipo de ejecución, nombres y
+tipos de los parámetros.
 
 ## Patrones de Import
 
-### ESM Directo (recomendado para npm/Vite/Webpack)
+### ESM directo (recomendado para npm/Vite/Webpack)
 
 ```typescript
 import * as geoprocessor from "@arcgis/core/rest/geoprocessor.js";
 ```
 
-### Imports Dinámicos (CDN)
+### Imports dinámicos (CDN)
 
 ```javascript
 const geoprocessor = await $arcgis.import("@arcgis/core/rest/geoprocessor.js");
@@ -78,7 +95,7 @@ const geoprocessor = await $arcgis.import("@arcgis/core/rest/geoprocessor.js");
 ### Map Components (recomendado para proyectos nuevos)
 
 ```typescript
-// Alimenta inputs desde la view del componente (sketch/query); renderiza outputs como capas.
+// Alimenta las entradas desde la vista del componente (sketch/query); pinta las salidas como capas o graphics.
 import "@arcgis/map-components/components/arcgis-map";
 ```
 
@@ -86,55 +103,31 @@ import "@arcgis/map-components/components/arcgis-map";
 
 ### Concepto 1: execute vs submitJob
 
-`execute` retorna resultados directamente (servicios GP síncronos). `submitJob` retorna un job que
-consultas (servicios asíncronos); trae los outputs cuando completa.
+Lo decide el servicio. Medido con 5.1.27: `execute` sobre una tarea asíncrona falló con
+`Error performing execute operation`. Un trabajo asíncrono pasó de `job-executing` a `job-succeeded`, y
+`fetchResultData("Hotspot_Raster")` devolvió un parámetro `raster-data-layer`.
 
-### Concepto 2: Nombres de parámetros
+### Concepto 2: el servicio define el tipo de cada parámetro
 
-Los inputs GP se indexan por los nombres exactos de parámetro de la herramienta (case-sensitive), ej.
-`Input_Observation_Point`. Lee la página del servicio para acertarlos.
+Las entradas van con los nombres de parámetro de la tarea y tienen que respetar su `dataType`. Medido: el servidor
+aceptó los nombres sin distinguir mayúsculas (`input_observation_point` funcionó), pero un nombre mal escrito, un
+número suelto para un `GPLinearUnit` o un solo `Graphic` para un `GPFeatureRecordSetLayer` fallaron con el mismo
+`Unable to complete operation.`, que no nombra ni el parámetro ni el problema. Un `FeatureSet` y su `toJSON()`
+funcionaron los dos.
 
-### Concepto 3: Queries de estadísticas
+### Concepto 3: resultados
 
-Para conteos/sumas/promedios, define `query.outStatistics` (StatisticDefinition[]) y opcionalmente
-`groupByFieldsForStatistics` — mucho más barato que descargar features.
+`execute` resuelve con `{ results, messages }`; cada resultado es un valor de parámetro con `paramName`, `dataType` y
+`value` (un `FeatureSet` de verdad para salidas de features, medido). Busca las salidas por `paramName`, no por
+posición.
 
 ## Pitfalls Comunes (Top 3)
 
-### Pitfall 1: Usar execute en un servicio asíncrono
+### Pitfall 1: Agregar features en el cliente
 
 ```typescript
 // ❌ Anti-patrón
-const r = await geoprocessor.execute(asyncGpUrl, params); // timeout / error
-```
-
-```typescript
-// ✅ Correcto
-const job = await geoprocessor.submitJob(asyncGpUrl, params);
-const result = await job.waitForJobCompletion();
-```
-
-**Impacto:** la llamada falla porque el servicio solo soporta jobs.
-
-### Pitfall 2: Nombres de parámetro incorrectos
-
-```typescript
-// ❌ Anti-patrón
-geoprocessor.execute(url, { input: 5 }); // la herramienta espera "Input_Field"
-```
-
-```typescript
-// ✅ Correcto
-geoprocessor.execute(url, { Input_Field: 5 });
-```
-
-**Impacto:** la herramienta ignora el input o falla.
-
-### Pitfall 3: Descargar features solo para contarlas
-
-```typescript
-// ❌ Anti-patrón
-const { features } = await layer.queryFeatures();
+const { features } = await layer.queryFeatures({ where: "1=1", outFields: ["POP"] });
 const total = features.reduce((s, f) => s + f.attributes.POP, 0);
 ```
 
@@ -142,10 +135,51 @@ const total = features.reduce((s, f) => s + f.attributes.POP, 0);
 // ✅ Correcto
 const q = layer.createQuery();
 q.outStatistics = [{ statisticType: "sum", onStatisticField: "POP", outStatisticFieldName: "total" }];
-const { features } = await layer.queryFeatures(q);
+const total = (await layer.queryFeatures(q)).features[0].attributes.total;
 ```
 
-**Impacto:** descargas enormes cuando una sola query de estadísticas bastaría.
+**Impacto:** medido con las ciudades de EE. UU.: el bucle en el cliente sumó **54.124.707** con las primeras 1000
+filas (`exceededTransferLimit: true`); la query de estadísticas devolvió el valor real, **165.628.942**. Es un número
+equivocado, no solo lento.
+
+### Pitfall 2: Valores planos para entradas GP con tipo
+
+```typescript
+// ❌ Anti-patrón
+geoprocessor.execute(VIEWSHED, { Input_Observation_Point: graphic, Viewshed_Distance: 5000 });
+```
+
+```typescript
+// ✅ Correcto
+geoprocessor.execute(VIEWSHED, {
+  Input_Observation_Point: new FeatureSet({ features: [graphic] }),
+  Viewshed_Distance: new LinearUnit({ distance: 5, units: "kilometers" }),
+});
+```
+
+**Impacto:** medido: cada uno de esos dos valores planos hizo fallar la tarea con `Unable to complete operation.`.
+Revisa el `dataType` de cada parámetro en la página de la tarea.
+
+### Pitfall 3: Tratar un trabajo fallido como uno resuelto
+
+```typescript
+// ❌ Anti-patrón
+const done = await job.waitForJobCompletion();
+if (done.jobStatus !== "job-succeeded") showError(done.jobStatus); // nunca corre si falla
+```
+
+```typescript
+// ✅ Correcto
+try {
+  await job.waitForJobCompletion();
+} catch (failed) {
+  const info = failed as JobInfo; // rechaza con el JobInfo, no con un Error
+  showError(info.jobStatus, info.messages.at(-1)?.description);
+}
+```
+
+**Impacto:** medido: un trabajo con una entrada inválida rechazó con un `JobInfo` (`jobStatus` `job-failed`, último
+mensaje `Failed.`). `e.message` es `undefined`, así que un manejador de errores genérico no muestra nada útil.
 
 ## Cuándo leer references/
 
@@ -168,4 +202,11 @@ const { features } = await layer.queryFeatures(q);
 
 ## Changelog
 
+- **0.2.0** (2026-10-27): SDK 5.1. Medido contra servicios GP públicos en
+  `tests/runtime/casos/arcgis-spatial-analysis.ts`. El ejemplo y el snippet de antes pasaban
+  `Viewshed_Distance: 5000`, que falla (`GPLinearUnit` necesita un `LinearUnit`). El pitfall de trabajos fallidos
+  revisaba `jobStatus` después de `waitForJobCompletion()`, pero un trabajo fallido rechaza con el JobInfo. La suma en
+  el cliente no solo es lenta sino equivocada (54 M de 165 M, por el tope de 1000 filas). Los nombres de parámetro no
+  distinguían mayúsculas en el servidor; lo que falla, con un mensaje opaco, es la ortografía y el tipo. Se cambió el
+  pitfall de autenticación que era solo un comentario.
 - **0.1.0** (2026-05-31): Versión inicial.

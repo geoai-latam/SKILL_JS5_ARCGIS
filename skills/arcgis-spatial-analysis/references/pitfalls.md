@@ -1,55 +1,56 @@
 # Extended Pitfalls: Spatial Analysis
 
 > Extends the Top 3 in SKILL.md. Format: Anti-pattern / Correct / Impact / Diagnosis.
+> Measured with 5.1.27 against public GP services in `tests/runtime/casos/arcgis-spatial-analysis.ts`.
 
-## Pitfall 1: Not handling job failure states
+## Pitfall 1: Using execute on an asynchronous service
 
 ### Anti-pattern
 
 ```typescript
-const job = await geoprocessor.submitJob(url, params);
-await job.waitForJobCompletion(); // assume success
+const r = await geoprocessor.execute(asyncGpUrl, params);
 ```
 
 ### Correct
 
 ```typescript
-const job = await geoprocessor.submitJob(url, params);
-const info = await job.waitForJobCompletion();
-if (info.jobStatus !== "job-succeeded") throw new Error(info.jobStatus);
+const job = await geoprocessor.submitJob(asyncGpUrl, params);
+await job.waitForJobCompletion();
+const out = await job.fetchResultData("Hotspot_Raster");
 ```
 
 ### Impact
 
-You read outputs from a failed job.
+Measured: `Error performing execute operation`.
 
 ### Diagnosis
 
-Empty/garbage outputs; check `jobStatus`.
+That message on a task whose page says `esriExecutionTypeAsynchronous`.
 
 ---
 
-## Pitfall 2: Sending wrong geometry/feature JSON
+## Pitfall 2: Misspelled parameter names
 
 ### Anti-pattern
 
 ```typescript
-geoprocessor.execute(url, { Input_Features: graphic }); // expects FeatureSet JSON
+geoprocessor.execute(url, { Observation_Point: observer, Viewshed_Distance: distance }); // the tool says Input_Observation_Point
 ```
 
 ### Correct
 
 ```typescript
-geoprocessor.execute(url, { Input_Features: featureSet.toJSON() });
+geoprocessor.execute(url, { Input_Observation_Point: observer, Viewshed_Distance: distance });
 ```
 
 ### Impact
 
-The tool rejects the input.
+Measured: `Unable to complete operation.`, the same message as a wrong type. Case did not matter on this server
+(`input_observation_point` worked), spelling did.
 
 ### Diagnosis
 
-Type/parse errors from the GP service; send proper JSON.
+Copy the names from `<task url>?f=json`.
 
 ---
 
@@ -69,7 +70,7 @@ q.outStatistics = [{ statisticType: "sum", onStatisticField: "POP", outStatistic
 
 ### Impact
 
-You can't reliably read the result field.
+Measured: the result came back as `sum_expr0`, a server-generated name.
 
 ### Diagnosis
 
@@ -77,48 +78,56 @@ Unknown result attribute name; always set the alias.
 
 ---
 
-## Pitfall 4: Long jobs blocking UX with no feedback
+## Pitfall 4: Long jobs with no feedback and no way out
 
 ### Anti-pattern
 
 ```typescript
-await job.waitForJobCompletion(); // user sees nothing for minutes
+await job.waitForJobCompletion(); // the user sees nothing for minutes
 ```
 
 ### Correct
 
 ```typescript
-// Poll jobStatus and show progress; allow cancel.
+const cancel = document.querySelector("#cancel")!;
+const statusEl = document.querySelector("#status")!;
+cancel.addEventListener("click", () => void job.cancelJob(), { once: true });
+await job.waitForJobCompletion({
+  interval: 1500,
+  statusCallback: (j) => { statusEl.textContent = j.jobStatus; }, // e.g. "job-executing"
+});
 ```
 
 ### Impact
 
-App feels hung during long analysis.
+Measured: `statusCallback` reported `job-executing` before `job-succeeded`; without it the app looks hung.
 
 ### Diagnosis
 
-Users abandon; add progress UI.
+Users abandon long analyses; show the status and offer `cancelJob()`.
 
 ---
 
-## Pitfall 5: Ignoring service auth/quotas
+## Pitfall 5: Reading results by position
 
 ### Anti-pattern
 
 ```typescript
-geoprocessor.execute(securedGpUrl, params); // no token
+const out = (result as { results: Array<{ value: FeatureSet }> }).results[0].value; // which output?
 ```
 
 ### Correct
 
 ```typescript
-// Authenticate (API key / OAuth) before calling secured GP services.
+const out = (result as { results: Array<{ paramName: string; value: FeatureSet }> }).results
+  .find((p) => p.paramName === "Viewshed_Result")?.value;
 ```
 
 ### Impact
 
-403 / quota errors.
+Measured: `execute` resolved to `{ results, messages }`, each result with `paramName`, `dataType` and `value`. A
+tool with several outputs, or a republished one, breaks code that reads by index.
 
 ### Diagnosis
 
-Auth error responses; see `arcgis-authentication`.
+The wrong output on screen after a service change.

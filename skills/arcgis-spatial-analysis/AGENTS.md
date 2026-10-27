@@ -1,30 +1,33 @@
 # Agent Guide: arcgis-spatial-analysis
 
-Quick-reference for server-side analysis. Read before running GP/statistics.
+Quick-reference for server-side analysis (SDK 5.1). Read before running GP/statistics.
 
 ## Quick Decision Tree
 
-1. **Fast GP tool?** → `geoprocessor.execute(url, params)`.
-2. **Long-running?** → `geoprocessor.submitJob` + `waitForJobCompletion`.
-3. **Aggregates?** → `query.outStatistics` on the layer.
+1. **Read `<task url>?f=json`**: execution type, parameter names, data types.
+2. **Synchronous?** → `geoprocessor.execute(url, params)`.
+3. **Asynchronous?** → `geoprocessor.submitJob` + `waitForJobCompletion` (in `try`) + `fetchResultData`.
+4. **Aggregates?** → `query.outStatistics` on the layer.
 
 ## Setup Checklist
 
-- [ ] Use exact, case-sensitive GP parameter names.
-- [ ] Pick `execute` (sync) vs `submitJob` (async) per the service.
-- [ ] For counts/sums use statistics queries, not feature downloads.
-- [ ] Authenticate if the service is secured.
+- [ ] `FeatureSet` for feature inputs, `LinearUnit` for distances.
+- [ ] Exact parameter spelling (the error does not say which one is wrong).
+- [ ] `try/catch` around `waitForJobCompletion()`: failures reject with the JobInfo.
+- [ ] Find outputs by `paramName`.
+- [ ] Statistics queries, never client-side sums.
 
 ## Anti-patterns (one-liner reminders)
 
+- ❌ Summing downloaded features (capped at 1000 rows: a wrong total).
+- ❌ A number for a `GPLinearUnit`, a `Graphic` for a feature set.
+- ❌ Checking `jobStatus` after `await waitForJobCompletion()` instead of catching.
 - ❌ `execute` on an async GP service.
-- ❌ Guessed parameter names.
-- ❌ Downloading features to compute aggregates.
 
 ## Files in This Skill
 
 - `SKILL.md` / `SKILL.es.md` — full guides
-- `references/api-detail.md` — geoprocessor / statistics
+- `references/api-detail.md` — geoprocessor / input types / statistics
 - `references/examples.md` — GP + statistics
 - `references/pitfalls.md` — extended troubleshooting
 - `scripts/snippet-geoprocessor.ts`

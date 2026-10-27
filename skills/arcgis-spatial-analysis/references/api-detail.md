@@ -3,6 +3,7 @@
 ## Table of Contents
 
 - [geoprocessor](#geoprocessor)
+- [GP input types](#gp-input-types)
 - [Statistics queries](#statistics-queries)
 
 ---
@@ -13,12 +14,25 @@
 
 | Function | Returns | Use |
 |---|---|---|
-| `execute(url, params, options?)` | `Promise<object>` | Synchronous GP service |
-| `submitJob(url, params, options?)` | `Promise<JobInfo>` | Asynchronous GP service |
+| `execute(url, params?, options?, requestOptions?)` | `Promise<object>` (`{ results, messages }`) | Synchronous GP task |
+| `submitJob(url, params?, options?, requestOptions?)` | `Promise<JobInfo>` | Asynchronous GP task |
 
-`JobInfo` exposes `waitForJobCompletion()`, `fetchResultData(name)`, and `jobStatus`.
+`JobInfo` (`rest/support/JobInfo.js`): `jobId`, `jobStatus`, `messages`, `waitForJobCompletion({ interval,
+statusCallback })`, `fetchResultData(name)`, `cancelJob()`. `waitForJobCompletion()` **rejects with the JobInfo**
+when the job fails (measured: `jobStatus` `job-failed`).
 
-Result objects from `execute` are loosely typed (`object`) — cast to the tool's known shape.
+---
+
+## GP input types
+
+Read each parameter's `dataType` from `<task url>?f=json`:
+
+| `dataType` | Pass |
+|---|---|
+| `GPFeatureRecordSetLayer` | `FeatureSet` (or its `toJSON()`); a single `Graphic` fails |
+| `GPLinearUnit` | `new LinearUnit({ distance, units })`; a bare number fails |
+| `GPString` / `GPDouble` / `GPLong` / `GPBoolean` | Plain values |
+| `GPRasterDataLayer` (output) | Fetched with `fetchResultData(name)` |
 
 ---
 
@@ -30,7 +44,7 @@ Result objects from `execute` are loosely typed (`object`) — cast to the tool'
 |---|---|---|
 | `statisticType` | `"count" \| "sum" \| "avg" \| "min" \| "max" \| "stddev"` | Aggregate |
 | `onStatisticField` | `string` | Field to aggregate |
-| `outStatisticFieldName` | `string` | Output alias |
+| `outStatisticFieldName` | `string` | Output alias (else the server names it, e.g. `sum_expr0`) |
 
-Combine with `query.groupByFieldsForStatistics` for grouped results. Run via
-`layer.queryFeatures(query)`.
+Combine with `query.groupByFieldsForStatistics` for grouped results (one feature per group, geometry `null`; measured
+51 groups for US states). Run via `layer.queryFeatures(query)`.

@@ -53,7 +53,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 24 | `arcgis-rest-services` | aporta con arreglos | sin key no hay 401: diálogo y promesa colgada; raíz del servicio = 0 features |
 | 25 | `arcgis-scene-environment` | aporta con arreglos | cameraTrackingEnabled mueve la fecha al navegar; clima no disponible en local/altura |
 | 26 | `arcgis-smart-mapping` | aporta con arreglos | intervalos iguales meten 3553/3557 en una clase; type solo 10 categorías; 2 pitfalls falsos |
-| 27 | `arcgis-spatial-analysis` | pendiente | |
+| 27 | `arcgis-spatial-analysis` | aporta con arreglos | su ejemplo fallaba (número para GPLinearUnit); job fallido rechaza con JobInfo; suma en cliente 54M de 165M |
 | 28 | `arcgis-starter-app` | pendiente | |
 | 29 | `arcgis-tables-forms` | pendiente | |
 | 30 | `arcgis-time-animation` | pendiente | |
@@ -876,3 +876,21 @@ nunca, o destruir y perder el mapa compartido.
   - el de «ignorar statistics» era solo un comentario y se cambió por «esperar que la vista acote las estadísticas».
 
 **Por qué aporta:** sin la skill, un agente usa los cortes por defecto y entrega un mapa de un solo color. También manda un campo de texto sin recibir ningún error, o pierde 41 de 51 categorías bajo «Otro». La versión anterior advertía de dos problemas que no existen y no decía nada de estos tres.
+
+### 27. `arcgis-spatial-analysis` — aporta con arreglos
+
+**Evidencia** (5.1.27, `tests/runtime/casos/arcgis-spatial-analysis.ts`, 13/13 en verde). Servicios GP públicos: Viewshed (síncrono) y 911 Calls Hotspot (asíncrono).
+
+- **El código de la skill fallaba.** El ejemplo y el snippet pasaban `Viewshed_Distance: 5000`, pero ese parámetro es `GPLinearUnit` y la llamada falla con `Unable to complete operation.`. Con `new LinearUnit({ distance: 5, units: "kilometers" })` devuelve 73 polígonos. Un `Graphic` suelto como observador también falla. Un `FeatureSet` y su `toJSON()` funcionan los dos.
+- **El extendido 1 («revisar `jobStatus` tras `waitForJobCompletion`») era falso.** Un trabajo con entrada inválida **rechaza** la promesa con un `JobInfo` (`jobStatus` `job-failed`, último mensaje `Failed.`), no con un `Error`. Ese `if` nunca corre y `e.message` es `undefined`.
+- **Pitfall 3: bajar features para sumar da un número equivocado, no solo lento.** El bucle en el cliente sumó 54.124.707 con 1000 filas (`exceededTransferLimit`). La query de estadísticas da el valor real, 165.628.942.
+- **Pitfall 2 corregido.** Los nombres de parámetro no distinguieron mayúsculas en este servidor (`input_observation_point` funcionó). Lo que falla es un nombre mal escrito, y da el mismo mensaje opaco que un tipo equivocado.
+- **Confirmado:**
+  - `execute` sobre una tarea asíncrona falla con `Error performing execute operation`;
+  - `submitJob` pasa de `job-executing` a `job-succeeded`, y `fetchResultData` trae un `raster-data-layer`;
+  - sin `outStatisticFieldName` el campo de salida se llama `sum_expr0`;
+  - `groupBy` devuelve 51 grupos sin geometría;
+  - `execute` resuelve con `{results, messages}` y su `value` es un `FeatureSet`.
+- **Relleno quitado:** el pitfall de autenticación, que era solo un comentario. El de progreso ahora tiene código real (`statusCallback` y `cancelJob`).
+
+**Por qué aporta:** sin la skill, un agente copia el ejemplo y el viewshed falla con un error que no dice por qué. También suma features en el cliente y entrega un total equivocado, o escribe un manejo de fallos que nunca se ejecuta.
