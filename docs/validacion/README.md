@@ -55,7 +55,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 26 | `arcgis-smart-mapping` | aporta con arreglos | intervalos iguales meten 3553/3557 en una clase; type solo 10 categorías; 2 pitfalls falsos |
 | 27 | `arcgis-spatial-analysis` | aporta con arreglos | su ejemplo fallaba (número para GPLinearUnit); job fallido rechaza con JobInfo; suma en cliente 54M de 165M |
 | 28 | `arcgis-starter-app` | aporta con arreglos | el scaffold generaba un main.ts que lanza (detail null), sin strict y con .env sin ignorar |
-| 29 | `arcgis-tables-forms` | pendiente | |
+| 29 | `arcgis-tables-forms` | aporta con arreglos | pitfall 1 falso (la tabla carga la capa); los relacionados omiten padres sin filas; editingEnabled y submit() fallan en silencio |
 | 30 | `arcgis-time-animation` | pendiente | |
 | 31 | `arcgis-utility-networks` | pendiente | |
 | 32 | `arcgis-visualization` | pendiente | |
@@ -920,3 +920,29 @@ nunca, o destruir y perder el mapa compartido.
 **Arreglo del verificador.** `check-code-blocks.mjs` compilaba los bloques `tsx` como `.ts`, así que todo JSX fallaba siempre. Ahora usa `.tsx` con `jsx: preserve`. Además ignora `TS2307` de paquetes de framework que no están instalados (Angular y otros). Las rutas del SDK que no resuelven siguen fallando.
 
 **Por qué aporta:** el scaffold es lo primero que corre quien la usa, y antes entregaba un proyecto que se caía al cargar y dejaba la key a un `git add .` del historial. Con los arreglos, compila, arranca y avisa lo que falta.
+
+### 29. `arcgis-tables-forms` — aporta con arreglos
+
+**Evidencia.** El caso `tests/runtime/casos/arcgis-tables-forms.ts` corrió contra el SDK 5.1.27 en Chromium y dio 9/9 en verde. Usa servicios públicos de sampleserver6: las solicitudes de San Diego (`ServiceRequest/FeatureServer/0`, con la relación 0 a la tabla de comentarios) y las ciudades de USA (`MapServer/0`, sin edición y sin relaciones). No escribe nada en ellos: el formulario solo se lee.
+
+**Lo que la skill vieja decía y era falso o inútil:**
+
+1. **Pitfall 1 (falso).** Decía que había que hacer `await layer.load()` antes de pasar la capa a la tabla, o faltarían columnas. Medido: con una capa sin cargar, la tabla la carga sola y muestra las 12 columnas y las 420 filas. Se quitó.
+2. **El ejemplo del formulario no mostraba nada.** Ponía el `formTemplate` pero nunca el `layer` ni el `feature`.
+3. **El pitfall extendido 5 no compilaba** (`TS1108`: un `return` fuera de una función).
+4. **Los snippets apuntaban a URLs inventadas** (`services.arcgis.com/example/...`). Ahora usan el servicio público, que tiene una relación de verdad.
+5. **Los enlaces de muestra eran la raíz de la API**, no los componentes.
+
+**Lo que se midió y entró como pitfall:**
+
+- **Sin `reference-element`, `table.view` es `null`.** Seleccionar una fila no resalta nada en el mapa, y no sale ningún error. Con `reference-element="#m"`, la vista es `2d`.
+- **El resultado de los relacionados solo trae a los padres que tienen relacionados.** De 200 solicitudes, volvieron 4 claves (string). `res[id].features` lanza para las otras 196. Un `relationshipId` equivocado rechaza con el opaco «Unable to complete operation.».
+- **`editingEnabled = true` sobre una capa de solo lectura se acepta en silencio.** En el MapServer (`supportsUpdate: false`, `layer.editingEnabled: false`), la tabla marcó 6 de 6 columnas como editables.
+- **`submit()` no guarda.** `arcgisSubmit` llega con `{valid, invalid, values}` (listas de nombres de campo y los valores), y ahí se termina: hay que llamar `applyEdits`.
+- **El filtro de la tabla no toca el mapa.** Con `table.definitionExpression = "st = 'CA'"` la tabla pasó de 3557 a 446 filas, y `layer.definitionExpression` siguió en `null`. Con `layer-url` basta la URL.
+- **La tabla pagina sola.** Sobre una capa con `maxRecordCount` 1000, la tabla reportó `size` 3557, con `pageSize` 50.
+- **`relationships` está vacío en una capa sin relaciones**, y `relationships[0].id` lanza `Cannot read properties of undefined`. Se confirmó el pitfall que ya había.
+
+**Lo que no se pudo medir:** escribir en los controles del formulario. Están en un shadow DOM al que la prueba no llega, así que la skill no afirma nada sobre cómo cambia `form.feature` al escribir.
+
+**Por qué aporta:** sin la skill, un agente adivina el `relationshipId` y lee `res[id]` como si todos los padres estuvieran. También activa la edición sobre servicios de solo lectura y cree que `submit()` guarda. Son tres fallos silenciosos que ahora tienen su medición y su arreglo.
