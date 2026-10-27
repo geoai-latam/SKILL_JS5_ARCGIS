@@ -1,6 +1,7 @@
 # Extended Pitfalls: Popup Templates
 
 > Extends the Top 3 in SKILL.md. Format: Anti-pattern / Correct / Impact / Diagnosis.
+> Measured with 5.1.27 in `tests/runtime/casos/arcgis-popup-templates.ts`.
 
 ## Pitfall 1: Setting popupTemplate but popups are disabled
 
@@ -8,7 +9,7 @@
 
 ```typescript
 layer.popupEnabled = false;
-layer.popupTemplate = template; // never shows
+layer.popupTemplate = template; // never shows on click
 ```
 
 ### Correct
@@ -20,83 +21,93 @@ layer.popupTemplate = template;
 
 ### Impact
 
-The popup never opens.
+Measured: with `popupEnabled = false`, even `view.openPopup({ location, fetchFeatures: true })` did not show the
+feature.
 
 ### Diagnosis
 
-Clicking does nothing; check `popupEnabled` and `view.popup`.
+Clicking does nothing; check `layer.popupEnabled` and `view.popupEnabled`.
 
 ---
 
-## Pitfall 2: Async content not returning a promise
+## Pitfall 2: A content function that returns nothing
 
 ### Anti-pattern
 
 ```typescript
-content: (f) => { fetchExtra(f).then(render); }; // returns undefined
+const content = (f: { graphic: Graphic }) => { void fetchExtra(f).then(render); }; // returns undefined
 ```
 
 ### Correct
 
 ```typescript
-content: async (f) => { const data = await fetchExtra(f); return render(data); };
+const content = async (f: { graphic: Graphic }) => render(await fetchExtra(f)); // return the element (or a promise)
 ```
 
 ### Impact
 
-The popup body is empty because nothing was returned.
+Measured: the popup opened with the title and its buttons and an empty body. An async function that returns an
+element rendered fine.
 
 ### Diagnosis
 
-Empty popup with async data; return a promise/element.
+Empty popup body with async data; return the element or the promise.
 
 ---
 
-## Pitfall 3: Date fields shown as epoch numbers
+## Pitfall 3: Attribute text with "<" shown as markup
 
 ### Anti-pattern
 
 ```typescript
-{ fieldName: "CREATED" } // shows a raw timestamp
+new PopupTemplate({ content: "Notes: {NOTES}" }); // NOTES may contain user-typed "<b>" or "<"
 ```
 
 ### Correct
 
 ```typescript
-{ fieldName: "CREATED", format: { dateFormat: "short-date" } }
+new PopupTemplate({
+  outFields: ["NOTES"],
+  content: (f: { graphic: Graphic }) => {
+    const p = document.createElement("p");
+    p.textContent = `Notes: ${String(f.graphic.attributes.NOTES ?? "")}`; // shown literally
+    return p;
+  },
+});
 ```
 
 ### Impact
 
-Users see a large number instead of a date.
+Measured: an attribute `<b class="negrita">x</b><img src="y" onerror=...>` rendered a real `<b>` element; the
+sanitizer removed the `onerror` and nothing ran. It is not a script risk, but user text is reinterpreted as HTML.
 
 ### Diagnosis
 
-Numeric date; add a `dateFormat`.
+Notes that lose their "<" characters or turn bold; render them with `textContent`.
 
 ---
 
-## Pitfall 4: Relying on attributes not requested
+## Pitfall 4: Placeholders for fields that do not exist
 
 ### Anti-pattern
 
 ```typescript
-content: (f) => String(f.graphic.attributes.RARE_FIELD); // not in outFields
+new PopupTemplate({ title: "{NOMBRE}" }); // the field is NAME
 ```
 
 ### Correct
 
 ```typescript
-new PopupTemplate({ outFields: ["RARE_FIELD"], content: ... });
+new PopupTemplate({ title: "{NAME}" }); // case does not matter ({name} works), spelling does
 ```
 
 ### Impact
 
-`undefined` in custom content.
+Measured: an unknown field renders as an empty string, not as the literal `{NOMBRE}`, so the typo is easy to miss.
 
 ### Diagnosis
 
-Missing values; add fields to the template/layer `outFields`.
+A blank title or gap; check the name against `layer.fields`.
 
 ---
 
@@ -105,18 +116,23 @@ Missing values; add fields to the template/layer `outFields`.
 ### Anti-pattern
 
 ```typescript
-content: (f) => heavySyncRender(f); // recomputed each open
+const content = (f: { graphic: Graphic }) => heavySyncRender(f); // recomputed each open
 ```
 
 ### Correct
 
 ```typescript
-// Cache by objectId, or precompute; keep the function light.
+const cache = new Map<number, HTMLElement>();
+const content = (f: { graphic: Graphic }) => {
+  const id = f.graphic.getObjectId() as number;
+  if (!cache.has(id)) cache.set(id, heavySyncRender(f));
+  return cache.get(id)!;
+};
 ```
 
 ### Impact
 
-Sluggish popups for complex content.
+Sluggish popups for complex content (not measured).
 
 ### Diagnosis
 

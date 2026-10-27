@@ -23,7 +23,7 @@ layer.popupTemplate = new PopupTemplate({
 **Notes:**
 
 - `format.digitSeparator` adds thousands separators.
-- Ensure `POP` is in the layer's `outFields`.
+- Placeholders and `fields` blocks fetch `POP` themselves when the popup opens (measured).
 
 ---
 
@@ -56,6 +56,7 @@ import PopupTemplate from "@arcgis/core/PopupTemplate.js";
 
 layer.popupTemplate = new PopupTemplate({
   title: "{NAME}",
+  outFields: ["NOTES"], // a function's fields are not fetched for you
   content: (feature: { graphic: { attributes: Record<string, unknown> } }) => {
     const div = document.createElement("div");
     div.textContent = `Notes: ${String(feature.graphic.attributes.NOTES ?? "")}`;

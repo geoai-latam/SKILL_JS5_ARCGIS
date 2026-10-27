@@ -1,4 +1,4 @@
-// snippet-popup-template.ts — fields-based PopupTemplate. Smoke-tested.
+// snippet-popup-template.ts — fields-based PopupTemplate. Smoke-tested (SDK 5.1).
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer.js";
 import PopupTemplate from "@arcgis/core/PopupTemplate.js";
 
@@ -8,7 +8,7 @@ const template = new PopupTemplate({
     {
       type: "fields",
       fieldInfos: [
-        { fieldName: "POP", label: "Population", format: { digitSeparator: true } },
+        { fieldName: "POP", label: "Population", format: { digitSeparator: true, places: 0 } }, // none by default
         { fieldName: "AREA", label: "Area (km²)" },
       ],
     },

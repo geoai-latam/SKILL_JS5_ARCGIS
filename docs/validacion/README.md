@@ -48,7 +48,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 19 | `arcgis-layers` | aporta con arreglos | reemplazar createQuery().where pierde el definitionExpression (29 vs 6); tope de 1000 silencioso (11 vs 51 capitales); outFields de capa no limitan queries |
 | 20 | `arcgis-map-tools` | aporta con arreglos | snapping-controls NO se conecta al sketch (snappingOptions separados); 3D en 2D = unsupported en silencio; medición por análisis; pitfalls que eran comentarios |
 | 21 | `arcgis-performance` | aporta con arreglos | import() solo ahorra 24 KB de 1494 (el SDK ya se divide); el import raíz no resuelve; 20 vistas sin destroy pierden contexto; destroy() se lleva el mapa compartido |
-| 22 | `arcgis-popup-templates` | pendiente | |
+| 22 | `arcgis-popup-templates` | aporta con arreglos | 3 pitfalls falsos; los reales: outFields en funciones, zona horaria, separadores |
 | 23 | `arcgis-portal-content` | pendiente | |
 | 24 | `arcgis-rest-services` | pendiente | |
 | 25 | `arcgis-scene-environment` | pendiente | |
@@ -760,3 +760,23 @@ el más débil. Medí en Chromium (`tests/runtime/casos/arcgis-performance.ts`) 
 **¿Aporta?** Sí, con arreglos, y ahora apunta a lo que de verdad pesa: la fuga de contextos WebGL, la trampa de que
 `destroy()` se lleva el mapa, y los `watch` por cuadro. Le ahorra a un agente dos errores contrarios: no destruir
 nunca, o destruir y perder el mapa compartido.
+
+### 22. `arcgis-popup-templates` — aporta con arreglos
+
+**Evidencia (5.1.27, `tests/runtime/casos/arcgis-popup-templates.ts`, 12/12 en verde, popups reales abiertos con `view.openPopup`):**
+
+- Los **tres pitfalls principales eran falsos o exagerados**:
+  - «Errores de mayúsculas en placeholders»: `{Name}` y `{name}` muestran `Bogotá` para `NAME`, no distinguen mayúsculas (el AGENTS decía «case-sensitive»).
+  - «Olvidar outFields que necesita el popup»: con `outFields: ["areaname"]` en la capa, `{pop2000}` igual mostró `8008278`, porque el popup pide sus campos al abrirse aunque el graphic del hit solo traiga `areaname,objectid`.
+  - «Riesgo de inyección HTML»: el SDK sanitiza. Con `<img onerror>` y `<script>` quedó `__xss=0`, sin `img[onerror]` ni script.
+- **Lo que sí muerde, medido, y ahora es el Top 3**:
+  - Una función de contenido que lee un campo sin `template.outFields` recibe `F:undefined`; con `outFields: ["pop2000"]` recibe `F:8008278`.
+  - Las fechas a medianoche UTC salen con el día anterior: `view.timeZone` por defecto es `"system"` (America/Bogota) y muestra `26/10/2026, 7:00 p. m.`; con `"UTC"` muestra `27/10/2026`.
+  - Sin `format`, los números no llevan separador (`7900000`); con `digitSeparator: true` salen como `7.900.000`.
+- **Extendidos**:
+  - Se confirmaron `popupEnabled=false`, que ni con `openPopup({fetchFeatures})` muestra el popup, y la función sin `return`, que deja el cuerpo vacío.
+  - Nuevos: el HTML dentro de un atributo se interpreta (un `<b>` real; `textContent` si debe verse literal) y un campo inexistente sale vacío, no `{NOEXISTE}`.
+  - Se arreglaron dos bloques que no compilaban y se marcó como «no medido» el de trabajo pesado.
+- **Lo demás**: `api-detail` gana `expression` y `relationship` y aclara para qué sirve `outFields`; los snippets se actualizaron a 5.1 y `snippet-popup-custom` declara sus `outFields`.
+
+**Por qué aporta**: sin la skill, un agente escribe la función de contenido sin `outFields` y le sale `undefined`, entrega fechas corridas un día y cifras sin separador. Los tres errores fallan en silencio. La versión anterior advertía de tres problemas que no existen.

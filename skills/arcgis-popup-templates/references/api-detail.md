@@ -16,7 +16,7 @@
 |---|---|---|
 | `title` | `string \| function` | Template with `{FIELD}` placeholders |
 | `content` | `string \| Content[] \| function` | Body of the popup |
-| `outFields` | `string[]` | Fields the popup needs (besides the layer's) |
+| `outFields` | `string[]` | Fields a content **function** or expression reads (placeholders fetch their own) |
 | `actions` | `ActionButton[]` | Custom action buttons |
 
 ---
@@ -29,8 +29,11 @@
 | `"text"` | HTML/text with placeholders | `text` |
 | `"media"` | Charts / images | `mediaInfos` |
 | `"attachments"` | Feature attachments | — |
+| `"expression"` | Arcade-generated content | `expressionInfo` |
+| `"relationship"` | Related records | `relationshipId` |
 
-A function `content` receives `{ graphic }` and returns `HTMLElement | string | Promise<...>`.
+A function `content` receives `{ graphic }` and returns `HTMLElement | string | Promise<...>`. Returned strings are
+sanitized (scripts and event handlers removed, measured).
 
 ---
 
@@ -42,4 +45,6 @@ A function `content` receives `{ graphic }` and returns `HTMLElement | string | 
 |---|---|---|
 | `digitSeparator` | `boolean` | Thousands separators |
 | `places` | `number` | Decimal places |
-| `dateFormat` | `string` | e.g. `"short-date"` |
+| `dateFormat` | `string` | e.g. `"short-date"`; shown in `view.timeZone` (default `"system"`) |
+
+Without `format`, numbers show no thousands separator (measured: `7900000`).
