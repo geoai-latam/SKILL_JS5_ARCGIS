@@ -54,7 +54,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 25 | `arcgis-scene-environment` | aporta con arreglos | cameraTrackingEnabled mueve la fecha al navegar; clima no disponible en local/altura |
 | 26 | `arcgis-smart-mapping` | aporta con arreglos | intervalos iguales meten 3553/3557 en una clase; type solo 10 categorías; 2 pitfalls falsos |
 | 27 | `arcgis-spatial-analysis` | aporta con arreglos | su ejemplo fallaba (número para GPLinearUnit); job fallido rechaza con JobInfo; suma en cliente 54M de 165M |
-| 28 | `arcgis-starter-app` | pendiente | |
+| 28 | `arcgis-starter-app` | aporta con arreglos | el scaffold generaba un main.ts que lanza (detail null), sin strict y con .env sin ignorar |
 | 29 | `arcgis-tables-forms` | pendiente | |
 | 30 | `arcgis-time-animation` | pendiente | |
 | 31 | `arcgis-utility-networks` | pendiente | |
@@ -894,3 +894,29 @@ nunca, o destruir y perder el mapa compartido.
 - **Relleno quitado:** el pitfall de autenticación, que era solo un comentario. El de progreso ahora tiene código real (`statusCallback` y `cancelJob`).
 
 **Por qué aporta:** sin la skill, un agente copia el ejemplo y el viewshed falla con un error que no dice por qué. También suma features en el cliente y entrega un total equivocado, o escribe un manejo de fallos que nunca se ejecuta.
+
+### 28. `arcgis-starter-app` — aporta con arreglos
+
+**Evidencia.** Se corrió `scripts/scaffold.sh` de punta a punta el 2026-10-27, con pnpm 10 y con npm 11:
+
+- **Versiones resueltas:** SDK 5.1.27, Calcite 5.2.0, Vite 8.3 y TypeScript 7.0.
+- **Prueba:** `pnpm build` y luego la app en Chromium. El caso `tests/runtime/casos/arcgis-starter-app.ts` dio 3/3 en verde.
+
+**Errores del scaffold de la skill vieja**, que generaba proyectos rotos:
+
+1. **El `main.ts` generado se cae.** Leía `(e as CustomEvent).detail.view`, pero `arcgisViewReadyChange` llega con `detail === null` y la lectura lanza `Cannot read properties of null`. El ejemplo de React tenía el mismo error. Ahora usa `await el.viewOnReady(); el.view`, y con `basemap="osm"` la app imprime `View ready: 2d`.
+2. **El `tsconfig` no era strict.** La skill prometía `strict: true`, pero la plantilla actual de Vite no lo trae. Ahora el scaffold lo agrega.
+3. **La API key podía terminar en git.** La plantilla de Vite ignora `*.local` pero no `.env`, así que el `cp .env.example .env` del Quick Start dejaba la key lista para un `git add .`. Ahora el scaffold agrega `.env` al `.gitignore`.
+4. **El aviso final decía `npm dev`**, que no existe en npm. Ahora dice `run dev`.
+
+**Hallazgos de la medición:**
+
+- **Sin `.env`, el mapa queda bloqueado en silencio.** El basemap `arcgis/topographic` responde 401, aparece un `calcite-dialog` de inicio de sesión y `view.ready` sigue en false a los 15 s. Ningún mensaje dice «falta la key», así que el `main.ts` ahora lo avisa.
+- **Pitfall de `moduleResolution: "node"`, actualizado.** TypeScript 7 lo rechaza con `TS5108` (opción eliminada). En TypeScript 5.9 el build pasa hasta el primer import con tipos de map-components; ahí falla con `TS2307`.
+- **Sin altura, la espera no termina.** Con 0 px de alto, `viewOnReady()` seguía pendiente a los 15 s: no es solo un mapa en blanco.
+- **El wrapper de React no está deprecado.** `@arcgis/map-components-react` 5.1.27 sigue publicado y npm no lo marca como deprecado, así que se reformuló como «no hace falta en React 19».
+- **Calcite `^5.0` quedó en `^5.1`**, porque el SDK declara `^5.1.1` como peer.
+
+**Arreglo del verificador.** `check-code-blocks.mjs` compilaba los bloques `tsx` como `.ts`, así que todo JSX fallaba siempre. Ahora usa `.tsx` con `jsx: preserve`. Además ignora `TS2307` de paquetes de framework que no están instalados (Angular y otros). Las rutas del SDK que no resuelven siguen fallando.
+
+**Por qué aporta:** el scaffold es lo primero que corre quien la usa, y antes entregaba un proyecto que se caía al cargar y dejaba la key a un `git add .` del historial. Con los arreglos, compila, arranca y avisa lo que falta.

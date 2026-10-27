@@ -88,7 +88,8 @@ function check(blocks) {
   fs.writeFileSync(prelude, PRELUDE_DTS);
   blocks.forEach((b, i) => {
     // An `export {}` keeps each block a module so names do not collide across blocks.
-    const f = path.join(tmp, `b${i}.ts`);
+    // JSX blocks need a .tsx file, or TypeScript reads `<arcgis-map ...>` as a type assertion.
+    const f = path.join(tmp, `b${i}.${b.lang === "tsx" || b.lang === "jsx" ? "tsx" : "ts"}`);
     // Fragments lean on context the prose gives ("a Map", "the SceneView"). Supply it on the
     // block's first line, so reported line numbers stay those of the markdown.
     const ctx = [];
@@ -111,6 +112,7 @@ function check(blocks) {
     moduleResolution: ts.ModuleResolutionKind.Bundler,
     skipLibCheck: true,
     allowJs: true,
+    jsx: ts.JsxEmit.Preserve,
     lib: ["lib.es2022.d.ts", "lib.dom.d.ts", "lib.dom.iterable.d.ts"],
     types: ["vite/client", "@arcgis/map-components"],
     typeRoots: [path.join(REPO_ROOT, "node_modules")],
@@ -144,6 +146,9 @@ function check(blocks) {
     };
     for (const d of [...program.getSyntacticDiagnostics(sf), ...program.getSemanticDiagnostics(sf)]) {
       const msg = ts.flattenDiagnosticMessageText(d.messageText, " ");
+      // Framework packages (Angular, React, LangGraph…) are not installed here; an SDK path that does not
+      // resolve still fails, which is the case this check exists for.
+      if (d.code === 2307 && !/module '@(arcgis|esri)\//.test(msg)) continue;
       if (FRAGMENT_CODES.has(d.code)) {
         const m = msg.match(/name '([^']+)'/);
         if (m) b.free.add(m[1]);

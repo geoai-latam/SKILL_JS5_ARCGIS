@@ -1,12 +1,12 @@
 # Agent Guide: arcgis-starter-app
 
-Quick-reference for scaffolding an ArcGIS Maps SDK 5.0 project. Read before generating setup code.
+Quick-reference for scaffolding an ArcGIS Maps SDK 5.1 project. Read before generating setup code.
 
 ## Quick Decision Tree
 
 1. **Framework?**
    - Vanilla TS → run `scripts/scaffold.sh`.
-   - React 19+ → Map Components as custom elements + `onArcgis*` props/events.
+   - React 19+ → Map Components as custom elements + `onarcgis*` event props.
    - Angular → `CUSTOM_ELEMENTS_SCHEMA` + explicit component CSS import.
 
 2. **Package manager?**
@@ -14,18 +14,19 @@ Quick-reference for scaffolding an ArcGIS Maps SDK 5.0 project. Read before gene
 
 ## Setup Checklist
 
-- [ ] Vite `vanilla-ts` template, `strict: true`, `moduleResolution: "bundler"`.
-- [ ] `pnpm add @arcgis/core @arcgis/map-components @esri/calcite-components` (Calcite `^5.0`).
+- [ ] Vite `vanilla-ts` template, `moduleResolution: "bundler"`, plus `"strict": true` (the template omits it).
+- [ ] `@arcgis/core`, `@arcgis/map-components` and `@esri/calcite-components` all `^5.1`.
 - [ ] `esriConfig.apiKey = import.meta.env.VITE_ARCGIS_API_KEY`.
-- [ ] `.env` in `.gitignore`; ship `.env.example`.
+- [ ] `.env` in `.gitignore` (the template does not do it); ship `.env.example`.
+- [ ] View from `await el.viewOnReady(); el.view`, never `event.detail.view`.
 - [ ] Container height set (`html,body,arcgis-map { height:100% }`).
 
 ## Anti-patterns (one-liner reminders)
 
-- ❌ `moduleResolution: "node"` — use `"bundler"`.
-- ❌ Hardcoded API key — use `import.meta.env`.
-- ❌ `@arcgis/map-components-react` on React 19 — use the element directly.
-- ❌ Calcite 3.x — use `^5.0`.
+- ❌ `(e as CustomEvent).detail.view` — `detail` is `null`, it throws.
+- ❌ `cp .env.example .env` without ignoring `.env`.
+- ❌ `arcgis/*` basemaps with no key — sign-in dialog, view never ready.
+- ❌ `moduleResolution: "node"` — removed in TS 7.
 
 ## Files in This Skill
 

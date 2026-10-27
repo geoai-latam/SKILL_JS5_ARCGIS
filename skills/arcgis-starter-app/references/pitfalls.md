@@ -1,8 +1,61 @@
 # Extended Pitfalls: Starter App
 
 > Extends the Top 3 in SKILL.md. Format: Anti-pattern / Correct / Impact / Diagnosis.
+> Measured on 2026-10-27 by running `scripts/scaffold.sh` and `tests/runtime/casos/arcgis-starter-app.ts`.
 
-## Pitfall 1: Pinning Calcite to 3.x
+## Pitfall 1: Wrong moduleResolution
+
+### Anti-pattern
+
+```jsonc
+{ "compilerOptions": { "moduleResolution": "node" } }
+```
+
+### Correct
+
+```jsonc
+{ "compilerOptions": { "moduleResolution": "bundler" } }
+```
+
+### Impact
+
+Measured: TypeScript 7 rejects the option outright (`TS5108: Option 'moduleResolution=node10' has been removed`).
+On TypeScript 5.9 the build passes until you import a type from map-components, then
+`TS2307: Cannot find module '@arcgis/map-components/components/arcgis-map'` (subpath exports do not resolve).
+
+### Diagnosis
+
+Either error; switch to `"bundler"` (or `"node16"`).
+
+---
+
+## Pitfall 2: Missing container height
+
+### Anti-pattern
+
+```html
+<arcgis-map basemap="osm"></arcgis-map>
+```
+
+### Correct
+
+```html
+<style>html, body, arcgis-map { margin: 0; height: 100%; }</style>
+<arcgis-map basemap="osm"></arcgis-map>
+```
+
+### Impact
+
+Measured: the element was 0 px tall and `viewOnReady()` was still pending after 15 s, so any code awaiting it never
+runs.
+
+### Diagnosis
+
+Element height is 0 in dev tools.
+
+---
+
+## Pitfall 3: Pinning Calcite to 3.x
 
 ### Anti-pattern
 
@@ -13,65 +66,17 @@ pnpm add @esri/calcite-components@^3.3
 ### Correct
 
 ```bash
-pnpm add @esri/calcite-components@^5.0
+pnpm add @esri/calcite-components@^5.1
 ```
 
 ### Impact
 
-Version skew with SDK 5.0; icons/components may render incorrectly.
+`@arcgis/core` and `@arcgis/map-components` 5.1.27 declare `@esri/calcite-components` `^5.1.1`: a 3.x install is a
+second, incompatible copy. With `^5.1` the scaffold resolved a single 5.2.0.
 
 ### Diagnosis
 
-Check `package.json` — Calcite should match the SDK major (5.x).
-
----
-
-## Pitfall 2: Missing container height
-
-### Anti-pattern
-
-```html
-<arcgis-map basemap="arcgis/topographic"></arcgis-map>
-```
-
-### Correct
-
-```html
-<style>html, body, arcgis-map { margin: 0; height: 100%; }</style>
-<arcgis-map basemap="arcgis/topographic"></arcgis-map>
-```
-
-### Impact
-
-The map renders at 0px height (blank page).
-
-### Diagnosis
-
-Element height is 0 in dev tools.
-
----
-
-## Pitfall 3: Committing the real .env
-
-### Anti-pattern
-
-```bash
-git add .env   # contains the real API key
-```
-
-### Correct
-
-```bash
-echo ".env" >> .gitignore   # commit only .env.example
-```
-
-### Impact
-
-Leaked API key; possible quota abuse and a forced key rotation.
-
-### Diagnosis
-
-`git status` shows `.env` as tracked; secret scanning flags it.
+Two Calcite versions in `pnpm why @esri/calcite-components`.
 
 ---
 
@@ -91,33 +96,34 @@ VITE_ARCGIS_API_KEY=xxxx
 
 ### Impact
 
-`import.meta.env.VITE_ARCGIS_API_KEY` is `undefined`; basemap 401s.
+`import.meta.env.VITE_ARCGIS_API_KEY` is `undefined`; measured, assigning that leaves `esriConfig.apiKey`
+`undefined`, and `arcgis/*` basemaps fall back to a sign-in dialog.
 
 ### Diagnosis
 
-Log the value during dev — `undefined` means the prefix is missing.
+The scaffold's `main.ts` warns in the console when the key is empty.
 
 ---
 
-## Pitfall 5: Overwriting an existing project
+## Pitfall 5: Adding the React wrapper on React 19
 
 ### Anti-pattern
 
-```bash
-bash scripts/scaffold.sh existing-dir   # would clobber files
+```typescript
+import { ArcgisMap } from "@arcgis/map-components-react";
 ```
 
 ### Correct
 
-```bash
-# scaffold.sh aborts if the directory exists — choose a new name.
-bash scripts/scaffold.sh fresh-dir
+```typescript
+import "@arcgis/map-components/components/arcgis-map"; // the custom element + onarcgis* event props
 ```
 
 ### Impact
 
-Accidental data loss if a scaffolder overwrites files.
+`@arcgis/map-components-react` 5.1.27 is still published (not marked deprecated on npm), but React 19 handles
+custom elements and their events natively, so it is an extra dependency to keep in step.
 
 ### Diagnosis
 
-The script prints "Directory already exists. Aborting." — pick a new name.
+`@arcgis/map-components-react` in a React 19 `package.json`.

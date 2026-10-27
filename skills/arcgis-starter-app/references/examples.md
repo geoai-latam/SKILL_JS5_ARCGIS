@@ -10,6 +10,10 @@ import "@esri/calcite-components/dist/components/calcite-shell";
 import esriConfig from "@arcgis/core/config.js";
 
 esriConfig.apiKey = import.meta.env.VITE_ARCGIS_API_KEY as string;
+
+const mapEl = document.querySelector("arcgis-map")!;
+await mapEl.viewOnReady(); // the arcgisViewReadyChange detail is null
+console.log(mapEl.view.type);
 ```
 
 **Notes:**
@@ -32,7 +36,7 @@ export function MapPane() {
       basemap="arcgis/topographic"
       center="-74.08,4.6"
       zoom={11}
-      onarcgisViewReadyChange={(e: CustomEvent) => console.log(e.detail.view)}
+      onarcgisViewReadyChange={(e: CustomEvent) => console.log((e.target as HTMLArcgisMapElement).view)}
     />
   );
 }
@@ -41,6 +45,7 @@ export function MapPane() {
 **Notes:**
 
 - React 19 supports custom elements and their events natively — no wrapper package.
+- Read the view from `e.target`, not `e.detail` (measured: `null`).
 - Add the element to JSX intrinsic types if your tsconfig is strict about unknown tags.
 
 ---

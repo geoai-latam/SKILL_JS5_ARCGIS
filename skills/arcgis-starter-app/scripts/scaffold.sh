@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# scaffold.sh — bootstrap a Vite + TypeScript + ArcGIS Maps SDK 5.0 project.
+# scaffold.sh — bootstrap a Vite + TypeScript + ArcGIS Maps SDK 5.1 project.
 # Idempotent: refuses to overwrite an existing directory.
+# Tested 2026-10-27 with pnpm 10 and npm 11 (Vite 8, TypeScript 7, SDK 5.1.27, Calcite 5.2).
 set -euo pipefail
 
 PROJECT_NAME="${1:-my-arcgis-app}"
@@ -15,29 +16,41 @@ echo "📦 Creating Vite + TS project: $PROJECT_NAME"
 "$PKG_MANAGER" create vite@latest "$PROJECT_NAME" --template vanilla-ts -- --quiet
 cd "$PROJECT_NAME"
 
-# Calcite is pinned to ^5.0 to match the SDK major (NOT 3.x, which is the 4.x era).
+# Calcite must match the SDK major (5.x; 3.x is the 4.x era). The SDK 5.1 packages
+# declare @esri/calcite-components ^5.1.1 as a peer, so ^5.1 dedupes to one copy.
 echo "📦 Installing ArcGIS dependencies..."
 "$PKG_MANAGER" add \
-  "@arcgis/map-components@^5.0" \
-  "@arcgis/core@^5.0" \
-  "@esri/calcite-components@^5.0"
+  "@arcgis/map-components@^5.1" \
+  "@arcgis/core@^5.1" \
+  "@esri/calcite-components@^5.1"
 
-# In 5.0, Calcite's asset path defaults to the SDK CDN, so setAssetPath is usually
-# unnecessary. Only configure it when hosting assets locally (use a 5.0.x path then).
+# The current Vite template sets moduleResolution "bundler" but not "strict".
+if ! grep -q '"strict"' tsconfig.json; then
+  sed -i.bak 's/"compilerOptions": {/"compilerOptions": {\n    "strict": true,/' tsconfig.json && rm -f tsconfig.json.bak
+fi
+
+# The Vite template ignores *.local but not .env: keep the real key out of git.
+grep -qx ".env" .gitignore 2>/dev/null || printf '\n# ArcGIS API key\n.env\n' >> .gitignore
+
 cat > src/main.ts <<'EOF'
 import "@arcgis/map-components/components/arcgis-map";
 import "@arcgis/map-components/components/arcgis-zoom";
 import "@esri/calcite-components/dist/components/calcite-shell";
 import esriConfig from "@arcgis/core/config.js";
 
-esriConfig.apiKey = import.meta.env.VITE_ARCGIS_API_KEY as string;
+const apiKey = import.meta.env.VITE_ARCGIS_API_KEY as string | undefined;
+if (apiKey) esriConfig.apiKey = apiKey;
+else console.warn("VITE_ARCGIS_API_KEY is empty: arcgis/* basemaps will ask for sign-in. Use basemap=\"osm\" or add .env.");
 
 const mapEl = document.querySelector("arcgis-map");
-mapEl?.addEventListener("arcgisViewReadyChange", (e) => {
-  console.log("View ready:", (e as CustomEvent).detail.view);
-});
+if (mapEl) {
+  // The arcgisViewReadyChange event has no detail (it is null): wait for the element instead.
+  await mapEl.viewOnReady();
+  console.log("View ready:", mapEl.view.type);
+}
 EOF
 
+# arcgis/* basemaps need the API key; without it the view waits behind a sign-in dialog.
 cat > index.html <<'EOF'
 <!DOCTYPE html>
 <html lang="en">
@@ -63,5 +76,5 @@ EOF
 
 echo "✅ Done. Next steps:"
 echo "   cd $PROJECT_NAME"
-echo "   cp .env.example .env   # then add your API key"
-echo "   $PKG_MANAGER dev"
+echo "   cp .env.example .env   # then add your API key (.env is git-ignored)"
+echo "   $PKG_MANAGER run dev"

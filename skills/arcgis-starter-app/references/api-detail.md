@@ -17,7 +17,7 @@
 | `apiKey` | `string` | API key for location services / basemap styles |
 | `portalUrl` | `string` | Portal/Enterprise URL (default ArcGIS Online) |
 | `request` | `object` | Default request options (interceptors, timeouts) |
-| `assetsPath` | `string` | Override the SDK asset path (rarely needed in 5.0) |
+| `assetsPath` | `string` | Override the SDK asset path (rarely needed in 5.x) |
 
 ---
 
@@ -25,10 +25,10 @@
 
 | Option | Value | Why |
 |---|---|---|
-| `moduleResolution` | `"bundler"` (or `"node16"`) | Resolve SDK subpath exports |
+| `moduleResolution` | `"bundler"` (or `"node16"`) | Resolve SDK subpath exports; `"node"` is removed in TS 7 |
 | `module` | `"ESNext"` | ESM only |
 | `target` | `"ES2020"`+ | Modern output |
-| `strict` | `true` | Project standard |
+| `strict` | `true` | Project standard; the Vite template omits it, the scaffold adds it |
 | `lib` | `["ES2020","DOM","DOM.Iterable"]` | Browser + iterables |
 
 ---
@@ -39,5 +39,5 @@
 |---|---|---|
 | `VITE_ARCGIS_API_KEY` | `esriConfig.apiKey` | Must be `VITE_`-prefixed to be exposed by Vite |
 
-Access with `import.meta.env.VITE_ARCGIS_API_KEY`. Keep the real value in `.env` (git-ignored);
-commit `.env.example` with a placeholder.
+Access with `import.meta.env.VITE_ARCGIS_API_KEY`. Keep the real value in `.env` and commit `.env.example` with a
+placeholder. The Vite template's `.gitignore` does not list `.env`; the scaffold appends it.
