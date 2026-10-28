@@ -1,5 +1,5 @@
 # Genera los .parquet que lee tests/runtime/casos/arcgis-parquet.ts (salen versionados en
-# tests/runtime/public/parquet/, ~90 KB en total). Requiere pyarrow, geopandas y shapely.
+# tests/runtime/public/parquet/, ~310 KB en total). Requiere pyarrow, geopandas y shapely.
 # Uso: python tests/runtime/generar-parquet.py
 import datetime, os, random
 import pyarrow as pa, pyarrow.parquet as pq
