@@ -3,6 +3,25 @@
 All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/) and the project follows semantic versioning.
 
+## [1.2.0] - 2026-10-28
+
+### Added
+
+- `arcgis-parquet` 0.1.0 (beta): `ParquetLayer` with `data` (`ParquetFilesData`, `ParquetPortalItemData`),
+  `geometryEncoding` for GeoParquet, WKB and x/y columns, the host requirements and what the layer cannot do.
+  Measured in `tests/runtime/casos/arcgis-parquet.ts` (32 checks, all green) against Esri's public sample file and
+  generated files. Silent failures found: an encoding without `spatialReference` gives `null` geometries; queries
+  stop at 8000 rows with `exceededTransferLimit: false`; a WKB or custom x/y file without an encoding loads as a
+  table; files with different schemas fail on query; pandas `timestamp[us]` becomes a `big-integer`.
+- `tests/runtime/correr.mjs`: `/sin-rango/` and `/sin-head/` hosts, to measure a server without Range or HEAD.
+- `tests/runtime/generar-parquet.py` and the 13 small `.parquet` fixtures it writes.
+
+### Changed
+
+- `scripts/check-code-blocks.mjs`: a free `layer` in `arcgis-parquet` blocks is a `ParquetLayer`. 1110 blocks,
+  none failing.
+- The catalog lists 36 skills (`CATALOG` in `scripts/lib/skill-utils.js` and its unit test).
+
 ## [1.1.0] - 2026-10-27
 
 ### Changed

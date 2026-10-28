@@ -1,0 +1,20 @@
+{
+  "skill_name": "arcgis-parquet",
+  "should_trigger": [
+    "How do I load a GeoParquet file on an ArcGIS map?",
+    "Add a .parquet file with lat/lon columns to my MapView",
+    "My ParquetLayer loads but nothing shows on the map",
+    "ParquetLayer says Failed to parse file, what is wrong?",
+    "How do I use ParquetFilesData with several parquet files?",
+    "¿Cómo cargo un archivo GeoParquet en el mapa con el SDK de ArcGIS?",
+    "Tengo un parquet con una columna WKB, ¿cómo lo muestro?",
+    "queryFeatures de mi ParquetLayer solo devuelve 8000 registros"
+  ],
+  "should_not_trigger": [
+    "Add a GeoJSON file to the map",
+    "Query a FeatureLayer from a feature service",
+    "Load a 3D Tiles mesh in a SceneView",
+    "Export a table to CSV with Python",
+    "Configura un renderer de valores únicos"
+  ]
+}

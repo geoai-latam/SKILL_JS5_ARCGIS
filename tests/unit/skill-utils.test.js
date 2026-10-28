@@ -112,8 +112,9 @@ describe("enumerations", () => {
   it("has the 3 statuses", () => {
     expect(STATUSES).toEqual(["stable", "beta", "deprecated"]);
   });
-  it("catalog has 35 skills + hello-world", () => {
-    expect(CATALOG.size).toBe(36);
+  it("catalog has 36 skills + hello-world", () => {
+    expect(CATALOG.size).toBe(37);
+    expect(CATALOG.has("arcgis-parquet")).toBe(true);
     expect(CATALOG.has("arcgis-embeddable-maps")).toBe(true);
   });
 });

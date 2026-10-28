@@ -6,6 +6,7 @@
 //
 // Usage: PLAYWRIGHT=../GeoAI_LATAM/video node tests/runtime/correr.mjs <caso> [<caso>…]
 import { createServer } from "vite";
+import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
@@ -15,7 +16,29 @@ const req = createRequire(path.resolve(process.env.PLAYWRIGHT ?? ".", "package.j
 const { chromium } = req("playwright");
 
 const casos = process.argv.slice(2);
-const server = await createServer({ root: here, logLevel: "error", server: { port: 5199 } });
+// Hosts that are not a plain static server, for the casos that need them (arcgis-parquet).
+// <f> is a file under public/:
+//   /sin-rango/<f>  answers every GET with 200 and the whole file (ignores Range);
+//   /sin-head/<f>   answers HEAD with 405 and serves GET normally (with Range).
+const hostsRaros = {
+  name: "hosts-raros",
+  configureServer(sv) {
+    sv.middlewares.use((req, res, next) => {
+      const m = req.url?.match(/^\/(sin-rango|sin-head)\/([\w./-]+)$/);
+      if (!m || m[2].includes("..") || !fs.existsSync(path.join(here, "public", m[2]))) return next();
+      if (m[1] === "sin-head") {
+        if (req.method === "HEAD") { res.statusCode = 405; return res.end(); }
+        req.url = `/${m[2]}`;
+        return next();
+      }
+      const buf = fs.readFileSync(path.join(here, "public", m[2]));
+      res.setHeader("Content-Type", "application/octet-stream");
+      res.setHeader("Content-Length", buf.length);
+      res.end(req.method === "HEAD" ? undefined : buf);
+    });
+  },
+};
+const server = await createServer({ root: here, logLevel: "error", server: { port: 5199 }, plugins: [hostsRaros] });
 await server.listen();
 const browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
 let fallos = 0;

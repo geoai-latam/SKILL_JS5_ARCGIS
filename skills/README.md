@@ -1,6 +1,7 @@
 # Skills Catalog
 
-The 35-skill catalog for the ArcGIS Maps SDK for JavaScript 5.0. Status legend:
+The 36-skill catalog for the ArcGIS Maps SDK for JavaScript 5.1 (35 from the original plan plus
+`arcgis-parquet`, added in v1.2.0). Status legend:
 ✅ built · 🚧 planned. See [`../docs/planning/v2.md`](../docs/planning/v2.md) for full descriptions.
 
 | # | Skill | Category | Status |
@@ -41,3 +42,4 @@ The 35-skill catalog for the ArcGIS Maps SDK for JavaScript 5.0. Status legend:
 | 33 | `arcgis-charts` | new-in-5.0 | ✅ |
 | 34 | `arcgis-coding-components` | new-in-5.0 | ✅ |
 | 35 | `arcgis-embeddable-maps` | new-in-5.0 | ✅ (CDN-only) |
+| 36 | `arcgis-parquet` | layers | ✅ (beta) |

@@ -19,10 +19,10 @@ rompían código o enseñaban algo falso. Ninguna se propone para borrar o fusio
 
 - **Que compile.** Cada bloque de código de `SKILL.md`, `SKILL.es.md`, `AGENTS.md` y
   `references/*.md` se compila contra los `.d.ts` 5.1.27, y se marca lo `@deprecated`
-  (`scripts/check-code-blocks.mjs`). Al final: 1059 bloques y ninguno falla (el trabajo sin
-  guardar de ai-components se aplicó y corrigió el 27-oct). Los `scripts/snippet-*.ts` pasan los 59 (`smoke-test.mjs`).
+  (`scripts/check-code-blocks.mjs`). Al cerrar las 35: 1059 bloques y ninguno falla (el trabajo
+  sin guardar de ai-components se aplicó y corrigió el 27-oct); con `arcgis-parquet`, 1110. Los `scripts/snippet-*.ts` pasan los 59 (62 con `arcgis-parquet`; `smoke-test.mjs`).
 - **Que corra.** Hay un caso de runtime por skill en `tests/runtime/casos/` (34 archivos,
-  más el de ai-components). Corren en Chromium real contra servicios públicos de Esri, sin
+  más el de ai-components; desde la v1.2.0, también el de `arcgis-parquet`). Corren en Chromium real contra servicios públicos de Esri, sin
   API key y sin iniciar sesión. Lo que la skill dice que pasa se ejecuta, se lee el resultado
   y, en las de visualización, se leen los píxeles dibujados.
 - **Que no sea relleno.** Un pitfall que solo es un comentario, o que dice algo que cualquier
@@ -111,7 +111,7 @@ Solo se cotejaron dos skills contra su `master`. No es una comparación de las 3
     `cambios-sdk-5.1.md`;
   - cada afirmación ejecutada contra el SDK real, con su caso de runtime;
   - pitfalls medidos en vez de supuestos, y los falsos fuera;
-  - un verificador que compila los 1059 bloques y ahora coteja `exports`;
+  - un verificador que compila los bloques (1059 al cerrar las 35, 1110 hoy) y coteja `exports`;
   - versión bilingüe ES/EN.
 
 Antes de abrir el repo conviene decidir dos cosas, y las dos son de Sebastián:
@@ -120,3 +120,12 @@ Antes de abrir el repo conviene decidir dos cosas, y las dos son de Sebastián:
   (atribución si de ahí salió la base, o diferenciarse por la validación);
 - ~~qué hacer con el trabajo sin guardar de `arcgis-ai-components`~~: aplicado y corregido el 27-oct,
   a pedido de Sebastián.
+
+## Después del informe: `arcgis-parquet` (v1.2.0, 2026-10-28)
+
+Se agregó una skill 36, `arcgis-parquet`, sobre `ParquetLayer` (beta), con el mismo método: primero los tipos,
+después cada bloque compilado y un caso de runtime (`tests/runtime/casos/arcgis-parquet.ts`, 32/32 en verde)
+contra el archivo público del sample de Esri y contra archivos generados. Se repitió el patrón 2 de este informe:
+lo que más valió fueron los fallos silenciosos. Sin `spatialReference` la geometría sale `null`, el tope de 8000
+filas no prende `exceededTransferLimit` y un archivo sin codificación carga como tabla. El registro está en
+[`README.md`](./README.md), en la sección 36.

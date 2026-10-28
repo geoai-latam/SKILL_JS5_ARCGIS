@@ -39,7 +39,8 @@ export const CATEGORIES = [
 export const STATUSES = ["stable", "beta", "deprecated"];
 
 /**
- * The canonical 35-skill catalog (Plan Maestro §34) plus the reference skill.
+ * The canonical 35-skill catalog (Plan Maestro §34), the skills added after it
+ * (arcgis-parquet, v1.2.0) and the reference skill.
  * Used by the cross-ref check so that a skill may reference a sibling that is
  * planned but not yet built (warning) versus a typo / unknown name (error).
  */
@@ -80,6 +81,8 @@ export const CATALOG = new Set([
   "arcgis-charts",
   "arcgis-coding-components",
   "arcgis-embeddable-maps",
+  // Added after v1.1.0 (the original 35 above stay numbered as in the plan).
+  "arcgis-parquet",
 ]);
 
 /** List skill directories under skills/ (any subdirectory, including hello-world). */

@@ -62,6 +62,7 @@ Tres preguntas, con evidencia, no con impresión:
 | 33 | `arcgis-widgets-advanced` | aporta con arreglos | position= (no existe: cae al slot por defecto, medido) en todos los ejemplos; estadísticas del perfil en la analysis view; perfil sin ground no avanza |
 | 34 | `arcgis-widgets-ui` | aporta con arreglos | position= en todos los ejemplos (ahora slot); enlace roto medido (view null, sin error); pitfall de solapamiento falso |
 | 35 | `arcgis-ai-components` | aporta con arreglos | sus imports dist/components rompen en Vite (no están en exports; tsc no lo ve); agentes de ArcGIS sin web map: Orchestrator not initialized; falta agent-utils 5.1 (FunctionAgent medido) |
+| 36 | `arcgis-parquet` | aporta (nueva, v1.2.0) | sin spatialReference la geometría sale null sin error; tope de 8000 con exceededTransferLimit en false; WKB o x/y sin codificación = tabla; Range y HEAD obligatorios |
 
 `arcgis-ai-components` va al final a propósito: tiene 596 líneas sin guardar de antes de esta
 rama, y guardarlas o descartarlas lo decide Sebastián. Se valida la versión del working tree sin
@@ -1097,3 +1098,94 @@ Lo de abajo es el registro de la validación, antes de aplicar.
 **Lo que no se midió:** ninguna respuesta del LLM, porque requiere un usuario nominal de ArcGIS Online.
 
 **Por qué aporta:** sin la skill, un agente no sabe que el assistant solo funciona con un usuario nominal, que los agentes de ArcGIS exigen un web map con embeddings, ni que es beta y hay que fijar la versión. El trabajo sin guardar ya corrige `layer-filter`, que no existe, y agrega el agente `knowledge`. Pero tal como está, el primer `import` rompe el build. Con los arreglos de la propuesta, aporta.
+
+### 36. `arcgis-parquet` — aporta (skill nueva, v1.2.0)
+
+Escrita el 2026-10-28, después de cerrar las 35, con el mismo método. No había una skill vieja que corregir:
+primero se leyeron los tipos (`layers/ParquetLayer.d.ts`, `layers/support/ParquetFilesData`,
+`ParquetPortalItemData`, `GeometryEncodingWkb`, `GeometryEncodingLocation`, `parquetUtils` y
+`views/layers/ParquetLayerView.d.ts`) y el sample de Esri. A la skill solo entró lo que dice el `.d.ts` o lo que se
+midió.
+
+**Evidencia.** El caso `tests/runtime/casos/arcgis-parquet.ts` corrió contra el SDK 5.1.27 en Chromium y dio
+32/32 en verde. Cada comprobación lanza `cambió: …` si el SDK deja de portarse como dice la skill. Usa dos fuentes:
+
+- el archivo del sample de Esri: el ítem público `6ab6f959c1684eb5a54db91644a89747` (pozos de agua de Kansas,
+  310 702 filas, 56 MB, GZIP, columnas `lng`/`lat`), sin iniciar sesión;
+- 13 archivos pequeños que escribe `tests/runtime/generar-parquet.py` con pyarrow y GeoPandas: cinco ciudades de
+  Colombia en GeoParquet, WKB sin metadato, `lon`/`lat`, `coord_x`/`coord_y`, ZSTD, EPSG:9377 y 3857, fechas en
+  tres unidades, dos esquemas y 10 000 puntos.
+
+Para medir lo que pide el servidor, `correr.mjs` tiene ahora dos hosts: `/sin-rango/` responde `200` con el
+archivo entero e ignora `Range`, y `/sin-head/` responde `405` al `HEAD`. En una corrida de exploración con un
+registro de red de Playwright, que no quedó en el repo, se vio que `load()` pide un `HEAD` y después solo el final
+del archivo (110 KB de los 56 MB), y que las consultas leen pedazos de 64 KB con `Range`.
+
+**Fallos silenciosos medidos (lo que más vale de la skill):**
+
+1. **Sin `spatialReference`, la geometría sale `null`.** Con `GeometryEncodingLocation` o `GeometryEncodingWkb`
+   y `geometryType`, pero sin `spatialReference`, `load()` resuelve, la vista de la capa se crea y no se dibuja
+   nada: el píxel del centro quedó del color del basemap. Con `spatialReference: { wkid: 4326 }` salió rojo.
+   `layer.spatialReference` dice 4326 en los dos casos, así que leerla no avisa.
+2. **El tope de 8000 no se anuncia.** `queryFeatures` devolvió 8000 de 310 702 con
+   `exceededTransferLimit: false`, también con `num: 20000`. `queryObjectIds()` sin `where` devolvió las 310 702,
+   pero con un `where` devolvió 8000 de 244 149. La paginación con `start` sí funciona: con `start: 310000`
+   llegaron las últimas 702.
+3. **Sin `geometryEncoding`, un archivo WKB o con x/y de otro nombre carga como tabla.** No hay error, `isTable`
+   es `true` y `geometryType` sigue diciendo `"point"`. `getParquetLayerInfo` devuelve `geometryEncoding: null`.
+4. **Un `geometryType` que falta o no coincide.** Los polígonos WKB sin `geometryType` quedaron en `"point"` y con
+   geometría `null`. En una corrida de exploración la consulta lanzó un `TypeError` (`reading 'slice'`); en las
+   siguientes devolvió `null`. Puntos WKB declarados como `polygon` dieron 5 polígonos con `rings: []`.
+5. **Los valores del `where` distinguen mayúsculas.** `'constructed'` dio 0 y `'Constructed'` 244 149.
+   `UPPER(STATUS) = 'CONSTRUCTED'` funciona. Un `definitionExpression` con `'bogotá'` contó 0.
+6. **Un `where` suelto reemplaza el `definitionExpression`.** Pasa igual que en `arcgis-layers`: dio 73 538 en
+   vez de 14 703. Con `createQuery()` y `AND` el conteo salió bien.
+7. **Archivos con esquemas distintos.** La capa carga con los campos del primero y cuenta 6, pero pedir
+   `poblacion`, que sí está en el primero, rechaza con `Unknown field`.
+8. **Las fechas dependen de la unidad.** `timestamp[ms]` queda como campo `date`, y `DATE '2020-01-01'` funciona
+   en el `where`. `timestamp[us]`, lo que escribe pandas por defecto, queda `big-integer` en microsegundos.
+   `date32` queda `integer` en días.
+9. **`queryExtent().count` no es el conteo de filas.** Con filtro cuenta solo las filas con coordenadas: 64 079 de
+   64 254 (175 sin `lat`/`lng`). Sin filtro dijo 310 702, aunque 389 filas no tienen coordenadas.
+10. **Sin metadato GeoParquet, `fullExtent` puede ser `null`.** Pasó con WKB. Un `MapView` sin basemap y con solo
+    esa capa no resolvió `view.when()` en 8 s. Con x/y sin `spatialReference`, `queryExtent()` lanza
+    `reading 'toJSON'`.
+
+**Lo que falla con un error que sí orienta:** un archivo en EPSG:9377 o columnas UTM (`Only WGS84 and Web
+Mercator are supported`), ZSTD (`Compression codec zstd is unsupported`) y un `SceneView` (`layerview creation
+failed`). Lo contrario pasa con el servidor: un 404, un host sin CORS, uno sin `Range` y uno sin `HEAD` dan todos
+el mismo `Failed to parse file`, que manda a buscar el problema en el archivo.
+
+**Lo que funciona y se midió:**
+
+- el ítem público sin sesión y `ParquetFilesData` con la URL `/data`;
+- varios archivos con el mismo esquema (5 + 3 = 8) y un archivo del usuario como `blob:`;
+- `orderByFields`, `outStatistics` y la consulta espacial;
+- la detección de `lng/lat`, que eligió esa pareja y no `LONGITUDE/LATITUDE`;
+- los 310 702 puntos dibujados a zoom 6;
+- el `urls` deprecado, que todavía carga.
+
+`hitTest` sin `outFields` trae solo `__OBJECTID`, un campo que genera la capa y que no es el `OBJECTID` del
+archivo.
+
+**Errores de la documentación de Esri que la skill corrige:** el ejemplo de WKB usa `ParquetGeometryEncodingWkb`,
+pero el módulo es `GeometryEncodingWkb`. La página de `GeometryEncodingLocation` dice que `xField` y `yField`
+llevan "la latitud y la longitud respectivamente". Lo medido es que `xField` es la longitud.
+
+**Lo que no se midió:**
+
+- `orderByFields` por encima de 500 000 filas (el sample tiene 310 702);
+- ítems privados o de Enterprise, porque piden sesión;
+- hosts distintos de ArcGIS Online y Vite (S3, GCS, Azure, GitHub);
+- etiquetas, `featureReduction`, el heatmap y los demás renderers;
+- la precisión de `big-integer` y los archivos de más de 56 MB.
+
+**Verificación.** `check-code-blocks` compila sus 51 bloques sin errores ni API deprecada (1110 en el repo).
+`smoke` pasa sus 3 snippets (62 en total). `validate-all`, `lint` y los 22 tests unitarios están en verde.
+`eval-descriptions` valida la estructura: 8 consultas que deben activarla y 5 que no. El modo en vivo no corre,
+porque no hay `ANTHROPIC_API_KEY`.
+
+**Por qué aporta:** sin la skill, un agente escribe lo que trae la documentación (`geometryEncoding` y
+`geometryType`), confía en que la SR por defecto es WGS84 y entrega un mapa vacío sin un solo error. Después cuenta
+filas con `queryFeatures`, obtiene 8000 y tampoco recibe aviso. Si el servidor no sirve `Range`, se pone a depurar
+el archivo. Las tres cosas quedaron medidas.

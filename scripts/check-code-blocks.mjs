@@ -45,7 +45,10 @@ export {};
 // Skills whose `view` is a SceneView unless a block says otherwise.
 const SCENE_SKILLS = new Set(["arcgis-3d-layers", "arcgis-scene-environment"]);
 // Skills whose free `layer` is not a FeatureLayer.
-const LAYER_TYPE = { "arcgis-advanced-layers": "@arcgis/core/layers/MapImageLayer.js" };
+const LAYER_TYPE = {
+  "arcgis-advanced-layers": "@arcgis/core/layers/MapImageLayer.js",
+  "arcgis-parquet": "@arcgis/core/layers/ParquetLayer.js",
+};
 const LANGS = new Set(["ts", "typescript", "js", "javascript", "tsx", "jsx"]);
 // Error codes that only mean "this is a fragment".
 const FRAGMENT_CODES = new Set([2304, 2552, 2582, 1375, 1378, 2451, 2300, 2393, 7006, 7005, 7034, 7031, 18004]);

@@ -27,14 +27,15 @@ the English `SKILL.md`.**
 
 ## Status
 
-**v1.1.0 — all 35 skills validated against SDK 5.1.27.** Each skill was checked one by one:
+**v1.2.0 — 36 skills, all validated against SDK 5.1.27.** The 35 of v1.1.0 plus `arcgis-parquet`
+(`ParquetLayer`, beta), added with the same method. Each skill was checked one by one:
 
-- **It compiles.** Every code block in the skills (1059) is type-checked against the real 5.1.27
+- **It compiles.** Every code block in the skills (1110) is type-checked against the real 5.1.27
   types, and every `@arcgis/*` import is checked against the package `exports` (a path tsc accepts
   can still fail in Vite and Node).
 - **It runs.** Each skill has a runtime case in `tests/runtime/casos/` that executes what the skill
-  claims in Chromium, against public Esri services, and reads the result (pixels, for the
-  visualization skills).
+  claims in Chromium, against public Esri services (and, for Parquet, small generated
+  files), and reads the result (pixels, for the visualization skills).
 - **It is not filler.** Pitfalls that turned out false were removed; the silent failures that
   were found (no error, wrong result) were added with their measurement.
 
