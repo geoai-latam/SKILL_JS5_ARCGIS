@@ -2,7 +2,7 @@
 name: hello-world
 description: >
   Reference skill and gold-standard template for the ArcGIS Maps SDK for
-  JavaScript 5.0 skills library. It demonstrates the canonical file layout,
+  JavaScript 5.x skills library. It demonstrates the canonical file layout,
   bilingual EN/ES structure, frontmatter schema, progressive disclosure, and a
   type-checked snippet. Use this skill as the blueprint when authoring or
   reviewing any new arcgis-* skill, or when you need to understand how a skill
@@ -33,7 +33,7 @@ license: MIT
 
 ## Overview
 
-This is the gold-standard reference skill for the ArcGIS Maps SDK for JavaScript 5.0
+This is the gold-standard reference skill for the ArcGIS Maps SDK for JavaScript 5.x
 skills library. It exists to be copied, not consumed by end users.
 
 - **Problem it solves:** keeps every skill structurally identical so the validators,

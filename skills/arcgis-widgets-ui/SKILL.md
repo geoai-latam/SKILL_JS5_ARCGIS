@@ -33,7 +33,7 @@ license: MIT
 # Widgets & UI
 
 > **When to use:** Activate this skill whenever the user adds a legend, layer list, search box, or
-> basemap gallery. Prefer Map Components — widgets are deprecated in 5.0.
+> basemap gallery. Prefer Map Components — the Core widgets are deprecated (4.32 to 5.0).
 
 ## Overview
 

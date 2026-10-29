@@ -2,7 +2,7 @@
 name: hello-world
 description: >
   Skill de referencia y plantilla gold-standard para la librería de skills del
-  ArcGIS Maps SDK for JavaScript 5.0. Demuestra la estructura canónica de
+  ArcGIS Maps SDK for JavaScript 5.x. Demuestra la estructura canónica de
   archivos, el formato bilingüe EN/ES, el schema de frontmatter, el progressive
   disclosure y un snippet type-checked. Usa esta skill como plano al crear o
   revisar cualquier skill arcgis-*, o cuando necesites entender cómo se organiza
@@ -34,7 +34,7 @@ license: MIT
 ## Resumen
 
 Esta es la skill de referencia gold-standard para la librería de skills del ArcGIS Maps
-SDK for JavaScript 5.0. Existe para copiarse, no para que la consuma el usuario final.
+SDK for JavaScript 5.x. Existe para copiarse, no para que la consuma el usuario final.
 
 - **Problema que resuelve:** mantiene cada skill estructuralmente idéntica para que los
   validadores, bilingual-sync y smoke tests pasen de forma uniforme.

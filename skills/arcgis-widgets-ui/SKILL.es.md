@@ -34,7 +34,7 @@ license: MIT
 # Widgets y UI
 
 > **Cuándo usar:** Activa esta skill cuando el usuario agregue una leyenda, lista de capas, buscador
-> o galería de basemaps. Prefiere Map Components — los widgets están deprecados en 5.0.
+> o galería de basemaps. Prefiere Map Components — los widgets del Core están deprecados (de 4.32 a 5.0).
 
 ## Resumen
 
