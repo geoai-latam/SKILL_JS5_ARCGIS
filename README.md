@@ -53,13 +53,13 @@ A similar catalog exists at
 
 ```bash
 # All skills, via the Skills CLI
-npx skills add sforero77/SKILL_JS5_ARCGIS
+npx skills add geoai-latam/SKILL_JS5_ARCGIS
 
 # A specific skill
-npx skills add sforero77/SKILL_JS5_ARCGIS --skill arcgis-starter-app
+npx skills add geoai-latam/SKILL_JS5_ARCGIS --skill arcgis-starter-app
 
 # Claude Code marketplace (requires a .claude-plugin/marketplace.json — see below)
-# /plugin marketplace add sforero77/SKILL_JS5_ARCGIS
+# /plugin marketplace add geoai-latam/SKILL_JS5_ARCGIS
 ```
 
 ## Develop
