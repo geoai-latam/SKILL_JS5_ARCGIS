@@ -31,7 +31,7 @@ jobs:
             echo "present=false" >> "$GITHUB_OUTPUT"
             echo "::notice::No docs/package.json yet — skipping docs build."
           fi
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         if: steps.guard.outputs.present == 'true'
       - uses: actions/setup-node@v7
         if: steps.guard.outputs.present == 'true'
