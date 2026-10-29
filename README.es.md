@@ -46,10 +46,14 @@ print). El informe completo está en [`docs/validacion/INFORME.md`](./docs/valid
 el registro por skill en [`docs/validacion/README.md`](./docs/validacion/README.md). El catálogo
 está en [`skills/README.md`](./skills/README.md).
 
+Hay un catálogo parecido en
+[SaschaBrunnerCH/arcgis-maps-sdk-js-ai-context](https://github.com/SaschaBrunnerCH/arcgis-maps-sdk-js-ai-context)
+(SDK 5.0). Este apunta a 5.1.27 y valida cada bloque de código y cada afirmación contra el SDK real.
+
 ## Instalación
 
 ```bash
-# Todas las skills, vía Skills CLI (requiere que el repo sea público)
+# Todas las skills, vía Skills CLI
 npx skills add sforero77/SKILL_JS5_ARCGIS
 
 # Una skill específica

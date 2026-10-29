@@ -45,6 +45,10 @@ Spanish, is [`docs/validacion/INFORME.md`](./docs/validacion/INFORME.md), and th
 is [`docs/validacion/README.md`](./docs/validacion/README.md). The catalog is
 [`skills/README.md`](./skills/README.md).
 
+A similar catalog exists at
+[SaschaBrunnerCH/arcgis-maps-sdk-js-ai-context](https://github.com/SaschaBrunnerCH/arcgis-maps-sdk-js-ai-context)
+(SDK 5.0). This one targets 5.1.27 and validates every code block and claim against the real SDK.
+
 ## Install
 
 ```bash
