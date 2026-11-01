@@ -10,5 +10,7 @@
   // Allow trailing "/" in headings like "When to Read references/".
   "MD026": { "punctuation": ".,;:!。，；：！" },
   // First-line H1 not required (files start with YAML frontmatter).
-  "MD041": false
+  "MD041": false,
+  // Table pipe spacing is style only; compact tables are used across the library.
+  "MD060": false
 }

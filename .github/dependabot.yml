@@ -9,6 +9,11 @@ updates:
         patterns:
           - "@arcgis/*"
           - "@esri/*"
+    ignore:
+      # Calcite 5.2 breaks arcgis-chart 5.1.27; see docs/validacion/cambios-sdk-5.1.md.
+      # Remove when the SDK is upgraded and charts are re-measured.
+      - dependency-name: "@esri/calcite-components"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
     open-pull-requests-limit: 10
 
   - package-ecosystem: github-actions

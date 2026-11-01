@@ -17,7 +17,8 @@ Quick-reference for AI Components. Read before adding an assistant. SDK 5.1.
 - [ ] With pnpm, add `@langchain/core@^1.3.0` directly (else `Missing "./utils/gateway" specifier`).
 - [ ] Register **≥1 agent** (built-in or custom) — the assistant needs one to work.
 - [ ] Bind built-in agents via `reference-element` → **`arcgis-map` only (2D, no SceneView)**.
-- [ ] Auth: named-user OAuth sign-in to an **ArcGIS Online** org with AI assistants enabled. No API keys, no Enterprise yet.
+- [ ] Auth: named-user OAuth sign-in to an **ArcGIS Online** org with AI assistants enabled.
+  No API keys, no Enterprise yet.
 - [ ] data-exploration needs **AI vector embeddings** generated on the web map's layers.
 - [ ] Custom agents: bundler + `@langchain/langgraph @langchain/core zod`; `createGraph` returns an
   **uncompiled** graph; workspace exposes `outputMessage` (a 5.1 `FunctionAgent`/`LLMAgent` does both for you).
