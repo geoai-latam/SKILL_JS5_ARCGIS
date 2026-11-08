@@ -42,11 +42,11 @@ importers:
         specifier: ^5.9.0
         version: 5.9.3
       vite:
-        specifier: ^8.3.5
-        version: 8.3.5(esbuild@0.27.7)
+        specifier: ^8.3.6
+        version: 8.3.6(esbuild@0.27.7)
       vitest:
         specifier: ^5.0.5
-        version: 5.0.5(vite@8.3.5(esbuild@0.27.7))
+        version: 5.0.5(vite@8.3.6(esbuild@0.27.7))
 
 packages:
 
@@ -1908,8 +1908,8 @@ packages:
     resolution: {integrity: sha512-vzi9uRZ926x4XV73S/4qQaTwPXM2JBj6/6lI/byHH1jOpCzb0zDbfytgA9LcN/hzb2l7WQSQnxITOVx5un/wGw==}
     hasBin: true
 
-  vite@8.3.5:
-    resolution: {integrity: sha512-z1YpjieJ9g0ebTmQpLBv/oq9E3F9EIlOe+7LahW8SrE3LTiG3udBRUXQOlYXP9b+IC2q2phHeVxj9xGlw34OEQ==}
+  vite@8.3.6:
+    resolution: {integrity: sha512-UI7dK29NnS54Fk+mmo7o+jI6U8Fp7hDl+X5Q1k45WH+d4dSlbLVUETGQ+hfkNgvLQGyoElPj837nZyv4MBc0VA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     peerDependencies:
@@ -2756,14 +2756,14 @@ snapshots:
     dependencies:
       '@vaadin/vaadin-development-mode-detector': 2.0.7
 
-  '@vitest/mocker@5.0.5(vite@8.3.5(esbuild@0.27.7))':
+  '@vitest/mocker@5.0.5(vite@8.3.6(esbuild@0.27.7))':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       '@vitest/spy': 5.0.5
       estree-walker: 3.0.3
       magic-string: 1.4.5
     optionalDependencies:
-      vite: 8.3.5(esbuild@0.27.7)
+      vite: 8.3.6(esbuild@0.27.7)
 
   '@vitest/spy@5.0.5': {}
 
@@ -4049,7 +4049,7 @@ snapshots:
 
   uuid@13.0.2: {}
 
-  vite@8.3.5(esbuild@0.27.7):
+  vite@8.3.6(esbuild@0.27.7):
     dependencies:
       lightningcss: 1.33.0
       picomatch: 4.0.7
@@ -4060,10 +4060,10 @@ snapshots:
       esbuild: 0.27.7
       fsevents: 2.3.3
 
-  vitest@5.0.5(vite@8.3.5(esbuild@0.27.7)):
+  vitest@5.0.5(vite@8.3.6(esbuild@0.27.7)):
     dependencies:
       '@types/chai': 5.2.3
-      '@vitest/mocker': 5.0.5(vite@8.3.5(esbuild@0.27.7))
+      '@vitest/mocker': 5.0.5(vite@8.3.6(esbuild@0.27.7))
       chai: 6.3.0
       es-module-lexer: 2.3.2
       expect-type: 1.4.0
@@ -4074,7 +4074,7 @@ snapshots:
       tinybench: 6.2.2
       tinyexec: 1.3.1
       tinyglobby: 0.2.17
-      vite: 8.3.5(esbuild@0.27.7)
+      vite: 8.3.6(esbuild@0.27.7)
       why-is-node-running: 3.2.1
     transitivePeerDependencies:
       - msw
